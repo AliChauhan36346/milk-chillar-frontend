@@ -1,102 +1,96 @@
+import Link from "next/link";
 import Image from "next/image";
 
 export default function Home() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white font-[family-name:var(--font-geist-sans)]">
+      {/* Hero Section */}
+      <header className="container mx-auto px-4 py-12 text-center">
+        <div className="max-w-4xl mx-auto">
+          <div className="mb-8 flex justify-center">
+            <div className="w-24 h-24 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
+              <span className="text-white text-3xl font-bold">CD</span>
+            </div>
+          </div>
+          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+            Welcome to Chauhan Dairies
+          </h1>
+          <p className="text-xl text-gray-600 mb-8">
+            Streamlining Dairy Management with Precision Analytics
+          </p>
+          
+          {/* Admin Dashboard Button */}
+          <div className="flex flex-col items-center gap-4">
+            <Link
+              href="/dashboard/admin"
+              className="relative group inline-flex items-center justify-center px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-all shadow-md hover:shadow-lg"
+            >
+              <span className="relative z-10">Access Admin Dashboard</span>
+              <span className="absolute -top-2 -right-2 bg-yellow-400 text-blue-900 px-2 py-1 text-xs rounded-full shadow-md">
+                Testing
+              </span>
+              <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            </Link>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
+      </header>
+
+      {/* Features Grid */}
+      <section className="container mx-auto px-4 py-16">
+        <div className="grid md:grid-cols-3 gap-8">
+          {/* Feature Card 1 */}
+          <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-shadow">
+            <div className="w-12 h-12 bg-blue-100 rounded-xl mb-4 flex items-center justify-center">
+              <span className="text-blue-600 text-xl">📊</span>
+            </div>
+            <h3 className="text-xl font-semibold mb-2">Real-time Analytics</h3>
+            <p className="text-gray-600">Monitor milk production, sales, and inventory with live updates</p>
+          </div>
+
+          {/* Feature Card 2 */}
+          <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-shadow">
+            <div className="w-12 h-12 bg-blue-100 rounded-xl mb-4 flex items-center justify-center">
+              <span className="text-blue-600 text-xl">💰</span>
+            </div>
+            <h3 className="text-xl font-semibold mb-2">Loss Management</h3>
+            <p className="text-gray-600">Track and analyze chillar loss, purchase discrepancies, and TS loss</p>
+          </div>
+
+          {/* Feature Card 3 */}
+          <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-shadow">
+            <div className="w-12 h-12 bg-blue-100 rounded-xl mb-4 flex items-center justify-center">
+              <span className="text-blue-600 text-xl">📈</span>
+            </div>
+            <h3 className="text-xl font-semibold mb-2">Financial Insights</h3>
+            <p className="text-gray-600">Detailed expense vs revenue tracking with visual reports</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Value Proposition */}
+      <section className="bg-blue-900 text-white py-16">
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="text-3xl font-bold mb-6">Why Choose MilkChillar?</h2>
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <div className="p-6">
+              <div className="text-4xl mb-4">🥛</div>
+              <h3 className="text-xl font-semibold mb-2">Precision Tracking</h3>
+              <p className="text-blue-200">Accurate measurement down to the last milliliter</p>
+            </div>
+            <div className="p-6">
+              <div className="text-4xl mb-4">⏱️</div>
+              <h3 className="text-xl font-semibold mb-2">Instant Updates</h3>
+              <p className="text-blue-200">Real-time data synchronization across all devices</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Simple Footer */}
+      <footer className="bg-white border-t border-gray-100 mt-16 py-8">
+        <div className="container mx-auto px-4 text-center text-gray-600">
+          <p>© 2024 MilkChillar. All rights reserved.</p>
+        </div>
       </footer>
     </div>
   );
