@@ -25,16 +25,6 @@ export default function ManagerDashboard() {
 
   return (
     <DashboardLayout role="manager">
-      {/* Welcome Header */}
-      <div className="bg-white p-4 rounded-lg shadow-sm mb-6">
-        <h1 className="text-xl font-bold text-gray-800">Hello Manager!</h1>
-        <p className="text-gray-600">Today is {new Date().toLocaleDateString('en-IN', { 
-          weekday: 'long', 
-          day: 'numeric', 
-          month: 'long' 
-        })}</p>
-      </div>
-
       {/* Big Action Buttons - Simple Navigation */}
       <div className="grid grid-cols-2 gap-4 mb-6">
         <Link href="/reports/saleReport" className="bg-blue-100 hover:bg-blue-200 p-4 rounded-lg text-center">
