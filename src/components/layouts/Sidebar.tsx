@@ -14,7 +14,8 @@ import {
   Home,
   Users,
   BarChart2,
-  Package
+  Package,
+  Settings
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -32,20 +33,82 @@ type MenuSection = {
   items: MenuItem[];
 };
 
+type SidebarProps = {
+  isCollapsed: boolean;
+  toggleSidebar: () => void;
+  role?: 'admin' | 'manager' | 'dodhi' | 'chillarIncharge' | 'buyer' | 'supplier';
+};
+
 export default function Sidebar({ 
   isCollapsed, 
   toggleSidebar,
   role
-}: { 
-  isCollapsed: boolean;
-  toggleSidebar: () => void;
-  role?: 'admin' | 'manager';
-}){
+}: SidebarProps) {
   const pathname = usePathname();
-  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
-    reports: true,
-    transactions: true
-  });
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+
+  // Navigation configuration directly in component
+  const navigationConfig: Record<string, MenuSection[]> = {
+    admin: [
+      {
+        section: 'Administration',
+        items: [
+          { label: 'Dashboard', href: '/admin/dashboard', icon: <LayoutDashboard size={18} /> },
+          { label: 'User Management', href: '/admin/users', icon: <Users size={18} /> },
+          { label: 'System Settings', href: '/admin/settings', icon: <Settings size={18} /> }
+        ]
+      },
+      {
+        section: 'Reports',
+        items: [
+          {
+            label: 'All Reports', 
+            href: '#',
+            icon: <FileText size={18} />,
+            subItems: [
+              { label: 'Financial', href: '/reports/financial', icon: <BarChart2 size={16} /> },
+              { label: 'Inventory', href: '/reports/inventory', icon: <Package size={16} /> }
+            ]
+          }
+        ]
+      }
+    ],
+    manager: [
+      {
+        section: 'Operations',
+        items: [
+          { label: 'Dashboard', href: '/manager/dashboard', icon: <LayoutDashboard size={18} /> },
+          {
+            label: 'Quick Actions', 
+            href: '#',
+            icon: <Home size={18} />,
+            subItems: [
+              { label: 'Add Purchase', href: '/purchases/add', icon: <ShoppingCart size={16} /> },
+              { label: 'Record Sale', href: '/sales/add', icon: <ShoppingBag size={16} /> }
+            ]
+          }
+        ]
+      }
+    ],
+    dodhi: [
+      {
+        section: 'Collections',
+        items: [
+          { label: 'Daily Records', href: '/dodhi/records', icon: <Truck size={18} /> },
+          { label: 'My Payments', href: '/dodhi/payments', icon: <Wallet size={18} /> }
+        ]
+      }
+    ],
+    chillarIncharge: [
+      {
+        section: 'Cold Storage',
+        items: [
+          { label: 'Inventory', href: '/chillar/inventory', icon: <Package size={18} /> },
+          { label: 'Quality Check', href: '/chillar/quality', icon: <Scale size={18} /> }
+        ]
+      }
+    ]
+  };
 
   const toggleSection = (section: string) => {
     setExpandedSections(prev => ({
@@ -54,62 +117,7 @@ export default function Sidebar({
     }));
   };
 
-  const managerSections: MenuSection[] = [
-    {
-      section: 'Navigation',
-      items: [
-        { label: 'Dashboard', href: '/dashboard/manager', icon: <LayoutDashboard size={18} /> },
-        {
-          label: 'Quick Actions', 
-          href: '#',
-          icon: <Home size={18} />,
-          subItems: [
-            { label: 'Add Purchase', href: '/purchase/SimplePurchase', icon: <ShoppingCart size={16} /> },
-            { label: 'Add Sales', href: '/sales', icon: <ShoppingBag size={16} /> },
-            { label: 'Record Receive', href: '/chillarReceive', icon: <Truck size={16} /> },
-            { label: 'Add Payment', href: '/payments/add', icon: <Wallet size={16} /> },
-          ]
-        }
-      ]
-    },
-    {
-      section: 'Management',
-      items: [
-        { label: 'Dodhi Management', href: '/dodhis', icon: <Users size={18} /> },
-        { label: 'Buyer Management', href: '/buyers', icon: <ShoppingBag size={18} /> },
-        { label: 'Stock Management', href: '/stock', icon: <Package size={18} /> },
-      ]
-    }
-  ];
-  
-  const adminSections: MenuSection[] = [
-    {
-      section: 'Navigation',
-      items: [
-        { label: 'Dashboard', href: '/dashboard/admin', icon: <LayoutDashboard size={18} /> }
-      ]
-    },
-    {
-      section: 'Reports',
-      items: [
-        {
-          label: 'All Reports', 
-          href: '#',
-          icon: <FileText size={18} />,
-          subItems: [
-            { label: 'Purchase Report', href: '/reports/purchase', icon: <ShoppingCart size={16} /> },
-            { label: 'Sales Report', href: '/reports/sales', icon: <ShoppingBag size={16} /> },
-            { label: 'Receive Report', href: '/reports/receive', icon: <Truck size={16} /> },
-            { label: 'Stock Report', href: '/reports/stock', icon: <Package size={16} /> },
-            { label: 'Financial Report', href: '/reports/financial', icon: <BarChart2 size={16} /> },
-          ]
-        }
-      ]
-    }
-  ];
-  
-  const sections = role === 'admin' ? adminSections : managerSections;
-  
+  const sections = role ? navigationConfig[role] || [] : [];
 
   return (
     <aside className={clsx(
@@ -151,12 +159,13 @@ export default function Sidebar({
                   (item.subItems && item.subItems.some(subItem => pathname === subItem.href));
                 
                 if (item.subItems) {
-                  const isExpanded = expandedSections[item.label.toLowerCase().replace(' ', '-')] ?? true;
+                  const sectionKey = item.label.toLowerCase().replace(/\s+/g, '-');
+                  const isExpanded = expandedSections[sectionKey] ?? true;
                   
                   return (
                     <div key={item.label}>
                       <button
-                        onClick={() => toggleSection(item.label.toLowerCase().replace(' ', '-'))}
+                        onClick={() => toggleSection(sectionKey)}
                         className={clsx(
                           'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors',
                           'hover:bg-blue-50 text-gray-700',
@@ -228,12 +237,14 @@ export default function Sidebar({
       <div className="p-4 border-t border-gray-200">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-            <span className="text-blue-600 text-sm font-medium">M</span>
+            <span className="text-blue-600 text-sm font-medium">
+              {role?.charAt(0).toUpperCase()}
+            </span>
           </div>
           {!isCollapsed && (
             <div>
-              <p className="text-sm font-medium">Manager</p>
-              <p className="text-xs text-gray-500">manager@milkchillar.com</p>
+              <p className="text-sm font-medium capitalize">{role}</p>
+              <p className="text-xs text-gray-500">{role}@milkchillar.com</p>
             </div>
           )}
         </div>

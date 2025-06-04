@@ -1,7 +1,6 @@
-// Updated page.tsx with new charts and cards
 // app/dashboard/admin/page.tsx
 'use client';
-import DashboardLayout from '@/components/dashboard/DashboardLayout';
+import { AdminLayout } from '@/components/layouts/AdminLayout'; // Update import path
 import { Card, CardContent } from '@/components/ui/card';
 import { Line, Pie } from 'react-chartjs-2';
 import {
@@ -21,15 +20,14 @@ Chart.register(
   LinearScale,
   LineElement,
   PointElement,
-  ArcElement,   // ✅ This is what was missing
+  ArcElement,
   Tooltip,
   Legend
 );
 
-
 export default function AdminDashboard() {
   return (
-    <DashboardLayout role="admin">
+    <AdminLayout>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {[
           { 
@@ -135,6 +133,6 @@ export default function AdminDashboard() {
           />
         </div>
       </div>
-    </DashboardLayout>
+    </AdminLayout>
   );
 }
