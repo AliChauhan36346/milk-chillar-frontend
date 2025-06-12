@@ -1,6 +1,6 @@
 // app/dashboard/manager/page.tsx
 'use client';
-import DashboardLayout from '@/components/dashboard/DashboardLayout';
+import DashboardLayout from '@/components/layouts/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import Link from 'next/link';
 

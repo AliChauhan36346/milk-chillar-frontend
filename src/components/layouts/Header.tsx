@@ -1,3 +1,4 @@
+//components/layouts/Header.tsx
 'use client';
 import { useEffect, useState } from 'react';
 import { Menu, Bell, User, LogOut } from 'lucide-react';
@@ -58,16 +59,18 @@ export default function Header({ toggleSidebar }: { toggleSidebar: () => void })
   }
 
   return (
-    <header className="flex items-center justify-between p-4 bg-white shadow-sm border-b">
+    <header className="flex items-center justify-between p-2 bg-white shadow-sm border-b">
       <div className="flex items-center gap-4">
-        <button
+        {/* <button
           onClick={toggleSidebar}
           className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 lg:hidden"
         >
           <Menu className="w-5 h-5" />
-        </button>
+        </button> */}
         <div>
-          <h1 className="text-lg font-semibold text-gray-800">Dashboard Overview</h1>
+            <h1 className="text-lg font-semibold text-gray-800">
+            {userInfo?.name ? `Welcome, ${userInfo.name}` : 'Dashboard'}
+            </h1>
           {isMounted && (
             <p className="text-sm text-gray-500 flex items-center gap-2">
               <span>📅 {date}</span>
@@ -77,41 +80,21 @@ export default function Header({ toggleSidebar }: { toggleSidebar: () => void })
       </div>
 
       <div className="flex items-center gap-4">
-        <button className="p-2 hover:bg-gray-100 rounded-full text-gray-600">
+        {/* <button className="p-2 hover:bg-gray-100 rounded-full text-gray-600">
           <Bell className="w-5 h-5" />
-        </button>
+        </button> */}
         
         <div className="relative">
-          <button 
-            onClick={handleProfileToggle}
-            className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-lg"
-          >
-            <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white">
-              <User className="w-4 h-4" />
-            </div>
-          </button>
-
-          {isProfileOpen && (
-            <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border z-50">
-              <div className="p-4 border-b">
-                <p className="font-medium capitalize">
-                  {userInfo?.name ?? 'Unknown'}
-                </p>
-                <p className="text-xs text-gray-500">
-                  {userInfo?.email ?? 'No email'}
-                </p>
-                <p className="text-xs mt-1 text-gray-400">
-                  Role: {userInfo?.role ?? 'N/A'}
-                </p>
-              </div>
-              <button
-                onClick={handleLogout}
-                className="w-full p-3 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
-              >
-                <LogOut className="w-4 h-4" /> Sign Out
-              </button>
-            </div>
-          )}
+            <button
+            onClick={handleLogout}
+            className="flex items-center gap-1 p-1.5 bg-red-600 hover:bg-red-700 rounded-md text-white font-semibold shadow transition text-sm"
+            title="Logout"
+            >
+            <span className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
+              <LogOut className="w-4 h-4 text-red-600" />
+            </span>
+            <span>Logout</span>
+            </button>
         </div>
       </div>
     </header>

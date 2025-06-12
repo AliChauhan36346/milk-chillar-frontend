@@ -7,6 +7,8 @@ interface SummaryCardProps {
   icon: ReactNode;
   color?: 'blue' | 'green' | 'red' | 'yellow' | 'purple' | 'gray';
   className?: string;
+  titleSize?: string; // Add this
+  valueSize?: string; // Add this
 }
 
 export default function SummaryCard({ 
@@ -14,7 +16,9 @@ export default function SummaryCard({
   value, 
   icon, 
   color = 'blue', 
-  className = '' 
+  className = '',
+  titleSize = 'text-lg', // Default value
+  valueSize = 'text-3xl' // Default value
 }: SummaryCardProps) {
   const colorClasses = {
     blue: 'border-blue-100 bg-blue-50 text-blue-600',
@@ -38,9 +42,9 @@ export default function SummaryCard({
     <div className={`p-2 rounded-xl shadow-sm border ${colorClasses[color]} ${className}`}>
       <div className="flex flex-col items-center justify-center gap-2 text-center">
         <span className={iconClasses[color]}>{icon}</span>
-        <span className="font-medium text-lg">{title}</span>
-        <p className="text-3xl font-bold">{value}</p>
+        <span className={`font-medium  ${titleSize}`}>{title}</span>
+        <p className={`font-bold ${valueSize}`}>{value}</p>
       </div>
     </div>
   );
-}
+}   

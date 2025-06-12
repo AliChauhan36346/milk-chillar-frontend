@@ -1,20 +1,28 @@
 // app/login/page.tsx
 'use client';
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/lib/auth/AuthContext';
 import Link from 'next/link';
-// New way — set the token in a secure cookie
-import { cookies } from 'next/headers' // Only available in server components, so use JS fallback
-
-import Cookies from 'js-cookie'
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const { login, isInitialized } = useAuth(); // Add isInitialized
   const router = useRouter();
+
+  // Show loading state until auth is initialized
+  if (!isInitialized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p>Initializing authentication...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,6 +34,7 @@ export default function LoginPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
+        //credentials: 'include'
       });
 
       const data = await response.json();
@@ -34,33 +43,28 @@ export default function LoginPage() {
         throw new Error(data?.message || 'Invalid username or password');
       }
 
-      // Save token and user info
-      Cookies.set('token', data.token, { expires: 1, secure: true, sameSite: 'Strict' })
-      localStorage.setItem('userInfo', JSON.stringify(data.user));
+      login(data.token, data.user);
 
-      // Redirect based on role
       const role = data.user?.role?.toLowerCase();
+      const redirectPaths = {
+        admin: '/dashboard/admin',
+        manager: '/dashboard/manager',
+        dodhi: '/dashboard/dodhi',
+        chillarincharge: '/dashboard/chillarIncharge'
+      };
+      const redirectPath = role && redirectPaths[role as keyof typeof redirectPaths] 
+        ? redirectPaths[role as keyof typeof redirectPaths] 
+        : '/dashboard';
 
-      switch (role) {
-        case 'admin':
-          router.push('/dashboard/admin');
-          break;
-        case 'manager':
-          router.push('/dashboard/manager');
-          break;
-        case 'dodhi':
-          router.push('/dashboard/dodhi');
-          break;
-        default:
-          router.push('/dashboard');
-      }
+      router.push(redirectPath);
     } catch (err: any) {
       setError(err.message || 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
   };
-
+  // Render the login form
+  
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-cyan-50 p-4 sm:p-6 lg:p-8">
       <form
@@ -122,7 +126,33 @@ export default function LoginPage() {
             disabled={loading}
             className={`w-full py-3 px-4 ${loading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'} text-white font-medium rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
           >
-            {loading ? 'Signing in...' : 'Sign in to System'}
+            {loading ? (
+              <span className="flex items-center justify-center gap-2">
+              <svg
+                className="animate-spin h-5 w-5 text-white"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+                />
+                <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                />
+              </svg>
+              Signing in...
+              </span>
+            ) : (
+              'Sign in to System'
+            )}
           </button>
         </div>
 

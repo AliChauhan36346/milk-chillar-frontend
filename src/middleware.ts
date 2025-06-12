@@ -1,55 +1,60 @@
-import { NextRequest, NextResponse } from 'next/server'
+// src/middleware.ts
+import { NextRequest, NextResponse } from 'next/server';
 
-const PUBLIC_ROUTES = ['/', '/login', '/UserManagement'];
+const PUBLIC_ROUTES = ['/', '/login', '/unauthorized'];
 
 function decodeJWT(token: string) {
-    try {
-      const payload = token.split('.')[1];
-      const decoded = atob(payload);
-      return JSON.parse(decoded);
-    } catch (error) {
-      return null;
-    }
+  try {
+    const payload = token.split('.')[1];
+    const decoded = Buffer.from(payload, 'base64').toString('utf-8');
+    return JSON.parse(decoded);
+  } catch (error) {
+    return null;
   }
-  
-  export function middleware(request: NextRequest) {
-    const { pathname } = request.nextUrl;
-    const token = request.cookies.get('token')?.value;
-  
-    if (PUBLIC_ROUTES.includes(pathname)) {
-      return NextResponse.next();
-    }
-  
-    if (!token) {
-      const loginUrl = new URL('/login', request.url);
-      loginUrl.searchParams.set('callbackUrl', pathname);
-      return NextResponse.redirect(loginUrl);
-    }
-  
-    const decoded = decodeJWT(token);
-  
-    // ✅ Pull role from the proper claim
-    const userRole =
-      decoded?.["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"]?.toLowerCase();
-  
-    if (pathname.startsWith('/dashboard/admin') && userRole !== 'admin') {
-      return NextResponse.redirect(new URL('/unauthorized', request.url));
-    }
-  
-    if (pathname.startsWith('/dashboard/manager') && userRole !== 'manager') {
-      return NextResponse.redirect(new URL('/unauthorized', request.url));
-    }
-  
-    if (pathname.startsWith('/dashboard/dodhi') && userRole !== 'dodhi') {
-      return NextResponse.redirect(new URL('/unauthorized', request.url));
-    }
-  
+}
+
+// Add async here
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  const token = request.cookies.get('token')?.value;
+
+  if (PUBLIC_ROUTES.some(route => pathname.startsWith(route))) {
     return NextResponse.next();
   }
-  
+
+  if (!token) {
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('callbackUrl', pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  const decoded = decodeJWT(token);
+  if (!decoded) {
+    const response = NextResponse.redirect(new URL('/login', request.url));
+    response.cookies.delete('token');
+    return response;
+  }
+
+  type Role = 'admin' | 'manager' | 'dodhi' | 'chillarincharge';
+  const role = (decoded?.role?.toLowerCase() ||
+               decoded?.["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"]?.toLowerCase()) as Role | undefined;
+
+  const rolePaths: Record<Role, string> = {
+    admin: '/dashboard/admin',
+    manager: '/dashboard/manager',
+    dodhi: '/dashboard/dodhi',
+    chillarincharge: '/dashboard/chillarIncharge'
+  };
+
+  if (role && !pathname.startsWith(rolePaths[role])) {
+    return NextResponse.redirect(new URL('/unauthorized', request.url));
+  }
+
+  return NextResponse.next();
+}
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|api/public).*)',
+    '/((?!_next/static|_next/image|favicon.ico|api/auth).*)',
   ],
-}
+};

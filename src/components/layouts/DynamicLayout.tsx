@@ -1,6 +1,7 @@
 // components/layouts/DynamicLayout.tsx
 'use client';
-import { PageLayout } from './PageLayout';
+import { AdminLayout } from './AdminLayout';
+import { FieldStaffLayout } from './FieldStaffLayout';
 import { useUserRole } from '@/hooks/useUserRole';
 import LoadingSpinner from '@/components/ui/Loader';
 import { Unauthorized } from '@/components/Unauthorized';
@@ -24,18 +25,30 @@ export function DynamicLayout({
     );
   }
 
+  // Convert allowedRoles to lowercase for comparison if they exist
+  const lowerAllowedRoles = allowedRoles?.map(role => role.toLowerCase());
+
   // Check if allowedRoles is provided and if user has access
-  if (allowedRoles && role && !allowedRoles.includes(role)) {
+  if (lowerAllowedRoles && role && !lowerAllowedRoles.includes(role)) {
     return <Unauthorized />;
   }
 
-  // If no allowedRoles specified, just render with the user's role
-  return (
-    <PageLayout
-      role={role as any} // Cast to any since we know it matches our role types
-      contentClassName="max-w-screen-xl mx-auto"
-    >
-      {children}
-    </PageLayout>
-  );
+  // Return the appropriate layout based on the user's actual role (now in lowercase)
+  switch(role) {
+    case 'admin':
+    case 'manager':
+      return <AdminLayout>{children}</AdminLayout>;
+    
+    case 'chillarincharge': // Note: now lowercase
+      return <FieldStaffLayout role="chillarIncharge">{children}</FieldStaffLayout>;
+    
+    case 'dodhi':
+      return <FieldStaffLayout role="dodhi">{children}</FieldStaffLayout>;
+    
+    // Add more cases for other roles as needed
+    
+    default:
+      // Fallback for unexpected roles
+      return <Unauthorized />;
+  }
 }
