@@ -68,7 +68,7 @@ export default function DodhiDashboard() {
                 </Link>
 
                 <Link 
-                    href="/reports/dodhiPurchaseReport" 
+                    href="/reports/purchase/dodhiPurchaseReport" 
                     className="bg-green-600 hover:bg-green-700 text-white rounded-xl p-6 shadow-md transition-all flex flex-col items-center justify-center gap-3"
                 >
                     <ClipboardList className="w-12 h-12 text-white" />
