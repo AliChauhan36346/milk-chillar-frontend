@@ -1,100 +1,75 @@
 //components/layouts/Header.tsx
 'use client';
-import { useEffect, useState } from 'react';
-import { Menu, Bell, User, LogOut } from 'lucide-react';
-//import jwt_decode from 'jwt-decode';
-import { jwtDecode } from 'jwt-decode';
-import Cookies from 'js-cookie'; // already installed
+import { Menu, Bell, Search } from 'lucide-react';
+import { useAuth } from '@/lib/auth/AuthContext';
+import { useRouter } from 'next/navigation';
 
-
-type DecodedToken = {
-  name: string;
-  email: string;
-  role: 'admin' | 'manager';
-  exp: number;
+type HeaderProps = {
+  toggleSidebar: () => void;
+  role?: 'admin' | 'manager' | 'dodhi' | 'chillarIncharge' | 'buyer' | 'supplier';
 };
 
-export default function Header({ toggleSidebar }: { toggleSidebar: () => void }) {
-  const [date, setDate] = useState('');
-  const [isMounted, setIsMounted] = useState(false);
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [userInfo, setUserInfo] = useState<DecodedToken | null>(null);
+export default function Header({ toggleSidebar, role }: HeaderProps) {
+  const { user, logout } = useAuth();
+  const router = useRouter();
 
-  useEffect(() => {
-    setIsMounted(true);
-    setDate(new Date().toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    }));
-  
-    const storedUser = localStorage.getItem('userInfo');
-  
-    if (storedUser) {
-      try {
-        const parsed = JSON.parse(storedUser);
-        setUserInfo({
-          name: parsed.username,
-          email: '-', // use email if you add it in future
-          role: parsed.role.toLowerCase(), // 'admin', 'manager', etc.
-          exp: 0 // not required unless you're decoding the JWT
-        });
-      } catch (err) {
-        console.error('Invalid userInfo in localStorage', err);
-      }
+  const handleSignOut = async () => {
+    try {
+      await logout();
+      router.push('/login');
+    } catch (error) {
+      console.error('Error signing out:', error);
     }
-  }, []);
-  
-
-  function handleProfileToggle() {
-    setIsProfileOpen(prev => !prev);
-  }
-
-  function handleLogout(event: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
-    event.preventDefault();
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('userInfo');
-    Cookies.remove('token'); // 👈 Remove the actual JWT cookie
-    window.location.href = '/login';
-  }
+  };
 
   return (
-    <header className="flex items-center justify-between p-2 bg-white shadow-sm border-b">
-      <div className="flex items-center gap-4">
-        {/* <button
+    <header className="bg-white border-b border-gray-200">
+      <div className="flex items-center justify-between px-4 py-3">
+        {/* Left side - Menu button */}
+        <button
           onClick={toggleSidebar}
-          className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 lg:hidden"
+          className="p-2 rounded-lg hover:bg-gray-100 text-gray-500"
+          aria-label="Toggle sidebar"
         >
-          <Menu className="w-5 h-5" />
-        </button> */}
-        <div>
-            <h1 className="text-lg font-semibold text-gray-800">
-            {userInfo?.name ? `Welcome, ${userInfo.name}` : 'Dashboard'}
-            </h1>
-          {isMounted && (
-            <p className="text-sm text-gray-500 flex items-center gap-2">
-              <span>📅 {date}</span>
-            </p>
-          )}
-        </div>
-      </div>
+          <Menu size={20} />
+        </button>
 
-      <div className="flex items-center gap-4">
-        {/* <button className="p-2 hover:bg-gray-100 rounded-full text-gray-600">
-          <Bell className="w-5 h-5" />
-        </button> */}
-        
-        <div className="relative">
+        {/* Center - Search bar */}
+        <div className="flex-1 max-w-2xl mx-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <input
+              type="text"
+              placeholder="Search..."
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+        </div>
+
+        {/* Right side - Notifications and User menu */}
+        <div className="flex items-center gap-4">
+          <button
+            className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 relative"
+            aria-label="Notifications"
+          >
+            <Bell size={20} />
+            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+          </button>
+
+          <div className="flex items-center gap-3">
+            <div className="text-right">
+              <p className="text-sm font-medium text-gray-900">{user?.username}</p>
+              <p className="text-xs text-gray-500 capitalize">{role}</p>
+            </div>
             <button
-            onClick={handleLogout}
-            className="flex items-center gap-1 p-1.5 bg-red-600 hover:bg-red-700 rounded-md text-white font-semibold shadow transition text-sm"
-            title="Logout"
+              onClick={handleSignOut}
+              className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center hover:bg-blue-200 transition-colors"
             >
-            <span className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
-              <LogOut className="w-4 h-4 text-red-600" />
-            </span>
-            <span>Logout</span>
+              <span className="text-blue-600 text-sm font-medium">
+                {user?.username?.charAt(0).toUpperCase() || 'U'}
+              </span>
             </button>
+          </div>
         </div>
       </div>
     </header>

@@ -21,94 +21,33 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
 
-type MenuItem = {
+type NavigationItem = {
   label: string;
   href: string;
   icon: React.ReactNode;
-  subItems?: MenuItem[];
+  subItems?: NavigationItem[];
 };
 
-type MenuSection = {
+type NavigationSection = {
   section: string;
-  items: MenuItem[];
+  items: NavigationItem[];
 };
 
 type SidebarProps = {
   isCollapsed: boolean;
   toggleSidebar: () => void;
   role?: 'admin' | 'manager' | 'dodhi' | 'chillarIncharge' | 'buyer' | 'supplier';
+  navigation: NavigationSection[];
 };
 
 export default function Sidebar({ 
   isCollapsed, 
   toggleSidebar,
-  role
+  role,
+  navigation
 }: SidebarProps) {
   const pathname = usePathname();
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
-
-  // Navigation configuration directly in component
-  const navigationConfig: Record<string, MenuSection[]> = {
-    admin: [
-      {
-        section: 'Administration',
-        items: [
-          { label: 'Dashboard', href: '/admin/dashboard', icon: <LayoutDashboard size={18} /> },
-          { label: 'User Management', href: '/admin/users', icon: <Users size={18} /> },
-          { label: 'System Settings', href: '/admin/settings', icon: <Settings size={18} /> }
-        ]
-      },
-      {
-        section: 'Reports',
-        items: [
-          {
-            label: 'All Reports', 
-            href: '#',
-            icon: <FileText size={18} />,
-            subItems: [
-              { label: 'Financial', href: '/reports/financial', icon: <BarChart2 size={16} /> },
-              { label: 'Inventory', href: '/reports/inventory', icon: <Package size={16} /> }
-            ]
-          }
-        ]
-      }
-    ],
-    manager: [
-      {
-        section: 'Operations',
-        items: [
-          { label: 'Dashboard', href: '/manager/dashboard', icon: <LayoutDashboard size={18} /> },
-          {
-            label: 'Quick Actions', 
-            href: '#',
-            icon: <Home size={18} />,
-            subItems: [
-              { label: 'Add Purchase', href: '/purchases/add', icon: <ShoppingCart size={16} /> },
-              { label: 'Record Sale', href: '/sales/add', icon: <ShoppingBag size={16} /> }
-            ]
-          }
-        ]
-      }
-    ],
-    dodhi: [
-      {
-        section: 'Collections',
-        items: [
-          { label: 'Daily Records', href: '/dodhi/records', icon: <Truck size={18} /> },
-          { label: 'My Payments', href: '/dodhi/payments', icon: <Wallet size={18} /> }
-        ]
-      }
-    ],
-    chillarIncharge: [
-      {
-        section: 'Cold Storage',
-        items: [
-          { label: 'Inventory', href: '/chillar/inventory', icon: <Package size={18} /> },
-          { label: 'Quality Check', href: '/chillar/quality', icon: <Scale size={18} /> }
-        ]
-      }
-    ]
-  };
 
   const toggleSection = (section: string) => {
     setExpandedSections(prev => ({
@@ -116,8 +55,6 @@ export default function Sidebar({
       [section]: !prev[section]
     }));
   };
-
-  const sections = role ? navigationConfig[role] || [] : [];
 
   return (
     <aside className={clsx(
@@ -144,11 +81,11 @@ export default function Sidebar({
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto p-4">
-        {sections.map(({ section, items }) => (
+      <nav className="flex-1 overflow-y-auto py-4">
+        {navigation.map(({ section, items }) => (
           <div key={section} className="mb-6">
             {!isCollapsed && (
-              <p className="text-xs font-semibold text-gray-500 uppercase mb-2">
+              <p className="text-xs font-semibold text-gray-500 uppercase mb-2 px-4">
                 {section}
               </p>
             )}
@@ -186,7 +123,7 @@ export default function Sidebar({
                         )}
                       </button>
                       
-                      {!isCollapsed && isExpanded && (
+                      {isExpanded && !isCollapsed && (
                         <div className="ml-8 mt-1 space-y-1">
                           {item.subItems.map((subItem) => (
                             <Link
