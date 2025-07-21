@@ -74,3 +74,9 @@ export const updateBuyer = async (id: number, data: CreateBuyerRequest) => {
   const response = await api.put(`/Buyers/${id}`, data);
   return response.data;
 };
+
+// Delete buyer
+export const deleteBuyer = async (id: number) => {
+  const response = await api.delete(`/Buyers/${id}`);
+  return response.data;
+};

@@ -5,7 +5,7 @@ import { ArrowLeft, Edit } from 'lucide-react';
 import { DynamicLayout } from '@/components/layouts/DynamicLayout';
 import { BackButton } from '@/components/ui/BackButton';
 import ProtectedRoute from '@/components/ProtectedRoutes';
-import { getSupplierById, Supplier } from '@/lib/api/suppliers';
+import { getSupplierById, Supplier, deleteSupplier } from '@/lib/api/suppliers';
 import { useToast } from '@/hooks/useToast';
 
 export default function SupplierDetailPage() {
@@ -71,13 +71,31 @@ export default function SupplierDetailPage() {
               <BackButton />
               <h1 className="text-2xl font-bold text-gray-800">{supplier.accountName}</h1>
             </div>
-            <button
-              onClick={() => router.push(`/Suppliers/createSupplier?id=${supplier.supplierId}`)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              <Edit className="w-5 h-5" />
-              Edit Supplier
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => router.push(`/Suppliers/createSupplier?id=${supplier.supplierId}`)}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <Edit className="w-5 h-5" />
+                Edit Supplier
+              </button>
+              <button
+                onClick={async () => {
+                  if (window.confirm('Are you sure you want to delete this supplier? This action cannot be undone.')) {
+                    try {
+                      await deleteSupplier(supplier.supplierId);
+                      toast({ title: 'Supplier deleted successfully!', variant: 'success' });
+                      router.push('/Suppliers/supplierList');
+                    } catch (error) {
+                      toast({ title: 'Error deleting supplier', description: (error as Error)?.message || 'An error occurred', variant: 'error' });
+                    }
+                  }
+                }}
+                className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
           </div>
 
           <div className="bg-white rounded-xl shadow-sm p-6">

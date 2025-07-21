@@ -263,7 +263,7 @@ export default function CreateSupplierPage() {
                 </div>
                 {/* Rate */}
                 <div>
-                  <Label htmlFor="rate">Rate per Liter (₹)</Label>
+                  <Label htmlFor="rate">Rate per Liter (₨)</Label>
                   <Input
                     id="rate"
                     type="number"
@@ -277,7 +277,7 @@ export default function CreateSupplierPage() {
                 </div>
                 {/* Credit Limit */}
                 <div>
-                    <Label htmlFor="creditLimit">Credit Limit (₹)</Label>
+                    <Label htmlFor="creditLimit">Credit Limit (₨)</Label>
                   <Input
                       id="creditLimit"
                     type="number"

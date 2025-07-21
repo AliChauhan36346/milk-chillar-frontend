@@ -5,7 +5,7 @@ import { ArrowLeft, Edit, DollarSign, Hash, MapPin, Calendar } from 'lucide-reac
 import { DynamicLayout } from '@/components/layouts/DynamicLayout';
 import { BackButton } from '@/components/ui/BackButton';
 import ProtectedRoute from '@/components/ProtectedRoutes';
-import { getBuyerById, Buyer } from '@/lib/api/buyers';
+import { getBuyerById, Buyer, deleteBuyer } from '@/lib/api/buyers';
 import { useToast } from '@/hooks/useToast';
 
 export default function BuyerDetailPage() {
@@ -76,13 +76,31 @@ export default function BuyerDetailPage() {
                 {/* If you have created_at, show it. Otherwise, remove this line. */}
                 {/* <p className="text-gray-500">Created on {new Date(buyer.created_at).toLocaleDateString()}</p> */}
               </div>
-              <button
-                onClick={() => router.push(`/Buyers/createBuyer?id=${buyer.buyerId}`)}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                <Edit className="w-5 h-5" />
-                Edit Buyer
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => router.push(`/Buyers/createBuyer?id=${buyer.buyerId}`)}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <Edit className="w-5 h-5" />
+                  Edit Buyer
+                </button>
+                <button
+                  onClick={async () => {
+                    if (window.confirm('Are you sure you want to delete this buyer? This action cannot be undone.')) {
+                      try {
+                        await deleteBuyer(buyer.buyerId);
+                        toast({ title: 'Buyer deleted successfully!', variant: 'success' });
+                        router.push('/Buyers/buyerList');
+                      } catch (error) {
+                        toast({ title: 'Error deleting buyer', description: (error as Error)?.message || 'An error occurred', variant: 'error' });
+                      }
+                    }
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Delete
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -99,7 +117,7 @@ export default function BuyerDetailPage() {
                   <DollarSign className="w-5 h-5 text-gray-400 mt-1" />
                   <div>
                     <h3 className="text-sm font-medium text-gray-500">Rate per Liter</h3>
-                    <p className="text-gray-900">₹{buyer.rate?.toFixed(2)}</p>
+                    <p className="text-gray-900">₨{buyer.rate?.toFixed(2)}</p>
                   </div>
                 </div>
 
@@ -107,7 +125,7 @@ export default function BuyerDetailPage() {
                   <DollarSign className="w-5 h-5 text-gray-400 mt-1" />
                   <div>
                     <h3 className="text-sm font-medium text-gray-500">Credit Limit</h3>
-                    <p className="text-gray-900">₹{buyer.creditLimit?.toFixed(2)}</p>
+                    <p className="text-gray-900">₨{buyer.creditLimit?.toFixed(2)}</p>
                   </div>
                 </div>
               </div>
