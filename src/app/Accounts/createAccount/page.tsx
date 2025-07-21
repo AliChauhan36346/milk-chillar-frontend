@@ -9,30 +9,20 @@ import { Label } from '@/components/ui/Label';
 import { Select } from '@/components/ui/Select';
 import { AccountFormModal } from '@/components/modals/AccountFormModal';
 import ProtectedRoute from '@/components/ProtectedRoutes';
+import { getMainAccounts, getSubAccounts, createMainAccount, createSubAccount, createAccount, MainAccount, SubAccount, type CreateAccountRequest } from '@/lib/api/accounts';
+import { useAuth } from '@/lib/auth/AuthContext';
+import { SuccessMessage } from '@/components/ui/SuccessMessage';
 
 type AccountFormData = {
-  main_account_id?: number;
-  sub_account_id?: number;
-  sub_account_code: string;
-  name: string;
-};
-
-type MainAccount = {
-  main_account_id: number;
-  main_account_code: string;
-  name: string;
-  financial_statement_component: string;
-};
-
-type SubAccount = {
-  sub_account_id: number;
-  sub_account_code: string;
+  mainAccountId?: number;
+  subAccountId?: number;
   name: string;
 };
 
 export default function CreateAccountPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { user } = useAuth();
   const accountId = searchParams.get('id');
   const mainAccountId = searchParams.get('mainId');
   const subAccountId = searchParams.get('subId');
@@ -41,15 +31,15 @@ export default function CreateAccountPage() {
   const [mainAccounts, setMainAccounts] = useState<MainAccount[]>([]);
   const [subAccounts, setSubAccounts] = useState<SubAccount[]>([]);
   const [formData, setFormData] = useState<AccountFormData>({
-    main_account_id: mainAccountId ? parseInt(mainAccountId) : undefined,
-    sub_account_id: subAccountId ? parseInt(subAccountId) : undefined,
-    sub_account_code: '',
+    mainAccountId: mainAccountId ? parseInt(mainAccountId) : undefined,
+    subAccountId: subAccountId ? parseInt(subAccountId) : undefined,
     name: ''
   });
 
   // Modal states
   const [isMainAccountModalOpen, setIsMainAccountModalOpen] = useState(false);
   const [isSubAccountModalOpen, setIsSubAccountModalOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
     fetchMainAccounts();
@@ -59,19 +49,15 @@ export default function CreateAccountPage() {
   }, [accountId]);
 
   useEffect(() => {
-    if (formData.main_account_id) {
-      fetchSubAccounts(formData.main_account_id);
+    if (formData.mainAccountId) {
+      fetchSubAccounts();
     }
-  }, [formData.main_account_id]);
+  }, [formData.mainAccountId]);
 
   const fetchMainAccounts = async () => {
     try {
-      // TODO: Replace with your API endpoint
-      const response = await fetch('/api/accounts/main');
-      if (!response.ok) {
-        throw new Error('Failed to fetch main accounts');
-      }
-      const data = await response.json();
+      if (!user?.tenantId) return;
+      const data = await getMainAccounts(user.tenantId);
       setMainAccounts(data);
     } catch (error) {
       console.error('Error fetching main accounts:', error);
@@ -79,18 +65,13 @@ export default function CreateAccountPage() {
     }
   };
 
-  const fetchSubAccounts = async (mainAccountId: number) => {
+  const fetchSubAccounts = async () => {
+    if (!user?.tenantId || !formData.mainAccountId) return;
     try {
-      // TODO: Replace with your API endpoint
-      const response = await fetch(`/api/accounts/sub?mainId=${mainAccountId}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch sub accounts');
-      }
-      const data = await response.json();
+      const data = await getSubAccounts(user.tenantId, formData.mainAccountId);
       setSubAccounts(data);
     } catch (error) {
       console.error('Error fetching sub accounts:', error);
-      // TODO: Add proper error handling/notification
     }
   };
 
@@ -113,22 +94,25 @@ export default function CreateAccountPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user?.tenantId) return;
     setIsSubmitting(true);
 
     try {
-      // TODO: Replace with your API endpoint
-      const response = await fetch('/api/accounts', {
-        method: accountId ? 'PUT' : 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to save account');
+      if (accountId) {
+        // TODO: Implement update account API
+        const response = await fetch(`/api/accounts/${accountId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(formData),
+        });
+        if (!response.ok) {
+          throw new Error('Failed to update account');
+        }
+      } else {
+        await createAccount({ tenantId: user.tenantId, ...formData });
       }
-
       router.push('/Accounts/chartOfAccounts');
     } catch (error) {
       console.error('Error saving account:', error);
@@ -140,19 +124,8 @@ export default function CreateAccountPage() {
 
   const handleCreateMainAccount = async (data: any) => {
     try {
-      // TODO: Replace with your API endpoint
-      const response = await fetch('/api/accounts/main', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to create main account');
-      }
-
+      if (!user?.tenantId) return;
+      await createMainAccount({ tenantId: user.tenantId, ...data });
       await fetchMainAccounts();
       setIsMainAccountModalOpen(false);
     } catch (error) {
@@ -161,28 +134,60 @@ export default function CreateAccountPage() {
     }
   };
 
-  const handleCreateSubAccount = async (data: any) => {
+  const handleCreateAccount = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user?.tenantId || !formData.subAccountId) return;
+
     try {
-      // TODO: Replace with your API endpoint
-      const response = await fetch('/api/accounts/sub', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
+      const request: CreateAccountRequest = {
+        tenantId: user.tenantId,
+        subAccountId: formData.subAccountId,
+        name: formData.name
+      };
+      await createAccount(request);
+      setSuccessMessage('Account created successfully');
+      setTimeout(() => {
+        router.push('/Accounts/chartOfAccounts');
+      }, 1500);
+    } catch (error) {
+      console.error('Error creating account:', error);
+    }
+  };
+
+  const handleMainAccountChange = (mainAccountId: number) => {
+    setFormData(prev => ({ ...prev, mainAccountId, subAccountId: undefined }));
+    setSubAccounts([]);
+  };
+
+  const handleMainAccountSubmit = async (data: any) => {
+    try {
+      if (!user?.tenantId) return;
+      await createMainAccount({ 
+        tenantId: user.tenantId, 
+        name: data.name,
+        financialStatementComponent: data.financial_statement_component
       });
+      await fetchMainAccounts();
+      setIsMainAccountModalOpen(false);
+      setSuccessMessage('Main account created successfully');
+    } catch (error) {
+      console.error('Error creating main account:', error);
+    }
+  };
 
-      if (!response.ok) {
-        throw new Error('Failed to create sub account');
-      }
-
-      if (formData.main_account_id) {
-        await fetchSubAccounts(formData.main_account_id);
-      }
+  const handleSubAccountSubmit = async (data: any) => {
+    try {
+      if (!user?.tenantId || !formData.mainAccountId) return;
+      await createSubAccount({ 
+        tenantId: user.tenantId, 
+        mainAccountId: formData.mainAccountId,
+        name: data.name 
+      });
+      await fetchSubAccounts();
       setIsSubAccountModalOpen(false);
+      setSuccessMessage('Sub account created successfully');
     } catch (error) {
       console.error('Error creating sub account:', error);
-      // TODO: Add proper error handling/notification
     }
   };
 
@@ -201,89 +206,71 @@ export default function CreateAccountPage() {
   return (
     <ProtectedRoute>
       <DynamicLayout>
-        <div className="max-w-3xl mx-auto p-6">
-          <div className="flex items-center gap-4 mb-6">
-            <BackButton />
-            <h1 className="text-2xl font-bold text-gray-800">
-              {accountId ? 'Edit Account' : 'Create New Account'}
-            </h1>
+        <div className="p-6">
+          {successMessage && (
+            <SuccessMessage
+              message={successMessage}
+              onClose={() => setSuccessMessage(null)}
+            />
+          )}
+          
+          <div className="flex items-center gap-4 mb-8">
+            <BackButton href="/Accounts/chartOfAccounts" />
+            <h1 className="text-2xl font-bold text-gray-900">Create Account</h1>
           </div>
 
-          <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm p-6">
-            <div className="grid grid-cols-1 gap-6">
-              {/* Main Account Selection */}
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <Label htmlFor="main_account">Main Account</Label>
-                  <button
-                    type="button"
-                    onClick={() => setIsMainAccountModalOpen(true)}
-                    className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Create New
-                  </button>
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <form onSubmit={handleCreateAccount} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <Label htmlFor="mainAccount">Main Account</Label>
+                  <div className="flex gap-2">
+                    <Select
+                      id="mainAccount"
+                      value={formData.mainAccountId?.toString() || ''}
+                      onChange={(value) => handleMainAccountChange(parseInt(value))}
+                      className="flex-1"
+                      options={mainAccounts.map(acc => ({
+                        value: acc.mainAccountId.toString(),
+                        label: acc.name
+                      }))}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setIsMainAccountModalOpen(true)}
+                      className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                    >
+                      <Plus className="w-5 h-5" />
+                    </button>
+                  </div>
                 </div>
-                <Select
-                  value={formData.main_account_id?.toString() || ''}
-                  onChange={(value) => setFormData(prev => ({ 
-                    ...prev, 
-                    main_account_id: value ? parseInt(value) : undefined,
-                    sub_account_id: undefined // Reset sub account when main account changes
-                  }))}
-                  options={mainAccounts.map(acc => ({
-                    value: acc.main_account_id.toString(),
-                    label: `${acc.name} (${acc.main_account_code})`
-                  }))}
-                  placeholder="Select a main account"
-                  required={!accountId}
-                  disabled={!!accountId || !!mainAccountId}
-                />
-              </div>
 
-              {/* Sub Account Selection */}
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <Label htmlFor="sub_account">Sub Account</Label>
-                  <button
-                    type="button"
-                    onClick={() => setIsSubAccountModalOpen(true)}
-                    className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700"
-                    disabled={!formData.main_account_id}
-                  >
-                    <Plus className="w-4 h-4" />
-                    Create New
-                  </button>
+                <div>
+                  <Label htmlFor="subAccount">Sub Account</Label>
+                  <div className="flex gap-2">
+                    <Select
+                      id="subAccount"
+                      value={formData.subAccountId?.toString() || ''}
+                      onChange={(value) => setFormData(prev => ({ ...prev, subAccountId: parseInt(value) }))}
+                      className="flex-1"
+                      options={subAccounts.map(acc => ({
+                        value: acc.subAccountId.toString(),
+                        label: acc.name
+                      }))}
+                      placeholder={!formData.mainAccountId ? "Select main account first" : "Select sub account"}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setIsSubAccountModalOpen(true)}
+                      disabled={!formData.mainAccountId}
+                      className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Plus className="w-5 h-5" />
+                    </button>
+                  </div>
                 </div>
-                <Select
-                  value={formData.sub_account_id?.toString() || ''}
-                  onChange={(value) => setFormData(prev => ({ 
-                    ...prev, 
-                    sub_account_id: value ? parseInt(value) : undefined 
-                  }))}
-                  options={subAccounts.map(acc => ({
-                    value: acc.sub_account_id.toString(),
-                    label: `${acc.name} (${acc.sub_account_code})`
-                  }))}
-                  placeholder="Select a sub account"
-                  required={!accountId}
-                  disabled={!!accountId || !!subAccountId || !formData.main_account_id}
-                />
               </div>
 
-              {/* Account Code */}
-              <div>
-                <Label htmlFor="sub_account_code">Account Code</Label>
-                <Input
-                  id="sub_account_code"
-                  value={formData.sub_account_code}
-                  onChange={(e) => setFormData(prev => ({ ...prev, sub_account_code: e.target.value }))}
-                  placeholder="Enter account code"
-                  required
-                />
-              </div>
-
-              {/* Account Name */}
               <div>
                 <Label htmlFor="name">Account Name</Label>
                 <Input
@@ -294,37 +281,45 @@ export default function CreateAccountPage() {
                   required
                 />
               </div>
-            </div>
 
-            <div className="mt-8 flex justify-end">
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-              >
-                <Save className="w-5 h-5" />
-                {isSubmitting ? 'Saving...' : accountId ? 'Update Account' : 'Create Account'}
-              </button>
-            </div>
-          </form>
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => router.push('/Accounts/chartOfAccounts')}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  disabled={!formData.subAccountId || !formData.name}
+                >
+                  Create Account
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <AccountFormModal
+            isOpen={isMainAccountModalOpen}
+            onClose={() => setIsMainAccountModalOpen(false)}
+            onSubmit={handleMainAccountSubmit}
+            type="main"
+          />
+
+          <AccountFormModal
+            isOpen={isSubAccountModalOpen}
+            onClose={() => setIsSubAccountModalOpen(false)}
+            onSubmit={handleSubAccountSubmit}
+            type="sub"
+            mainAccounts={mainAccounts.map(acc => ({
+              main_account_id: acc.mainAccountId,
+              main_account_code: acc.mainAccountCode,
+              name: acc.name
+            }))}
+          />
         </div>
-
-        {/* Create Main Account Modal */}
-        <AccountFormModal
-          isOpen={isMainAccountModalOpen}
-          onClose={() => setIsMainAccountModalOpen(false)}
-          onSubmit={handleCreateMainAccount}
-          type="main"
-        />
-
-        {/* Create Sub Account Modal */}
-        <AccountFormModal
-          isOpen={isSubAccountModalOpen}
-          onClose={() => setIsSubAccountModalOpen(false)}
-          onSubmit={handleCreateSubAccount}
-          type="sub"
-          mainAccounts={mainAccounts}
-        />
       </DynamicLayout>
     </ProtectedRoute>
   );

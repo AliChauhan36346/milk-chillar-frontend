@@ -1,31 +1,11 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Search, Eye, Edit } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { DynamicLayout } from '@/components/layouts/DynamicLayout';
 import ProtectedRoute from '@/components/ProtectedRoutes';
-import { BackButton } from '@/components/ui/BackButton';
-import { Input } from '@/components/ui/Input';
-import { Select } from '@/components/ui/Select';
-
-type Supplier = {
-  supplier_id: number;
-  full_name: string;
-  khata_number: string;
-  rate: number;
-  credit_limit: number;
-  address: string;
-  is_active: boolean;
-  created_at: string;
-  account: {
-    account_id: number;
-    name: string;
-  };
-  dodhi?: {
-    employee_id: number;
-    full_name: string;
-  };
-};
+import { getSuppliersPaged, Supplier } from '@/lib/api/suppliers';
+import { useToast } from '@/hooks/useToast';
 
 export default function SupplierListPage() {
   const router = useRouter();
@@ -33,41 +13,45 @@ export default function SupplierListPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [pageNumber, setPageNumber] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const { toast } = useToast();
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Debounce search
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setPageNumber(1);
+      fetchSuppliers();
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
 
   useEffect(() => {
     fetchSuppliers();
-  }, []);
+  }, [statusFilter, pageNumber, pageSize]);
 
   const fetchSuppliers = async () => {
+    setIsLoading(true);
     try {
-      // TODO: Replace with your API endpoint
-      const response = await fetch('/api/suppliers');
-      if (!response.ok) {
-        throw new Error('Failed to fetch suppliers');
-      }
-      const data = await response.json();
-      setSuppliers(data);
+      const isActive = statusFilter === 'all' ? undefined : statusFilter === 'active';
+      const data = await getSuppliersPaged({
+        pageNumber,
+        pageSize,
+        search: searchQuery,
+        isActive,
+        mainAccountCode: '202', // Add this line
+      });
+      setSuppliers(data.items);
+      setTotalPages(data.totalPages);
     } catch (error) {
+      toast({ title: 'Error fetching suppliers', description: (error as Error)?.message || 'An error occurred', variant: 'error' });
       console.error('Error fetching suppliers:', error);
-      // TODO: Add proper error handling/notification
     } finally {
       setIsLoading(false);
     }
   };
-
-  const filteredSuppliers = suppliers.filter(supplier => {
-    const matchesSearch = 
-      supplier.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      supplier.khata_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      supplier.account.name.toLowerCase().includes(searchQuery.toLowerCase());
-
-    const matchesStatus = 
-      statusFilter === 'all' || 
-      (statusFilter === 'active' && supplier.is_active) ||
-      (statusFilter === 'inactive' && !supplier.is_active);
-
-    return matchesSearch && matchesStatus;
-  });
 
   if (isLoading) {
     return (
@@ -85,124 +69,126 @@ export default function SupplierListPage() {
     <ProtectedRoute>
       <DynamicLayout>
         <div className="p-6">
+          {/* Header */}
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold text-gray-800">Suppliers</h1>
             <button
               onClick={() => router.push('/Suppliers/createSupplier')}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
-              <Plus className="w-5 h-5" />
               Add New Supplier
             </button>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex flex-col md:flex-row gap-4">
-                <div className="flex-1">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                    <Input
-                      type="text"
-                      placeholder="Search suppliers..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-                <div className="w-full md:w-48">
-                  <Select
-                    value={statusFilter}
-                    onChange={(value) => setStatusFilter(value as 'all' | 'active' | 'inactive')}
-                    options={[
-                      { value: 'all', label: 'All Status' },
-                      { value: 'active', label: 'Active' },
-                      { value: 'inactive', label: 'Inactive' }
-                    ]}
-                  />
-                </div>
+          {/* Filters */}
+          <div className="flex gap-4 mb-6">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  placeholder="Search suppliers..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
               </div>
             </div>
+            <select
+              value={statusFilter}
+              onChange={(e) => { setStatusFilter(e.target.value as 'all' | 'active' | 'inactive'); setPageNumber(1); }}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="all">All Status</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
 
+          {/* Table */}
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-gray-50">
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Name
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Khata Number
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Rate/Liter
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Credit Limit
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Account
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
+                  <tr className="bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3">Account Code</th>
+                    <th className="px-6 py-3">Name</th>
+                    <th className="px-6 py-3">Khata Number</th>
+                    <th className="px-6 py-3">Rate</th>
+                    <th className="px-6 py-3">Credit Limit</th>
+                    <th className="px-6 py-3">Dodhi Name</th>
+                    <th className="px-6 py-3">Status</th>
+                    <th className="px-6 py-3">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredSuppliers.map((supplier) => (
-                    <tr key={supplier.supplier_id} className="hover:bg-gray-50">
+                <tbody className="divide-y divide-gray-200">
+                  {suppliers.map((supplier) => (
+                    <tr key={supplier.supplierId} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {supplier.accountCode}
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{supplier.full_name}</div>
-                        {supplier.dodhi && (
-                          <div className="text-sm text-gray-500">Dodhi: {supplier.dodhi.full_name}</div>
-                        )}
+                        <button
+                          onClick={() => router.push(`/Suppliers/supplierDetail?id=${supplier.supplierId}`)}
+                          className="text-sm font-medium text-blue-600 hover:text-blue-700"
+                        >
+                          {supplier.accountName}
+                        </button>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {supplier.khata_number}
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {supplier.khataNumber}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        ₨{supplier.rate.toFixed(2)}
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {supplier.rate?.toFixed(2)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        ₨{supplier.credit_limit.toFixed(2)}
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {supplier.creditLimit?.toFixed(2)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {supplier.account.name}
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {supplier.dodhiName}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          supplier.is_active 
+                          supplier.isActive 
                             ? 'bg-green-100 text-green-800' 
                             : 'bg-red-100 text-red-800'
                         }`}>
-                          {supplier.is_active ? 'Active' : 'Inactive'}
+                          {supplier.isActive ? 'Active' : 'Inactive'}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex justify-end gap-2">
-                          <button
-                            onClick={() => router.push(`/Suppliers/supplierDetail?id=${supplier.supplier_id}`)}
-                            className="text-blue-600 hover:text-blue-900"
-                          >
-                            <Eye className="w-5 h-5" />
-                          </button>
-                          <button
-                            onClick={() => router.push(`/Suppliers/createSupplier?id=${supplier.supplier_id}`)}
-                            className="text-blue-600 hover:text-blue-900"
-                          >
-                            <Edit className="w-5 h-5" />
-                          </button>
-                        </div>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <button
+                          onClick={() => router.push(`/Suppliers/createSupplier?id=${supplier.supplierId}`)}
+                          className="text-blue-600 hover:text-blue-700"
+                        >
+                          Edit
+                        </button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
+          </div>
+
+          {/* Pagination */}
+          <div className="flex justify-end mt-4 gap-2">
+            <button
+              onClick={() => setPageNumber((p) => Math.max(1, p - 1))}
+              disabled={pageNumber === 1}
+              className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <span className="px-2 py-1">Page {pageNumber} of {totalPages}</span>
+            <button
+              onClick={() => setPageNumber((p) => Math.min(totalPages, p + 1))}
+              disabled={pageNumber === totalPages}
+              className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+            >
+              Next
+            </button>
           </div>
         </div>
       </DynamicLayout>

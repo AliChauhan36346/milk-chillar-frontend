@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { ChevronDown, Check } from 'lucide-react';
+import ReactDOM from 'react-dom';
 
 interface SelectOption {
   value: string;
@@ -27,12 +28,28 @@ export function Select({
 }: SelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const selectedOption = options.find(opt => opt.value === value);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const [dropdownStyles, setDropdownStyles] = useState<React.CSSProperties>({});
+
+  useEffect(() => {
+    if (isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setDropdownStyles({
+        position: 'absolute',
+        top: rect.bottom + window.scrollY,
+        left: rect.left + window.scrollX,
+        width: rect.width,
+        zIndex: 9999,
+      });
+    }
+  }, [isOpen]);
 
   return (
     <div className={`relative ${className}`}>
       <button
         id={id}
         type="button"
+        ref={buttonRef}
         className={`flex items-center justify-between w-full p-3 text-left rounded-lg border ${
           error ? 'border-red-500' : 'border-gray-300'
         } bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500`}
@@ -43,9 +60,9 @@ export function Select({
         </span>
         <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
-      
-      {isOpen && (
-        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg">
+      {/* Portal Dropdown */}
+      {isOpen && typeof window !== 'undefined' && ReactDOM.createPortal(
+        <div style={dropdownStyles} className="bg-white border border-gray-200 rounded-lg shadow-lg" onClick={e => e.stopPropagation()}>
           <ul className="py-1 overflow-auto max-h-60">
             {options.map((option) => (
               <li
@@ -63,9 +80,9 @@ export function Select({
               </li>
             ))}
           </ul>
-        </div>
+        </div>,
+        document.body
       )}
-      
       {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
     </div>
   );

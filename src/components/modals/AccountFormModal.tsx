@@ -6,10 +6,9 @@ import { Label } from '@/components/ui/Label';
 import { Select } from '@/components/ui/Select';
 
 type AccountFormData = {
-  main_account_code?: string;
-  sub_account_code?: string;
   name: string;
   financial_statement_component?: string;
+  main_account_code?: string;
 };
 
 type AccountFormModalProps = {
@@ -32,10 +31,9 @@ export function AccountFormModal({
   mainAccounts = []
 }: AccountFormModalProps) {
   const [formData, setFormData] = useState<AccountFormData>({
-    main_account_code: '',
-    sub_account_code: '',
     name: '',
-    financial_statement_component: ''
+    financial_statement_component: '',
+    main_account_code: ''
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -46,7 +44,7 @@ export function AccountFormModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div className="fixed inset-0 bg-white/30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
         {/* Header */}
         <div className="p-4 bg-blue-600 text-white">
@@ -64,64 +62,36 @@ export function AccountFormModal({
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {type === 'main' && (
-            <>
-              <div>
-                <Label htmlFor="main_account_code">Account Code</Label>
-                <Input
-                  id="main_account_code"
-                  value={formData.main_account_code}
-                  onChange={(e) => setFormData(prev => ({ ...prev, main_account_code: e.target.value }))}
-                  placeholder="Enter account code"
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="financial_statement_component">Financial Statement Component</Label>
-                <Select
-                  value={formData.financial_statement_component || ''}
-                  onChange={(value) => setFormData(prev => ({ ...prev, financial_statement_component: value }))}
-                  options={[
-                    { value: 'asset', label: 'Asset' },
-                    { value: 'liability', label: 'Liability' },
-                    { value: 'equity', label: 'Equity' },
-                    { value: 'revenue', label: 'Revenue' },
-                    { value: 'expense', label: 'Expense' }
-                  ]}
-                  placeholder="Select component"
-                  required
-                />
-              </div>
-            </>
+            <div>
+              <Label htmlFor="financial_statement_component">Financial Statement Component</Label>
+              <Select
+                value={formData.financial_statement_component || ''}
+                onChange={(value) => setFormData(prev => ({ ...prev, financial_statement_component: value }))}
+                options={[
+                  { value: 'Assets', label: 'Assets' },
+                  { value: 'Liabilities', label: 'Liabilities' },
+                  { value: 'Equity', label: 'Equity' },
+                  { value: 'Revenue', label: 'Revenue' },
+                  { value: 'Expenses', label: 'Expenses' }
+                ]}
+                placeholder="Select component"
+              />
+            </div>
           )}
 
           {type === 'sub' && (
-            <>
-              <div>
-                <Label htmlFor="main_account">Main Account</Label>
-                <Select
-                  value={formData.main_account_code || ''}
-                  onChange={(value) => setFormData(prev => ({ ...prev, main_account_code: value }))}
-                  options={mainAccounts.map(acc => ({
-                    value: acc.main_account_code,
-                    label: `${acc.name} (${acc.main_account_code})`
-                  }))}
-                  placeholder="Select main account"
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="sub_account_code">Sub Account Code</Label>
-                <Input
-                  id="sub_account_code"
-                  value={formData.sub_account_code}
-                  onChange={(e) => setFormData(prev => ({ ...prev, sub_account_code: e.target.value }))}
-                  placeholder="Enter sub account code"
-                  required
-                />
-              </div>
-            </>
+            <div>
+              <Label htmlFor="main_account">Main Account</Label>
+              <Select
+                value={formData.main_account_code || ''}
+                onChange={(value) => setFormData(prev => ({ ...prev, main_account_code: value }))}
+                options={mainAccounts.map(acc => ({
+                  value: acc.main_account_code,
+                  label: acc.name
+                }))}
+                placeholder="Select main account"
+              />
+            </div>
           )}
 
           <div>

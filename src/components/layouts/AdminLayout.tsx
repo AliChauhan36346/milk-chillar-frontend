@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PageLayout } from './PageLayout';
 import { 
   LayoutDashboard,
@@ -69,6 +69,21 @@ const adminNavigation = [
 export function AdminLayout({ children }: { children: React.ReactNode }) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
+  // Load sidebar state from localStorage on mount
+  useEffect(() => {
+    const savedState = localStorage.getItem('sidebarCollapsed');
+    if (savedState !== null) {
+      setIsSidebarCollapsed(JSON.parse(savedState));
+    }
+  }, []);
+
+  // Save sidebar state to localStorage when it changes
+  const toggleSidebar = () => {
+    const newState = !isSidebarCollapsed;
+    setIsSidebarCollapsed(newState);
+    localStorage.setItem('sidebarCollapsed', JSON.stringify(newState));
+  };
+
   return (
     <PageLayout
       role="admin"
@@ -77,7 +92,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       showChatBot={false}
       navigation={adminNavigation}
       isSidebarCollapsed={isSidebarCollapsed}
-      toggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+      toggleSidebar={toggleSidebar}
     >
       {children}
     </PageLayout>

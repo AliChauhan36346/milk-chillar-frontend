@@ -4,31 +4,11 @@ import { useRouter } from 'next/navigation';
 import { Plus, Search, ChevronDown, ChevronRight, Edit, Eye } from 'lucide-react';
 import { DynamicLayout } from '@/components/layouts/DynamicLayout';
 import ProtectedRoute from '@/components/ProtectedRoutes';
-
-type MainAccount = {
-  main_account_id: number;
-  main_account_code: string;
-  name: string;
-  financial_statement_component: string;
-  sub_accounts: SubAccount[];
-};
-
-type SubAccount = {
-  sub_account_id: number;
-  sub_account_code: string;
-  name: string;
-  final_accounts: FinalAccount[];
-};
-
-type FinalAccount = {
-  account_id: number;
-  sub_account_code: string;
-  name: string;
-};
+import { getChartOfAccounts, ChartAccount } from '@/lib/api/accounts';
 
 export default function ChartOfAccountsPage() {
   const router = useRouter();
-  const [accounts, setAccounts] = useState<MainAccount[]>([]);
+  const [accounts, setAccounts] = useState<ChartAccount[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedAccounts, setExpandedAccounts] = useState<Set<number>>(new Set());
@@ -39,12 +19,8 @@ export default function ChartOfAccountsPage() {
 
   const fetchAccounts = async () => {
     try {
-      // TODO: Replace with your API endpoint
-      const response = await fetch('/api/accounts/hierarchy');
-      if (!response.ok) {
-        throw new Error('Failed to fetch accounts');
-      }
-      const data = await response.json();
+      const tenantId = 3; // TODO: Replace with actual tenant ID
+      const data = await getChartOfAccounts(tenantId);
       setAccounts(data);
     } catch (error) {
       console.error('Error fetching accounts:', error);
@@ -69,27 +45,27 @@ export default function ChartOfAccountsPage() {
   const filteredAccounts = accounts.filter(account => {
     const matchesSearch = 
       account.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      account.main_account_code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      account.sub_accounts.some(sub => 
+      account.mainAccountCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      account.subAccounts.some(sub => 
         sub.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        sub.sub_account_code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        sub.final_accounts.some(final => 
+        sub.subAccountCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        sub.accounts.some(final => 
           final.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          final.sub_account_code.toLowerCase().includes(searchQuery.toLowerCase())
+          final.accountCode.toLowerCase().includes(searchQuery.toLowerCase())
         )
       );
     return matchesSearch;
   });
 
-  const renderAccount = (account: MainAccount): React.ReactElement => {
-    const isExpanded = expandedAccounts.has(account.main_account_id);
+  const renderAccount = (account: ChartAccount): React.ReactElement => {
+    const isExpanded = expandedAccounts.has(account.mainAccountId);
 
     return (
-      <div key={account.main_account_id} className="border-b border-gray-200 last:border-b-0">
+      <div key={account.mainAccountId} className="border-b border-gray-200 last:border-b-0">
         {/* Main Account */}
         <div 
           className="flex items-center p-4 hover:bg-gray-50 cursor-pointer"
-          onClick={() => toggleAccount(account.main_account_id)}
+          onClick={() => toggleAccount(account.mainAccountId)}
         >
           {isExpanded ? (
             <ChevronDown className="w-5 h-5 text-gray-400" />
@@ -100,16 +76,16 @@ export default function ChartOfAccountsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-medium text-gray-900">{account.name}</h3>
-                <p className="text-sm text-gray-500">Code: {account.main_account_code}</p>
+                <p className="text-sm text-gray-500">Code: {account.mainAccountCode}</p>
               </div>
               <div className="flex items-center gap-2">
                 <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
-                  {account.financial_statement_component}
+                  {account.financialStatementComponent}
                 </span>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    router.push(`/Accounts/createAccount?mainId=${account.main_account_id}`);
+                    router.push(`/Accounts/createAccount?mainId=${account.mainAccountId}`);
                   }}
                   className="text-blue-600 hover:text-blue-900"
                 >
@@ -123,17 +99,17 @@ export default function ChartOfAccountsPage() {
         {/* Sub Accounts */}
         {isExpanded && (
           <div className="ml-8">
-            {account.sub_accounts.map(subAccount => (
-              <div key={subAccount.sub_account_id} className="border-l-2 border-gray-200 pl-4">
+            {account.subAccounts.map(subAccount => (
+              <div key={subAccount.subAccountId} className="border-l-2 border-gray-200 pl-4">
                 <div className="py-3">
                   <div className="flex items-center justify-between">
                     <div>
                       <h4 className="text-sm font-medium text-gray-900">{subAccount.name}</h4>
-                      <p className="text-sm text-gray-500">Code: {subAccount.sub_account_code}</p>
+                      <p className="text-sm text-gray-500">Code: {subAccount.subAccountCode}</p>
                     </div>
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={() => router.push(`/Accounts/createAccount?subId=${subAccount.sub_account_id}`)}
+                        onClick={() => router.push(`/Accounts/createAccount?subId=${subAccount.subAccountId}`)}
                         className="text-blue-600 hover:text-blue-900"
                       >
                         <Plus className="w-5 h-5" />
@@ -143,22 +119,22 @@ export default function ChartOfAccountsPage() {
 
                   {/* Final Accounts */}
                   <div className="mt-2 ml-4">
-                    {subAccount.final_accounts.map(finalAccount => (
-                      <div key={finalAccount.account_id} className="py-2">
+                    {subAccount.accounts.map(finalAccount => (
+                      <div key={finalAccount.accountId} className="py-2">
                         <div className="flex items-center justify-between">
                           <div>
                             <h5 className="text-sm text-gray-900">{finalAccount.name}</h5>
-                            <p className="text-sm text-gray-500">Code: {finalAccount.sub_account_code}</p>
+                            <p className="text-sm text-gray-500">Code: {finalAccount.accountCode}</p>
                           </div>
                           <div className="flex items-center gap-2">
                             <button
-                              onClick={() => router.push(`/Accounts/createAccount?id=${finalAccount.account_id}`)}
+                              onClick={() => router.push(`/Accounts/createAccount?id=${finalAccount.accountId}`)}
                               className="text-indigo-600 hover:text-indigo-900"
                             >
                               <Edit className="w-5 h-5" />
                             </button>
                             <button
-                              onClick={() => router.push(`/Accounts/accountTransactions?id=${finalAccount.account_id}`)}
+                              onClick={() => router.push(`/Accounts/accountTransactions?id=${finalAccount.accountId}`)}
                               className="text-blue-600 hover:text-blue-900"
                             >
                               <Eye className="w-5 h-5" />
@@ -200,27 +176,25 @@ export default function ChartOfAccountsPage() {
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <Plus className="w-5 h-5" />
-              Add New Account
+              New Account
             </button>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <div className="mb-6">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  type="text"
-                  placeholder="Search accounts..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
+          <div className="mb-4">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search accounts..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <Search className="absolute right-3 top-2.5 w-5 h-5 text-gray-400" />
             </div>
+          </div>
 
-            <div className="space-y-2">
-              {filteredAccounts.map(renderAccount)}
-            </div>
+          <div className="bg-white rounded-xl shadow-sm">
+            {filteredAccounts.map(renderAccount)}
           </div>
         </div>
       </DynamicLayout>

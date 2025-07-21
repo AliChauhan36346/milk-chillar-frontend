@@ -1,65 +1,63 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Search, Edit, Eye, Filter } from 'lucide-react';
+import { Search, Filter } from 'lucide-react';
 import { DynamicLayout } from '@/components/layouts/DynamicLayout';
 import ProtectedRoute from '@/components/ProtectedRoutes';
-
-type Buyer = {
-  buyer_id: number;
-  full_name: string;
-  khata_number: string;
-  rate: number;
-  credit_limit: number;
-  address: string;
-  is_active: boolean;
-  created_at: string;
-  account: {
-    account_id: number;
-    name: string;
-  };
-};
+import { getBuyersPaged, Buyer } from '@/lib/api/buyers';
+import { useAuth } from '@/lib/auth/AuthContext';
+import { useToast } from '@/hooks/useToast';
 
 export default function BuyerListPage() {
   const router = useRouter();
+  const { user } = useAuth?.() || {};
   const [buyers, setBuyers] = useState<Buyer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [pageNumber, setPageNumber] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const { toast } = useToast();
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const [currentStep, setCurrentStep] = useState<'account' | 'supplier'>('account');
+
+  // Debounce search
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setPageNumber(1);
+      fetchBuyers();
+    }, 300);
+    return () => clearTimeout(handler);
+    // eslint-disable-next-line
+  }, [searchQuery]);
 
   useEffect(() => {
     fetchBuyers();
-  }, []);
+    // eslint-disable-next-line
+  }, [statusFilter, pageNumber, pageSize]);
 
   const fetchBuyers = async () => {
+    setIsLoading(true);
     try {
-      // TODO: Replace with your API endpoint
-      const response = await fetch('/api/buyers');
-      if (!response.ok) {
-        throw new Error('Failed to fetch buyers');
-      }
-      const data = await response.json();
-      setBuyers(data);
+      const tenantId = user?.tenantId || 3;
+      const isActive = statusFilter === 'all' ? undefined : statusFilter === 'active';
+      const data = await getBuyersPaged({
+        tenantId,
+        pageNumber,
+        pageSize,
+        search: searchQuery,
+        isActive,
+      });
+      setBuyers(data.items);
+      setTotalPages(data.totalPages);
     } catch (error) {
+      toast({ title: 'Error fetching buyers', description: (error as Error)?.message || 'An error occurred', variant: 'error' });
       console.error('Error fetching buyers:', error);
-      // TODO: Add proper error handling/notification
     } finally {
       setIsLoading(false);
     }
   };
-
-  const filteredBuyers = buyers.filter(buyer => {
-    const matchesSearch = 
-      buyer.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      buyer.khata_number.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesStatus = 
-      statusFilter === 'all' || 
-      (statusFilter === 'active' && buyer.is_active) ||
-      (statusFilter === 'inactive' && !buyer.is_active);
-
-    return matchesSearch && matchesStatus;
-  });
 
   if (isLoading) {
     return (
@@ -77,121 +75,124 @@ export default function BuyerListPage() {
     <ProtectedRoute>
       <DynamicLayout>
         <div className="p-6">
+          {/* Header */}
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold text-gray-800">Buyers</h1>
             <button
               onClick={() => router.push('/Buyers/createBuyer')}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
-              <Plus className="w-5 h-5" />
               Add New Buyer
             </button>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <div className="flex flex-col md:flex-row gap-4 mb-6">
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input
-                    type="text"
-                    placeholder="Search by name or khata number..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Filter className="w-5 h-5 text-gray-500" />
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="all">All Status</option>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
+          {/* Filters */}
+          <div className="flex gap-4 mb-6">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  placeholder="Search buyers..."
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                  }}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
               </div>
             </div>
+            <select
+              value={statusFilter}
+              onChange={(e) => { setStatusFilter(e.target.value as 'all' | 'active' | 'inactive'); setPageNumber(1); }}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="all">All Status</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
 
+          {/* Table */}
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-gray-50">
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Name
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Khata Number
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Rate
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Credit Limit
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Account
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
+                  <tr className="bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3">Account Code</th>
+                    <th className="px-6 py-3">Name</th>
+                    <th className="px-6 py-3">Khata Number</th>
+                    <th className="px-6 py-3">Rate</th>
+                    <th className="px-6 py-3">Credit Limit</th>
+                    <th className="px-6 py-3">Status</th>
+                    <th className="px-6 py-3">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredBuyers.map((buyer) => (
-                    <tr key={buyer.buyer_id} className="hover:bg-gray-50">
+                <tbody className="divide-y divide-gray-200">
+                  {buyers.map((buyer) => (
+                    <tr key={buyer.buyerId} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {buyer.accountCode}
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{buyer.full_name}</div>
-                        <div className="text-sm text-gray-500">{buyer.address}</div>
+                        <button
+                          onClick={() => router.push(`/Buyers/buyerDetail?id=${buyer.buyerId}`)}
+                          className="text-sm font-medium text-blue-600 hover:text-blue-700"
+                        >
+                          {buyer.accountName}
+                        </button>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {buyer.khata_number}
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {buyer.khataNumber}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        ₹{buyer.rate.toFixed(2)}
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {buyer.rate?.toFixed(2)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        ₹{buyer.credit_limit.toFixed(2)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {buyer.account.name}
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {buyer.creditLimit?.toFixed(2)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          buyer.is_active 
+                          buyer.isActive 
                             ? 'bg-green-100 text-green-800' 
                             : 'bg-red-100 text-red-800'
                         }`}>
-                          {buyer.is_active ? 'Active' : 'Inactive'}
+                          {buyer.isActive ? 'Active' : 'Inactive'}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex justify-end gap-2">
-                          <button
-                            onClick={() => router.push(`/Buyers/buyerDetail?id=${buyer.buyer_id}`)}
-                            className="text-blue-600 hover:text-blue-900"
-                          >
-                            <Eye className="w-5 h-5" />
-                          </button>
-                          <button
-                            onClick={() => router.push(`/Buyers/createBuyer?id=${buyer.buyer_id}`)}
-                            className="text-indigo-600 hover:text-indigo-900"
-                          >
-                            <Edit className="w-5 h-5" />
-                          </button>
-                        </div>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <button
+                          onClick={() => router.push(`/Buyers/createBuyer?id=${buyer.buyerId}`)}
+                          className="text-blue-600 hover:text-blue-700"
+                        >
+                          Edit
+                        </button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
+          </div>
+
+          {/* Pagination */}
+          <div className="flex justify-end mt-4 gap-2">
+            <button
+              onClick={() => setPageNumber((p) => Math.max(1, p - 1))}
+              disabled={pageNumber === 1}
+              className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <span className="px-2 py-1">Page {pageNumber} of {totalPages}</span>
+            <button
+              onClick={() => setPageNumber((p) => Math.min(totalPages, p + 1))}
+              disabled={pageNumber === totalPages}
+              className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+            >
+              Next
+            </button>
           </div>
         </div>
       </DynamicLayout>
