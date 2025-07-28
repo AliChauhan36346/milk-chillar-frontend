@@ -1,3 +1,4 @@
+// src/lib/api/buyers.ts
 import { api } from './api';
 
 export interface Buyer {

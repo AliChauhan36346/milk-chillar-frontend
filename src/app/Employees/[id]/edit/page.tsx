@@ -1,5 +1,6 @@
+//src/app/Employees/[id]/edit/page.tsx
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { DynamicLayout } from '@/components/layouts/DynamicLayout';
 import { Button } from '@/components/ui/Button';
@@ -9,6 +10,8 @@ import { Select } from '@/components/ui/Select';
 import { Card } from '@/components/ui/card';
 import { BackButton } from '@/components/ui/BackButton';
 import { Switch } from '@/components/ui/Switch';
+import { getEmployeeById, updateEmployee, Employee } from '@/lib/api/employees';
+import { useToast } from '@/hooks/useToast';
 
 const designations = [
   { value: 'dodhi', label: 'Dodhi' },
@@ -17,79 +20,144 @@ const designations = [
   { value: 'admin', label: 'Admin' },
 ];
 
-export default function EditEmployeePage({ params }: { params: { id: string } }) {
+interface PageProps {
+  params: Promise<{ id: string }>;
+}
+
+type FormData = {
+  fullName: string;
+  designation: string;
+  contactNumber: string;
+  salary: string;
+  isActive: boolean;
+};
+
+export default function EditEmployeePage({ params }: PageProps) {
   const router = useRouter();
+  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
-  const [formData, setFormData] = useState({
-    full_name: '',
+  const [isSaving, setIsSaving] = useState(false);
+  
+  // Unwrap params using React.use()
+  const resolvedParams = use(params);
+  
+  const [formData, setFormData] = useState<FormData>({
+    fullName: '',
     designation: '',
-    contact_number: '',
+    contactNumber: '',
     salary: '',
-    is_active: true,
+    isActive: true,
   });
+
+  // Use useCallback to prevent unnecessary re-renders
+  const handleInputChange = useCallback((field: keyof Omit<FormData, 'isActive'>) => {
+    return (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value;
+      setFormData(prev => ({
+        ...prev,
+        [field]: value
+      }));
+    };
+  }, []);
+
+  const handleSelectChange = useCallback((value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      designation: value
+    }));
+  }, []);
+
+  const handleSwitchChange = useCallback((checked: boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      isActive: checked
+    }));
+  }, []);
+
+  const handleCancel = useCallback(() => {
+    router.push(`/Employees/${resolvedParams.id}`);
+  }, [router, resolvedParams.id]);
 
   useEffect(() => {
     const fetchEmployee = async () => {
       try {
-        // TODO: Replace with actual API call
-        const response = await fetch(`https://localhost:7013/api/Employees/${params.id}`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch employee');
+        const id = parseInt(resolvedParams.id);
+        if (isNaN(id)) {
+          throw new Error('Invalid employee ID');
         }
-        const data = await response.json();
+        
+        const data = await getEmployeeById(id);
         setFormData({
-          full_name: data.full_name,
+          fullName: data.fullName,
           designation: data.designation,
-          contact_number: data.contact_number,
+          contactNumber: data.contactNumber,
           salary: data.salary.toString(),
-          is_active: data.is_active,
+          isActive: data.isActive,
         });
       } catch (error) {
         console.error('Error fetching employee:', error);
-        // TODO: Show error toast
+        toast({
+          title: 'Error',
+          description: 'Failed to fetch employee details',
+          variant: 'error',
+        });
+        router.push('/Employees');
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchEmployee();
-  }, [params.id]);
+  }, [resolvedParams.id, router, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    
+    if (!formData.fullName || !formData.designation || !formData.contactNumber || !formData.salary) {
+      toast({
+        title: 'Error',
+        description: 'Please fill all required fields',
+        variant: 'error',
+      });
+      return;
+    }
+
+    setIsSaving(true);
 
     try {
-      // TODO: Replace with actual API call
-      const response = await fetch(`https://localhost:7013/api/Employees/${params.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...formData,
-          salary: parseFloat(formData.salary),
-          tenant_id: 1, // TODO: Get from auth context
-        }),
+      const employeeId = parseInt(resolvedParams.id);
+      const updatedEmployee: Employee = {
+        employeeId,
+        fullName: formData.fullName,
+        designation: formData.designation,
+        contactNumber: formData.contactNumber,
+        salary: parseFloat(formData.salary),
+        isActive: formData.isActive,
+      };
+
+      await updateEmployee(employeeId, updatedEmployee);
+      
+      toast({
+        title: 'Success',
+        description: 'Employee updated successfully',
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to update employee');
-      }
-
-      router.push('/Employees');
+      router.push(`/Employees/${employeeId}`);
     } catch (error) {
       console.error('Error updating employee:', error);
-      // TODO: Show error toast
+      toast({
+        title: 'Error',
+        description: 'Failed to update employee',
+        variant: 'error',
+      });
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
   };
 
   if (isLoading) {
     return (
       <DynamicLayout allowedRoles={['admin', 'manager']}>
-        <div className="flex items-center justify-center h-screen">
+        <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <p>Loading...</p>
           </div>
@@ -102,7 +170,7 @@ export default function EditEmployeePage({ params }: { params: { id: string } })
     <DynamicLayout allowedRoles={['admin', 'manager']}>
       <div className="space-y-6">
         <div className="flex items-center gap-4">
-          <BackButton href="/Employees" />
+          <BackButton href={`/Employees/${resolvedParams.id}`} />
           <h1 className="text-2xl font-bold">Edit Employee</h1>
         </div>
 
@@ -112,11 +180,12 @@ export default function EditEmployeePage({ params }: { params: { id: string } })
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="full_name">Full Name</Label>
+                  <Label htmlFor="fullName">Full Name</Label>
                   <Input
-                    id="full_name"
-                    value={formData.full_name}
-                    onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                    id="fullName"
+                    value={formData.fullName}
+                    onChange={handleInputChange('fullName')}
+                    disabled={isSaving}
                     required
                   />
                 </div>
@@ -126,18 +195,21 @@ export default function EditEmployeePage({ params }: { params: { id: string } })
                   <Select
                     id="designation"
                     value={formData.designation}
-                    onChange={(value) => setFormData({ ...formData, designation: value })}
+                    onChange={handleSelectChange}
                     options={designations}
                     placeholder="Select designation"
+                    disabled={isSaving}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="contact_number">Contact Number</Label>
+                  <Label htmlFor="contactNumber">Contact Number</Label>
                   <Input
-                    id="contact_number"
-                    value={formData.contact_number}
-                    onChange={(e) => setFormData({ ...formData, contact_number: e.target.value })}
+                    id="contactNumber"
+                    type="tel"
+                    value={formData.contactNumber}
+                    onChange={handleInputChange('contactNumber')}
+                    disabled={isSaving}
                     required
                   />
                 </div>
@@ -147,22 +219,26 @@ export default function EditEmployeePage({ params }: { params: { id: string } })
                   <Input
                     id="salary"
                     type="number"
+                    step="0.01"
+                    min="0"
                     value={formData.salary}
-                    onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
+                    onChange={handleInputChange('salary')}
+                    disabled={isSaving}
                     required
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="is_active">Status</Label>
+                  <Label htmlFor="isActive">Status</Label>
                   <div className="flex items-center space-x-2">
                     <Switch
-                      id="is_active"
-                      checked={formData.is_active}
-                      onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
+                      id="isActive"
+                      checked={formData.isActive}
+                      onCheckedChange={handleSwitchChange}
+                      disabled={isSaving}
                     />
-                    <Label htmlFor="is_active">
-                      {formData.is_active ? 'Active' : 'Inactive'}
+                    <Label htmlFor="isActive">
+                      {formData.isActive ? 'Active' : 'Inactive'}
                     </Label>
                   </div>
                 </div>
@@ -172,12 +248,13 @@ export default function EditEmployeePage({ params }: { params: { id: string } })
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => router.push('/Employees')}
+                  onClick={handleCancel}
+                  disabled={isSaving}
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={isLoading}>
-                  {isLoading ? 'Saving...' : 'Save Changes'}
+                <Button type="submit" disabled={isSaving}>
+                  {isSaving ? 'Saving...' : 'Save Changes'}
                 </Button>
               </div>
             </form>
@@ -186,4 +263,4 @@ export default function EditEmployeePage({ params }: { params: { id: string } })
       </div>
     </DynamicLayout>
   );
-} 
+}

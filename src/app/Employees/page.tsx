@@ -1,5 +1,7 @@
+//src/app/Employees/page.tsx
+
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Search, Edit, Trash2, UserPlus } from 'lucide-react';
 import Link from 'next/link';
 import { DynamicLayout } from '@/components/layouts/DynamicLayout';
@@ -13,34 +15,54 @@ import {
   DropdownItem,
 } from '@/components/ui/Dropdown/Dropdown';
 import { Badge } from '@/components/ui/Badge';
-
-// Mock data for testing
-const mockEmployees = [
-  {
-    employee_id: 1,
-    full_name: 'John Doe',
-    designation: 'dodhi',
-    contact_number: '+92 300 1234567',
-    salary: 25000,
-    is_active: true,
-  },
-  {
-    employee_id: 2,
-    full_name: 'Jane Smith',
-    designation: 'chillarIncharge',
-    contact_number: '+92 301 2345678',
-    salary: 30000,
-    is_active: true,
-  },
-];
+import { getPagedEmployees, deleteEmployee, Employee } from '@/lib/api/employees';
+import { useToast } from '@/hooks/useToast';
 
 export default function EmployeesPage() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const { toast } = useToast();
 
-  const filteredEmployees = mockEmployees.filter(employee =>
-    employee.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    employee.designation.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const fetchEmployees = async () => {
+    try {
+      const response = await getPagedEmployees(currentPage, 10, undefined, searchQuery);
+      setEmployees(response.items);
+      setTotalPages(response.totalPages);
+    } catch (error) {
+      console.error('Error fetching employees:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch employees',
+        variant: 'error',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchEmployees();
+  }, [currentPage, searchQuery]);
+
+  const handleDelete = async (id: number) => {
+    try {
+      await deleteEmployee(id);
+      toast({
+        title: 'Success',
+        description: 'Employee deleted successfully',
+      });
+      fetchEmployees();
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete employee',
+        variant: 'error',
+      });
+    }
+  };
 
   const getDesignationBadgeColor = (designation: string) => {
     const colors: Record<string, string> = {
@@ -49,7 +71,7 @@ export default function EmployeesPage() {
       dodhi: 'bg-green-100 text-green-800',
       chillarIncharge: 'bg-purple-100 text-purple-800',
     };
-    return colors[designation] || 'bg-gray-100 text-gray-800';
+    return colors[designation.toLowerCase()] || 'bg-gray-100 text-gray-800';
   };
 
   return (
@@ -90,55 +112,83 @@ export default function EmployeesPage() {
               </Table.Row>
             </Table.Header>
             <Table.Body>
-              {filteredEmployees.map((employee) => (
-                <Table.Row key={employee.employee_id}>
-                  <Table.Cell className="font-medium">{employee.full_name}</Table.Cell>
-                  <Table.Cell>
-                    <Badge className={getDesignationBadgeColor(employee.designation)}>
-                      {employee.designation}
-                    </Badge>
-                  </Table.Cell>
-                  <Table.Cell>{employee.contact_number}</Table.Cell>
-                  <Table.Cell>Rs. {employee.salary.toLocaleString()}</Table.Cell>
-                  <Table.Cell>
-                    <Badge className={employee.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
-                      {employee.is_active ? 'Active' : 'Inactive'}
-                    </Badge>
-                  </Table.Cell>
-                  <Table.Cell className="text-right">
-                    <DropdownMenu>
-                      <DropdownTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <span className="sr-only">Open menu</span>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                      </DropdownTrigger>
-                      <DropdownContent align="end">
-                        <DropdownItem asChild>
-                          <Link href={`/Employees/${employee.employee_id}`}>
-                            View Details
-                          </Link>
-                        </DropdownItem>
-                        <DropdownItem asChild>
-                          <Link href={`/Employees/${employee.employee_id}/edit`}>
-                            Edit
-                          </Link>
-                        </DropdownItem>
-                        <DropdownItem asChild>
-                          <Link href={`/Users/create?employeeId=${employee.employee_id}`}>
-                            <UserPlus className="w-4 h-4 mr-2" />
-                            Create User Account
-                          </Link>
-                        </DropdownItem>
-                        <DropdownItem className="text-red-600">
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Delete
-                        </DropdownItem>
-                      </DropdownContent>
-                    </DropdownMenu>
-                  </Table.Cell>
+              {isLoading ? (
+                <Table.Row>
+                  <Table.Cell colSpan={6} className="text-center">Loading...</Table.Cell>
                 </Table.Row>
-              ))}
+              ) : employees.length === 0 ? (
+                <Table.Row>
+                  <Table.Cell colSpan={6} className="text-center">No employees found</Table.Cell>
+                </Table.Row>
+              ) : (
+                employees.map((employee) => (
+                  <Table.Row key={employee.employeeId}>
+                    <Table.Cell className="font-medium">{employee.fullName}</Table.Cell>
+                    <Table.Cell>
+                      <Badge className={getDesignationBadgeColor(employee.designation)}>
+                        {employee.designation}
+                      </Badge>
+                    </Table.Cell>
+                    <Table.Cell>{employee.contactNumber}</Table.Cell>
+                    <Table.Cell>Rs. {employee.salary.toLocaleString()}</Table.Cell>
+                    <Table.Cell>
+                      <Badge
+                        className={
+                          employee.isActive
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-red-100 text-red-800'
+                        }
+                      >
+                        {employee.isActive ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <DropdownMenu>
+                        <DropdownTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Open menu</span>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </DropdownTrigger>
+                        <DropdownContent align="end">
+                          <DropdownItem asChild>
+                            <Link href={`/Employees/${employee.employeeId}`}>
+                              <span className="flex items-center">
+                                View Details
+                              </span>
+                            </Link>
+                          </DropdownItem>
+                          <DropdownItem asChild>
+                            <Link href={`/Employees/${employee.employeeId}/edit`}>
+                              <span className="flex items-center">
+                                <Edit className="mr-2 h-4 w-4" />
+                                Edit
+                              </span>
+                            </Link>
+                          </DropdownItem>
+                          <DropdownItem asChild>
+                            <Link href={`/Users/create?employeeId=${employee.employeeId}`}>
+                              <span className="flex items-center">
+                                <UserPlus className="w-4 h-4 mr-2" />
+                                Create User Account
+                              </span>
+                            </Link>
+                          </DropdownItem>
+                          <DropdownItem
+                            onClick={() => handleDelete(employee.employeeId)}
+                            className="text-red-600 cursor-pointer"
+                          >
+                            <span className="flex items-center">
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Delete
+                            </span>
+                          </DropdownItem>
+                        </DropdownContent>
+                      </DropdownMenu>
+                    </Table.Cell>
+                  </Table.Row>
+                ))
+              )}
             </Table.Body>
           </Table>
         </div>

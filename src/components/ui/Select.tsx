@@ -1,6 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { ChevronDown, Check } from 'lucide-react';
-import ReactDOM from 'react-dom';
 
 interface SelectOption {
   value: string;
@@ -15,6 +14,7 @@ interface SelectProps {
   className?: string;
   error?: string;
   id?: string;
+  disabled?: boolean;
 }
 
 export function Select({
@@ -25,65 +25,110 @@ export function Select({
   className,
   error,
   id,
+  disabled = false,
 }: SelectProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
   const selectedOption = options.find(opt => opt.value === value);
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const [dropdownStyles, setDropdownStyles] = useState<React.CSSProperties>({});
 
+  // Close dropdown when clicking outside
   useEffect(() => {
-    if (isOpen && buttonRef.current) {
-      const rect = buttonRef.current.getBoundingClientRect();
-      setDropdownStyles({
-        position: 'absolute',
-        top: rect.bottom + window.scrollY,
-        left: rect.left + window.scrollX,
-        width: rect.width,
-        zIndex: 9999,
-      });
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
     }
   }, [isOpen]);
 
+  // Close dropdown on escape key
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape);
+      return () => {
+        document.removeEventListener('keydown', handleEscape);
+      };
+    }
+  }, [isOpen]);
+
+  const handleToggle = useCallback(() => {
+    if (!disabled) {
+      setIsOpen(prev => !prev);
+    }
+  }, [disabled]);
+
+  const handleOptionClick = useCallback((optionValue: string) => {
+    onChange(optionValue);
+    setIsOpen(false);
+  }, [onChange]);
+
   return (
-    <div className={`relative ${className}`}>
+    <div ref={containerRef} className={`relative ${className}`}>
       <button
         id={id}
         type="button"
-        ref={buttonRef}
         className={`flex items-center justify-between w-full p-3 text-left rounded-lg border ${
           error ? 'border-red-500' : 'border-gray-300'
-        } bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500`}
-        onClick={() => setIsOpen(!isOpen)}
+        } bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
+          disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+        }`}
+        onClick={handleToggle}
+        disabled={disabled}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        aria-labelledby={id ? `${id}-label` : undefined}
       >
-        <span className={value ? '' : 'text-gray-400'}>
+        <span className={value ? 'text-gray-900' : 'text-gray-400'}>
           {selectedOption?.label || placeholder}
         </span>
-        <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown 
+          className={`w-4 h-4 transition-transform duration-200 ${
+            isOpen ? 'rotate-180' : ''
+          } ${disabled ? 'text-gray-400' : 'text-gray-600'}`} 
+        />
       </button>
-      {/* Portal Dropdown */}
-      {isOpen && typeof window !== 'undefined' && ReactDOM.createPortal(
-        <div style={dropdownStyles} className="bg-white border border-gray-200 rounded-lg shadow-lg" onClick={e => e.stopPropagation()}>
-          <ul className="py-1 overflow-auto max-h-60">
+
+      {/* Dropdown without portal - keeps it in the normal DOM flow */}
+      {isOpen && !disabled && (
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-60 overflow-auto">
+          <ul className="py-1" role="listbox">
             {options.map((option) => (
               <li
                 key={option.value}
-                className={`px-3 py-2 cursor-pointer hover:bg-gray-50 flex items-center justify-between ${
-                  value === option.value ? 'bg-blue-50' : ''
+                role="option"
+                aria-selected={value === option.value}
+                className={`px-3 py-2 cursor-pointer hover:bg-gray-50 flex items-center justify-between transition-colors ${
+                  value === option.value ? 'bg-blue-50 text-blue-900' : 'text-gray-900'
                 }`}
-                onClick={() => {
-                  onChange(option.value);
-                  setIsOpen(false);
-                }}
+                onClick={() => handleOptionClick(option.value)}
               >
                 <span>{option.label}</span>
-                {value === option.value && <Check className="w-4 h-4 text-blue-600" />}
+                {value === option.value && (
+                  <Check className="w-4 h-4 text-blue-600" />
+                )}
               </li>
             ))}
           </ul>
-        </div>,
-        document.body
+        </div>
       )}
-      {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+      
+      {error && (
+        <p className="mt-1 text-sm text-red-600" role="alert">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

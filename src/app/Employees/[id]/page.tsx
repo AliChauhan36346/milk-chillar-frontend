@@ -1,49 +1,54 @@
+//src/app/Employees/[id]/page.tsx
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { DynamicLayout } from '@/components/layouts/DynamicLayout';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BackButton } from '@/components/ui/BackButton';
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '@/components/ui/Badge';
 import { UserPlus, Edit, Trash2 } from 'lucide-react';
 import Link from 'next/link';
+import { Employee, getEmployeeById, deleteEmployee } from '@/lib/api/employees';
+import { useToast } from '@/hooks/useToast';
 
-type Employee = {
-  employee_id: number;
-  full_name: string;
-  designation: string;
-  contact_number: string;
-  salary: number;
-  is_active: boolean;
-  tenant_id: number;
-};
+interface PageProps {
+  params: Promise<{ id: string }>;
+}
 
-export default function EmployeeDetailsPage({ params }: { params: { id: string } }) {
+export default function EmployeeDetailsPage({ params }: PageProps) {
   const router = useRouter();
+  const { toast } = useToast();
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Unwrap params using React.use()
+  const resolvedParams = use(params);
 
   useEffect(() => {
     const fetchEmployee = async () => {
       try {
-        // TODO: Replace with actual API call
-        const response = await fetch(`https://localhost:7013/api/Employees/${params.id}`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch employee');
+        const id = parseInt(resolvedParams.id);
+        if (isNaN(id)) {
+          throw new Error('Invalid employee ID');
         }
-        const data = await response.json();
+        const data = await getEmployeeById(id);
         setEmployee(data);
       } catch (error) {
         console.error('Error fetching employee:', error);
-        // TODO: Show error toast
+        toast({
+          title: 'Error',
+          description: 'Failed to fetch employee details',
+          variant: 'error',
+        });
+        router.push('/Employees');
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchEmployee();
-  }, [params.id]);
+  }, [resolvedParams.id, router, toast]);
 
   const getDesignationBadgeColor = (designation: string) => {
     const colors: Record<string, string> = {
@@ -52,13 +57,36 @@ export default function EmployeeDetailsPage({ params }: { params: { id: string }
       dodhi: 'bg-green-100 text-green-800',
       chillarIncharge: 'bg-purple-100 text-purple-800',
     };
-    return colors[designation] || 'bg-gray-100 text-gray-800';
+    return colors[designation.toLowerCase()] || 'bg-gray-100 text-gray-800';
+  };
+
+  const handleDelete = async () => {
+    if (!employee) return;
+    
+    if (!confirm('Are you sure you want to delete this employee? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      await deleteEmployee(employee.employeeId);
+      toast({
+        title: 'Success',
+        description: 'Employee deleted successfully',
+      });
+      router.push('/Employees');
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete employee',
+        variant: 'error',
+      });
+    }
   };
 
   if (isLoading) {
     return (
       <DynamicLayout allowedRoles={['admin', 'manager']}>
-        <div className="flex items-center justify-center h-screen">
+        <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <p>Loading...</p>
           </div>
@@ -70,7 +98,7 @@ export default function EmployeeDetailsPage({ params }: { params: { id: string }
   if (!employee) {
     return (
       <DynamicLayout allowedRoles={['admin', 'manager']}>
-        <div className="flex items-center justify-center h-screen">
+        <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <p>Employee not found</p>
           </div>
@@ -88,72 +116,65 @@ export default function EmployeeDetailsPage({ params }: { params: { id: string }
             <h1 className="text-2xl font-bold">Employee Details</h1>
           </div>
           <div className="flex gap-2">
-            <Link href={`/Employees/${employee.employee_id}/edit`}>
+            <Link href={`/Employees/${employee.employeeId}/edit`}>
               <Button variant="outline">
                 <Edit className="w-4 h-4 mr-2" />
                 Edit
               </Button>
             </Link>
-            <Link href={`/Users/create?employeeId=${employee.employee_id}`}>
+            <Link href={`/Users/create?employeeId=${employee.employeeId}`}>
               <Button>
                 <UserPlus className="w-4 h-4 mr-2" />
                 Create User Account
               </Button>
             </Link>
+            <Button variant="destructive" onClick={handleDelete}>
+              <Trash2 className="w-4 h-4 mr-2" />
+              Delete
+            </Button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Basic Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Employee Information</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-2 gap-6">
               <div>
-                <h3 className="text-sm font-medium text-gray-500">Full Name</h3>
-                <p className="mt-1">{employee.full_name}</p>
+                <p className="text-sm text-gray-500">Full Name</p>
+                <p className="text-lg font-medium">{employee.fullName}</p>
               </div>
               <div>
-                <h3 className="text-sm font-medium text-gray-500">Designation</h3>
-                <Badge className={`mt-1 ${getDesignationBadgeColor(employee.designation)}`}>
+                <p className="text-sm text-gray-500">Designation</p>
+                <Badge className={getDesignationBadgeColor(employee.designation)}>
                   {employee.designation}
                 </Badge>
               </div>
               <div>
-                <h3 className="text-sm font-medium text-gray-500">Contact Number</h3>
-                <p className="mt-1">{employee.contact_number}</p>
+                <p className="text-sm text-gray-500">Contact Number</p>
+                <p className="text-lg font-medium">{employee.contactNumber}</p>
               </div>
               <div>
-                <h3 className="text-sm font-medium text-gray-500">Salary</h3>
-                <p className="mt-1">Rs. {employee.salary.toLocaleString()}</p>
+                <p className="text-sm text-gray-500">Salary</p>
+                <p className="text-lg font-medium">Rs. {employee.salary.toLocaleString()}</p>
               </div>
               <div>
-                <h3 className="text-sm font-medium text-gray-500">Status</h3>
-                <Badge className={`mt-1 ${employee.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                  {employee.is_active ? 'Active' : 'Inactive'}
+                <p className="text-sm text-gray-500">Status</p>
+                <Badge
+                  className={
+                    employee.isActive
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-red-100 text-red-800'
+                  }
+                >
+                  {employee.isActive ? 'Active' : 'Inactive'}
                 </Badge>
               </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>User Account</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8">
-                <p className="text-gray-500 mb-4">No user account created yet</p>
-                <Link href={`/Users/create?employeeId=${employee.employee_id}`}>
-                  <Button>
-                    <UserPlus className="w-4 h-4 mr-2" />
-                    Create User Account
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </DynamicLayout>
   );
-} 
+}

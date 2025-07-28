@@ -1,5 +1,6 @@
+//src/app/Employees/create/page.tsx
 'use client';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { DynamicLayout } from '@/components/layouts/DynamicLayout';
 import { Button } from '@/components/ui/Button';
@@ -8,6 +9,8 @@ import { Label } from '@/components/ui/Label';
 import { Select } from '@/components/ui/Select';
 import { Card } from '@/components/ui/card';
 import { BackButton } from '@/components/ui/BackButton';
+import { createEmployee } from '@/lib/api/employees';
+import { useToast } from '@/hooks/useToast';
 
 const designations = [
   { value: 'dodhi', label: 'Dodhi' },
@@ -16,47 +19,85 @@ const designations = [
   { value: 'admin', label: 'Admin' },
 ];
 
+type FormData = {
+  fullName: string;
+  designation: string;
+  contactNumber: string;
+  salary: string;
+};
+
 export default function CreateEmployeePage() {
   const router = useRouter();
-  const [formData, setFormData] = useState({
-    full_name: '',
+  const { toast } = useToast();
+  const [formData, setFormData] = useState<FormData>({
+    fullName: '',
     designation: '',
-    contact_number: '',
+    contactNumber: '',
     salary: '',
   });
   const [isLoading, setIsLoading] = useState(false);
 
+  // Use useCallback to prevent unnecessary re-renders
+  const handleInputChange = useCallback((field: keyof FormData) => {
+    return (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value;
+      setFormData(prev => ({
+        ...prev,
+        [field]: value
+      }));
+    };
+  }, []);
+
+  const handleSelectChange = useCallback((value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      designation: value
+    }));
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!formData.fullName || !formData.designation || !formData.contactNumber || !formData.salary) {
+      toast({
+        title: 'Error',
+        description: 'Please fill all required fields',
+        variant: 'error',
+      });
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      // TODO: Replace with actual API call
-      const response = await fetch('https://localhost:7013/api/Employees', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...formData,
-          salary: parseFloat(formData.salary),
-          tenant_id: 1, // TODO: Get from auth context
-          is_active: true,
-        }),
+      await createEmployee({
+        fullName: formData.fullName,
+        designation: formData.designation,
+        contactNumber: formData.contactNumber,
+        salary: parseFloat(formData.salary),
+        isActive: true
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to create employee');
-      }
-
+      toast({
+        title: 'Success',
+        description: 'Employee created successfully',
+      });
       router.push('/Employees');
     } catch (error) {
       console.error('Error creating employee:', error);
-      // TODO: Show error toast
+      toast({
+        title: 'Error',
+        description: 'Failed to create employee',
+        variant: 'error',
+      });
     } finally {
       setIsLoading(false);
     }
   };
+
+  const handleCancel = useCallback(() => {
+    router.push('/Employees');
+  }, [router]);
 
   return (
     <DynamicLayout allowedRoles={['admin', 'manager']}>
@@ -72,12 +113,12 @@ export default function CreateEmployeePage() {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="full_name">Full Name</Label>
+                  <Label htmlFor="fullName">Full Name</Label>
                   <Input
-                    id="full_name"
-                    value={formData.full_name}
-                    onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                    required
+                    id="fullName"
+                    value={formData.fullName}
+                    onChange={handleInputChange('fullName')}
+                    disabled={isLoading}
                   />
                 </div>
 
@@ -86,19 +127,21 @@ export default function CreateEmployeePage() {
                   <Select
                     id="designation"
                     value={formData.designation}
-                    onChange={(value) => setFormData({ ...formData, designation: value })}
+                    onChange={handleSelectChange}
                     options={designations}
                     placeholder="Select designation"
+                    disabled={isLoading}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="contact_number">Contact Number</Label>
+                  <Label htmlFor="contactNumber">Contact Number</Label>
                   <Input
-                    id="contact_number"
-                    value={formData.contact_number}
-                    onChange={(e) => setFormData({ ...formData, contact_number: e.target.value })}
-                    required
+                    id="contactNumber"
+                    type="tel"
+                    value={formData.contactNumber}
+                    onChange={handleInputChange('contactNumber')}
+                    disabled={isLoading}
                   />
                 </div>
 
@@ -107,23 +150,26 @@ export default function CreateEmployeePage() {
                   <Input
                     id="salary"
                     type="number"
+                    step="0.01"
+                    min="0"
                     value={formData.salary}
-                    onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
-                    required
+                    onChange={handleInputChange('salary')}
+                    disabled={isLoading}
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end gap-4">
+              <div className="flex items-center gap-4">
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading ? 'Creating...' : 'Create Employee'}
+                </Button>
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => router.push('/Employees')}
+                  onClick={handleCancel}
+                  disabled={isLoading}
                 >
                   Cancel
-                </Button>
-                <Button type="submit" disabled={isLoading}>
-                  {isLoading ? 'Creating...' : 'Create Employee'}
                 </Button>
               </div>
             </form>
@@ -132,4 +178,4 @@ export default function CreateEmployeePage() {
       </div>
     </DynamicLayout>
   );
-} 
+}
