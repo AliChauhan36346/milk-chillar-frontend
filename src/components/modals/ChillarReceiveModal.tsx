@@ -8,20 +8,20 @@ type DodhiFormData = {
   lr: number;
   fat: number;
   netLiters: number;
-  date: string;
-  time: string;
 };
 
 type DodhiFormModalProps = {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: DodhiFormData) => void;
-  initialData?: Omit<DodhiFormData, 'netLiters' | 'date' | 'time'> & { netLiters?: number };
+  initialData?: DodhiFormData;
   dodhiName: string;
   dodhiId: string;
   date: string;
   time: string;
   isFromAddedList: boolean;
+  formValues: DodhiFormData;
+  onInputChange: (field: string, value: number) => void;
 };
 
 export function DodhiFormModal({
@@ -31,84 +31,17 @@ export function DodhiFormModal({
   initialData,
   dodhiName,
   dodhiId,
-  date: initialDate,
-  time: initialTime,
-  isFromAddedList
+  date,
+  time,
+  isFromAddedList,
+  formValues,
+  onInputChange
 }: DodhiFormModalProps) {
-  const [formData, setFormData] = useState({
-    grossLiters: initialData?.grossLiters.toString() || '',
-    lr: initialData?.lr.toString() || '',
-    fat: initialData?.fat.toString() || '',
-    netLiters: initialData?.netLiters?.toString() || '',
-    date: initialDate,
-    time: initialTime
-  });
-
   const isUpdateMode = isFromAddedList;
-
-  useEffect(() => {
-    if (initialData) {
-      setFormData({
-        grossLiters: initialData.grossLiters.toString(),
-        lr: initialData.lr.toString(),
-        fat: initialData.fat.toString(),
-        netLiters: initialData.netLiters?.toString() || calculateNetLiters(
-          initialData.grossLiters.toString(),
-          initialData.lr.toString(),
-          initialData.fat.toString()
-        ),
-        date: initialDate,
-        time: initialTime
-      });
-    } else {
-      setFormData({
-        grossLiters: '',
-        lr: '',
-        fat: '',
-        netLiters: '',
-        date: initialDate,
-        time: initialTime
-      });
-    }
-  }, [initialData, initialDate, initialTime]);
-
-  const calculateNetLiters = (gross: string, lr: string, fat: string) => {
-    const grossNum = parseFloat(gross) || 0;
-    const lrNum = parseFloat(lr) || 0;
-    const fatNum = parseFloat(fat) || 0;
-    
-    const net = grossNum - (lrNum * fatNum * 0.01);
-    return net.toFixed(2);
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    const newFormData = {
-      ...formData,
-      [name]: value
-    };
-
-    if (name === 'grossLiters' || name === 'lr' || name === 'fat') {
-      newFormData.netLiters = calculateNetLiters(
-        name === 'grossLiters' ? value : formData.grossLiters,
-        name === 'lr' ? value : formData.lr,
-        name === 'fat' ? value : formData.fat
-      );
-    }
-
-    setFormData(newFormData);
-  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit({
-      grossLiters: parseFloat(formData.grossLiters),
-      lr: parseFloat(formData.lr),
-      fat: parseFloat(formData.fat),
-      netLiters: parseFloat(formData.netLiters),
-      date: formData.date,
-      time: formData.time
-    });
+    onSubmit(formValues);
   };
 
   if (!isOpen) return null;
@@ -116,7 +49,7 @@ export function DodhiFormModal({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
-        {/* Header - Color-coded for action type */}
+        {/* Header */}
         <div className={`p-4 ${isUpdateMode ? 'bg-green-50 border-b' : 'bg-blue-600 text-white'}`}>
           <div className="flex justify-between items-center">
             <h3 className={`text-xl font-bold flex items-center gap-2 ${isUpdateMode ? 'text-green-700' : 'text-white'}`}>
@@ -138,7 +71,7 @@ export function DodhiFormModal({
           </div>
         </div>
 
-        {/* Dodhi Info - Clear white background with improved visibility */}
+        {/* Dodhi Info */}
         <div className="bg-white p-4 border-b">
           <div className="flex items-center gap-3">
             <div className="bg-blue-100 p-2 rounded-full">
@@ -157,10 +90,9 @@ export function DodhiFormModal({
               <div className="relative">
                 <input
                   type="date"
-                  value={formData.date}
-                  onChange={(e) => setFormData({...formData, date: e.target.value})}
-                  className="w-full p-1 pl-10 border border-gray-300 rounded-lg"
-                  required
+                  value={date}
+                  readOnly
+                  className="w-full p-1 pl-10 border border-gray-300 rounded-lg bg-gray-100"
                 />
                 <Calendar className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
               </div>
@@ -169,9 +101,9 @@ export function DodhiFormModal({
               <label className="block text-sm font-medium text-gray-700">Time</label>
               <div className="relative">
                 <select
-                  value={formData.time}
-                  onChange={(e) => setFormData({...formData, time: e.target.value})}
-                  className="w-full p-1 pl-10 border border-gray-300 rounded-lg appearance-none"
+                  value={time}
+                  disabled
+                  className="w-full p-1 pl-10 border border-gray-300 rounded-lg appearance-none bg-gray-100"
                 >
                   <option value="morning">Morning</option>
                   <option value="evening">Evening</option>
@@ -192,9 +124,8 @@ export function DodhiFormModal({
             </label>
             <input
               type="number"
-              name="grossLiters"
-              value={formData.grossLiters}
-              onChange={handleChange}
+              value={formValues.grossLiters}
+              onChange={(e) => onInputChange('grossLiters', parseFloat(e.target.value) || 0)}
               className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               required
               step="0.01"
@@ -211,9 +142,8 @@ export function DodhiFormModal({
               </label>
               <input
                 type="number"
-                name="lr"
-                value={formData.lr}
-                onChange={handleChange}
+                value={formValues.lr}
+                onChange={(e) => onInputChange('lr', parseFloat(e.target.value) || 0)}
                 className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                 required
                 step="0.01"
@@ -227,9 +157,8 @@ export function DodhiFormModal({
               </label>
               <input
                 type="number"
-                name="fat"
-                value={formData.fat}
-                onChange={handleChange}
+                value={formValues.fat}
+                onChange={(e) => onInputChange('fat', parseFloat(e.target.value) || 0)}
                 className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                 required
                 step="0.01"
@@ -246,8 +175,7 @@ export function DodhiFormModal({
             </label>
             <input
               type="number"
-              name="netLiters"
-              value={formData.netLiters}
+              value={formValues.netLiters.toFixed(2)}
               readOnly
               className="w-full p-2 border border-gray-300 rounded-lg bg-gray-50 font-medium text-gray-800"
             />
@@ -255,7 +183,6 @@ export function DodhiFormModal({
 
           {/* Action Buttons */}
           <div className="flex gap-2 pt-2">
-            
             <button
               type="button"
               onClick={onClose}
@@ -283,8 +210,6 @@ export function DodhiFormModal({
                 </>
               )}
             </button>
-            
-            
           </div>
         </form>
       </div>
