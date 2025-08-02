@@ -1,3 +1,4 @@
+//app/chillarReceive/page.tsx
 'use client';
 import { useEffect, useState } from 'react';
 import { Milk, Scale, User, CheckCircle } from 'lucide-react';
@@ -186,7 +187,7 @@ export default function ChillarReceivePage() {
   return (
     <ProtectedRoute allowedRoles={['chillarincharge', 'admin']}>
       <DynamicLayout allowedRoles={['admin', 'chillarincharge']}>
-        <div className="max-w-6xl mx-auto p-4 bg-gray-50 min-h-screen">
+        <div className="max-w-6xl mx-auto p-1 bg-gray-50 min-h-screen">
           {/* Header Section */}
           <div className="bg-white shadow-sm rounded-lg p-4 mb-6">
             <h1 className="text-2xl font-bold flex items-center gap-2 text-blue-600">

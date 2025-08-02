@@ -1,27 +1,51 @@
 // components/modals/SalesFormModal.tsx
 'use client';
 import { useState, useEffect } from 'react';
-import { CheckCircle, Plus, X, User, Calendar, Droplet, Percent, IndianRupee, } from 'lucide-react';
+import { CheckCircle, Plus, X, User, Calendar, Droplet, Percent, DollarSign } from 'lucide-react';
 
 type BuyerFormData = {
   grossLiters: number;
   lr: number;
   fat: number;
+  netLiters: number;
   rate: number;
   amount: number;
+  amountReceived: number;
+  revenueAccountId: number;
   date: string;
+};
+
+type RevenueAccount = {
+  accountId: number;
+  accountName: string;
+  accountCode: string;
 };
 
 type BuyerFormModalProps = {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: BuyerFormData) => void;
-  initialData?: Omit<BuyerFormData, 'amount'> & { amount?: number };
+  initialData?: Omit<BuyerFormData, 'amount' | 'netLiters'> & {
+    amount?: number;
+    netLiters?: number;
+  };
   buyerName: string;
   buyerId: string;
   date: string;
   isAdmin: boolean;
   isFromAddedList: boolean;
+  revenueAccounts: RevenueAccount[];
+  formValues: {
+    grossLiters: number;
+    lr: number;
+    fat: number;
+    netLiters: number;
+    rate: number;
+    amount: number;
+    amountReceived: number;
+    revenueAccountId: number;
+  };
+  onInputChange: (field: string, value: number) => void;
 };
 
 export function SalesFormModal({
@@ -33,79 +57,60 @@ export function SalesFormModal({
   buyerId,
   date: initialDate,
   isAdmin,
-  isFromAddedList
+  isFromAddedList,
+  revenueAccounts,
+  formValues,
+  onInputChange
 }: BuyerFormModalProps) {
   const [formData, setFormData] = useState({
-    grossLiters: initialData?.grossLiters.toString() || '',
-    lr: initialData?.lr.toString() || '',
-    fat: initialData?.fat.toString() || '',
-    rate: initialData?.rate.toString() || '',
-    amount: initialData?.amount?.toString() || '0',
+    grossLiters: formValues.grossLiters.toString(),
+    lr: formValues.lr.toString(),
+    fat: formValues.fat.toString(),
+    netLiters: formValues.netLiters.toString(),
+    rate: formValues.rate.toString(),
+    amount: formValues.amount.toString(),
+    amountReceived: formValues.amountReceived.toString(),
+    revenueAccountId: formValues.revenueAccountId.toString(),
     date: initialDate
   });
 
   const isUpdateMode = isFromAddedList;
 
   useEffect(() => {
-    if (initialData) {
-      setFormData({
-        grossLiters: initialData.grossLiters.toString(),
-        lr: initialData.lr.toString(),
-        fat: initialData.fat.toString(),
-        rate: initialData.rate.toString(),
-        amount: initialData.amount?.toString() || calculateAmount(
-          initialData.grossLiters.toString(),
-          initialData.rate.toString()
-        ),
-        date: initialDate
-      });
-    } else {
-      setFormData({
-        grossLiters: '',
-        lr: '',
-        fat: '',
-        rate: '',
-        amount: '0',
-        date: initialDate
-      });
-    }
-  }, [initialData, initialDate]);
+    setFormData({
+      grossLiters: formValues.grossLiters.toString(),
+      lr: formValues.lr.toString(),
+      fat: formValues.fat.toString(),
+      netLiters: formValues.netLiters.toString(),
+      rate: formValues.rate.toString(),
+      amount: formValues.amount.toString(),
+      amountReceived: formValues.amountReceived.toString(),
+      revenueAccountId: formValues.revenueAccountId.toString(),
+      date: initialDate
+    });
+  }, [formValues, initialDate]);
 
-  const calculateAmount = (liters: string, rate: string) => {
-    const litersNum = parseFloat(liters) || 0;
-    const rateNum = parseFloat(rate) || 0;
-    return (litersNum * rateNum).toFixed(2);
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    const newFormData = {
-      ...formData,
-      [name]: value
-    };
-
-    if (name === 'grossLiters' || name === 'rate') {
-      newFormData.amount = calculateAmount(
-        name === 'grossLiters' ? value : formData.grossLiters,
-        name === 'rate' ? value : formData.rate
-      );
-    }
-
-    setFormData(newFormData);
+    const numValue = parseFloat(value) || 0;
+    onInputChange(name, numValue);
   };
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({...formData, date: e.target.value});
+    setFormData(prev => ({ ...prev, date: e.target.value }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit({
-      grossLiters: parseFloat(formData.grossLiters),
-      lr: parseFloat(formData.lr),
-      fat: parseFloat(formData.fat),
-      rate: parseFloat(formData.rate),
-      amount: parseFloat(formData.amount),
+      grossLiters: formValues.grossLiters,
+      lr: formValues.lr,
+      fat: formValues.fat,
+      netLiters: formValues.netLiters,
+      rate: formValues.rate,
+      amount: formValues.amount,
+      amountReceived: formValues.amountReceived,
+      revenueAccountId: formValues.revenueAccountId,
       date: formData.date
     });
   };
@@ -115,7 +120,7 @@ export function SalesFormModal({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
-        {/* Header - Only colored for new sales */}
+        {/* Header */}
         <div className={`p-3 ${isUpdateMode ? 'bg-white' : 'bg-blue-600 text-white'}`}>
           <div className="flex justify-between items-center">
             <h3 className={`text-xl font-bold flex items-center gap-2 ${isUpdateMode ? 'text-gray-800' : 'text-white'}`}>
@@ -137,9 +142,9 @@ export function SalesFormModal({
           </div>
         </div>
 
-        {/* Buyer Info - Always white background for readability */}
+        {/* Buyer Info */}
         <div className="bg-white p-4 border-b">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 mb-2">
             <div className="bg-blue-100 p-2 rounded-full">
               <User className="w-5 h-5 text-blue-600" />
             </div>
@@ -149,145 +154,197 @@ export function SalesFormModal({
             </div>
           </div>
 
-          {/* Editable Date Field */}
-          <div className="mt-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Transaction Date</label>
-            <div className="relative">
-              <input
-                type="date"
-                value={formData.date}
-                onChange={handleDateChange}
-                className="w-full p-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                required
-              />
-              <Calendar className="absolute left-3 top-3.5 h-5 w-5 text-gray-400" />
-            </div>
+          {/* Compact Date Field */}
+          <div className="flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-gray-400" />
+            <input
+              type="date"
+              value={formData.date}
+              onChange={handleDateChange}
+              className="flex-1 p-1 border border-gray-300 rounded-lg text-sm"
+              required
+            />
           </div>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-4 space-y-4">
-          {/* Gross Liters */}
-          <div className="space-y-.5">
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-              <Droplet className="w-4 h-4 text-blue-500" />
-              Gross Liters
-            </label>
-            <input
-              type="number"
-              name="grossLiters"
-              value={formData.grossLiters}
-              onChange={handleChange}
-              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              required
-              step="0.01"
-              placeholder="Enter liters"
-            />
-          </div>
-
-          {/* LR and Fat */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-.5">
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                <Percent className="w-4 h-4 text-green-500" />
-                LR
-              </label>
-              <input
-                type="number"
-                name="lr"
-                value={formData.lr}
-                onChange={handleChange}
-                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                required
-                step="0.01"
-                placeholder="Enter LR"
-              />
+        <form onSubmit={handleSubmit} className="p-4 space-y-3">
+          {/* Compact Input Grid */}
+          <div className="grid grid-cols-2 gap-3">
+            {/* Gross Liters */}
+            <div className="space-y-1">
+              <label className="block text-xs font-medium text-gray-700">Gross Liters</label>
+              <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
+                <span className="px-2 bg-gray-100 text-gray-500">
+                  <Droplet className="w-4 h-4" />
+                </span>
+                <input
+                  type="number"
+                  name="grossLiters"
+                  value={formData.grossLiters}
+                  onChange={handleChange}
+                  className="flex-1 p-1 text-sm focus:outline-none"
+                  required
+                  step="0.01"
+                  placeholder="0.00"
+                />
+              </div>
             </div>
-            <div className="space-y-.5">
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                <Percent className="w-4 h-4 text-purple-500" />
-                Fat %
-              </label>
+
+            {/* LR */}
+            <div className="space-y-1">
+              <label className="block text-xs font-medium text-gray-700">LR</label>
+              <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
+                <span className="px-2 bg-gray-100 text-gray-500">
+                  <Percent className="w-4 h-4" />
+                </span>
+                <input
+                  type="number"
+                  name="lr"
+                  value={formData.lr}
+                  onChange={handleChange}
+                  className="flex-1 p-1 text-sm focus:outline-none"
+                  required
+                  step="0.01"
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+
+            {/* Fat */}
+            <div className="space-y-1">
+              <label className="block text-xs font-medium text-gray-700">Fat %</label>
+              <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
+                <span className="px-2 bg-gray-100 text-gray-500">
+                  <Percent className="w-4 h-4" />
+                </span>
+                <input
+                  type="number"
+                  name="fat"
+                  value={formData.fat}
+                  onChange={handleChange}
+                  className="flex-1 p-1 text-sm focus:outline-none"
+                  required
+                  step="0.01"
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+
+            {/* Net Liters */}
+            <div className="space-y-1">
+              <label className="block text-xs font-medium text-gray-700">Net Liters</label>
               <input
                 type="number"
-                name="fat"
-                value={formData.fat}
-                onChange={handleChange}
-                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                required
-                step="0.01"
-                placeholder="Enter fat"
+                name="netLiters"
+                value={formData.netLiters}
+                readOnly
+                className="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-sm"
               />
             </div>
           </div>
 
           {/* Rate (admin only) */}
           {isAdmin && (
-            <div className="space-y-.5">
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                <IndianRupee className="w-4 h-4 text-yellow-500" />
-                Rate per Liter (Rs)
-              </label>
-              <input
-                type="number"
-                name="rate"
-                value={formData.rate}
-                onChange={handleChange}
-                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
-                required
-                step="0.01"
-                placeholder="Enter rate"
-              />
+            <div className="space-y-1">
+              <label className="block text-xs font-medium text-gray-700">Rate per Liter (PKR)</label>
+              <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
+                <span className="px-2 bg-gray-100 text-gray-500">Rs</span>
+                <input
+                  type="number"
+                  name="rate"
+                  value={formData.rate}
+                  onChange={handleChange}
+                  className="flex-1 p-1 text-sm focus:outline-none"
+                  required
+                  step="0.01"
+                  placeholder="0.00"
+                />
+              </div>
             </div>
           )}
 
-          {/* Amount (readonly) */}
-          <div className="space-y-.5">
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-              <IndianRupee className="w-4 h-4 text-green-600" />
-              Total Amount (₹)
-            </label>
-            <input
-              type="number"
-              name="amount"
-              value={formData.amount}
-              readOnly
-              className="w-full p-2 border border-gray-300 rounded-lg bg-gray-50 font-medium text-gray-800"
-            />
+          {/* Revenue Account */}
+          <div className="space-y-1">
+            <label className="block text-xs font-medium text-gray-700">Revenue Account</label>
+            <select
+              name="revenueAccountId"
+              value={formData.revenueAccountId}
+              onChange={handleChange}
+              className="w-full p-1 border border-gray-300 rounded-lg text-sm"
+              required
+            >
+              {revenueAccounts.map(account => (
+                <option key={account.accountId} value={account.accountId}>
+                  {account.accountName} ({account.accountCode})
+                </option>
+              ))}
+            </select>
           </div>
 
+          {/* Amount */}
+          <div className="space-y-1">
+            <label className="block text-xs font-medium text-gray-700">Amount Received (PKR)</label>
+            <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
+              <span className="px-2 bg-gray-100 text-gray-700 font-medium">Rs</span>
+              <input
+                type="number"
+                name="amountReceived"
+                value={formData.amountReceived}
+                onChange={handleChange}
+                className="flex-1 p-1 text-sm focus:outline-none"
+                step="0.01"
+                placeholder="0.00"
+              />
+            </div>
+          </div>
+
+          {/* Total Amount (Admin only) */}
+          {isAdmin && (
+            <div className="space-y-1">
+              <label className="block text-xs font-medium text-gray-700">Total Amount (PKR)</label>
+              <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden bg-gray-50">
+                <span className="px-2 bg-gray-100 text-gray-700 font-medium">Rs</span>
+                <input
+                  type="number"
+                  name="amount"
+                  value={formData.amount}
+                  readOnly
+                  className="flex-1 p-1 text-sm font-medium"
+                />
+              </div>
+            </div>
+          )}
+
           {/* Action Buttons */}
-          <div className="flex gap-3 pt-1">
+          <div className="flex gap-2 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2 px-2 bg-gray-100 hover:bg-gray-300 text-gray-700 rounded-lg font-medium transition-colors flex items-center justify-center gap-1"
+              className="flex-1 py-2 px-2 bg-gray-100 hover:bg-gray-300 text-gray-700 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
               Cancel
             </button>
-
             <button
               type="submit"
-              className={`flex-1 py-2 px-2 rounded-lg font-medium flex items-center justify-center gap-1 transition-colors
-                ${isUpdateMode 
-                  ? 'bg-green-600 hover:bg-green-700 text-white' 
+              className={`flex-1 py-2 px-2 rounded-lg text-sm font-medium flex items-center justify-center gap-1 transition-colors
+                ${isUpdateMode
+                  ? 'bg-green-600 hover:bg-green-700 text-white'
                   : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
             >
               {isUpdateMode ? (
                 <>
-                  <CheckCircle className="w-5 h-5" />
-                  Update Sale
+                  <CheckCircle className="w-4 h-4" />
+                  Update
                 </>
               ) : (
                 <>
-                  <Plus className="w-5 h-5" />
+                  <Plus className="w-4 h-4" />
                   Add Sale
                 </>
               )}
             </button>
-            
-            
           </div>
         </form>
       </div>

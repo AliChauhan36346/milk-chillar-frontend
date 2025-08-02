@@ -4,42 +4,245 @@ import { useState, useEffect } from 'react';
 import { Milk, Scale, ShoppingCart, CheckCircle, User } from 'lucide-react';
 import SummaryCard from '@/components/ui/SummaryCard';
 import MilkLoader from '@/components/ui/Loader';
-import { useAuth } from '@/lib/auth/AuthContext'; // Replace next-auth with your auth
+import { useAuth } from '@/lib/auth/AuthContext';
 import { DynamicLayout } from '@/components/layouts/DynamicLayout';
 import { AddedList } from '@/components/ui/List/AddedList';
 import { RemainingList } from '@/components/ui/List/RemainingList';
-import { SalesFormModal } from '@/components/modals/SalesFormModal'; // We'll create this
-import ProtectedRoute from '@/components/ProtectedRoutes'; // Ensure this is set up correctly
+import { SalesFormModal } from '@/components/modals/SalesFormModal';
+import ProtectedRoute from '@/components/ProtectedRoutes';
+import { getSalesMetadata, createSale, updateSale } from '@/lib/api/sales';
 
 type Buyer = {
-  id: string;
+  id: number;
+  accountId: number;
   name: string;
+  accountCode: string;
   added: boolean;
   grossLiters: number;
   lr: number;
   fat: number;
+  netLiters: number;
   rate: number;
   amount: number;
+  amountReceived: number;
+  saleId?: number;
 };
 
 export default function SalesPage() {
-  const { user } = useAuth(); // Use your custom auth hook
-  const isAdmin = user?.role === 'admin'; // Check role from your auth system
-  const [isLoading, setIsLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [currentBuyer, setCurrentBuyer] = useState<Buyer | null>(null);
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
+  const [loading, setLoading] = useState(true);
+  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [buyers, setBuyers] = useState<Buyer[]>([]);
+  const [chillarReceiveTotal, setChillarReceiveTotal] = useState(0);
+  const [modalBuyer, setModalBuyer] = useState<Buyer | null>(null);
+  const [chillarId, setChillarId] = useState<number | null>(null);
+  const [revenueAccounts, setRevenueAccounts] = useState<{ accountId: number, accountName: string, accountCode: string }[]>([]);
 
-  // ... rest of your existing code ...
+  // Form state for live calculation
+  const [formValues, setFormValues] = useState({
+    grossLiters: 0,
+    lr: 0,
+    fat: 0,
+    netLiters: 0,
+    rate: 0,
+    amount: 0,
+    amountReceived: 0,
+    revenueAccountId: 0
+  });
 
-  // Sample data - replace with API calls
-  const [buyers, setBuyers] = useState<Buyer[]>([
-    { id: 'B001', name: 'Milk Depot 1', added: false, grossLiters: 0, lr: 0, fat: 0, rate: 42, amount: 0 },
-    { id: 'B002', name: 'Local Shop', added: false, grossLiters: 0, lr: 0, fat: 0, rate: 40, amount: 0 },
-    { id: 'B003', name: 'Hotel Grand', added: false, grossLiters: 0, lr: 0, fat: 0, rate: 45, amount: 0 },
-  ]);
+  const calculateNetLiters = (lr: number, fat: number, volume: number, tsStandard: number = 13): number => {
+    const fatOperations = 0.22 * fat + 0.72;
+    const lrOperations = lr / 4;
+    const snf = fatOperations + lrOperations;
+    const volumeOperations = (snf + fat) * volume;
+    const ts = volumeOperations / tsStandard;
+    return parseFloat(ts.toFixed(2));
+  };
 
-  const [chillarReceiveTotal, setChillarReceiveTotal] = useState(385); // Sample data
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  // Calculate net liters and amount
+  const calculateValues = (gross: number, lr: number, fat: number, rate: number) => {
+    const netLiters = calculateNetLiters(lr, fat, gross);
+    const amount = netLiters * rate;
+    return {
+      netLiters: netLiters,
+      amount: parseFloat(amount.toFixed(2))
+    };
+  };
+
+  // Handle input changes and recalculate
+  const handleInputChange = (field: string, value: number) => {
+    const newValues = {
+      ...formValues,
+      [field]: value || 0,
+    };
+
+    const { netLiters, amount } = calculateValues(
+      field === 'grossLiters' ? value : newValues.grossLiters,
+      field === 'lr' ? value : newValues.lr,
+      field === 'fat' ? value : newValues.fat,
+      field === 'rate' ? value : newValues.rate
+    );
+
+    newValues.netLiters = netLiters;
+    newValues.amount = amount;
+    setFormValues(newValues);
+  };
+
+  // Fetch metadata on date change
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      try {
+        const meta = await getSalesMetadata(date);
+        setChillarId(meta.chillarId);
+        setRevenueAccounts(meta.revenueAccounts);
+
+        // For demo, we'll set a static chillar receive total
+        // In real app, you'd fetch this from your chillar receive API
+        setChillarReceiveTotal(385);
+
+        // app/sales/page.tsx
+        const remaining: Buyer[] = meta.remainingAccounts.map(account => ({
+          id: account.accountId,
+          accountId: account.accountId,
+          name: account.accountName,
+          accountCode: account.accountCode,
+          added: false,
+          grossLiters: 0,
+          lr: 0,
+          fat: 0,
+          netLiters: 0,
+          rate: account.rate, // Now properly typed
+          amount: 0,
+          amountReceived: 0
+        }));
+
+        const added: Buyer[] = meta.addedSales.map(sale => ({
+          id: sale.accountId,
+          accountId: sale.accountId,
+          name: sale.accountName,
+          accountCode: sale.accountCode,
+          added: true,
+          grossLiters: sale.grossLiters,
+          lr: sale.lr,
+          fat: sale.fat,
+          netLiters: sale.netLiters,
+          rate: sale.rate,
+          amount: sale.totalAmount,
+          amountReceived: sale.amountReceived ?? 0,
+          saleId: sale.saleId
+        }));
+
+        setBuyers([...remaining, ...added]);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [date]);
+
+  // Update form values when modal opens
+  useEffect(() => {
+    if (modalBuyer) {
+      setFormValues({
+        grossLiters: modalBuyer.grossLiters,
+        lr: modalBuyer.lr,
+        fat: modalBuyer.fat,
+        netLiters: modalBuyer.netLiters,
+        rate: modalBuyer.rate,
+        amount: modalBuyer.amount,
+        amountReceived: modalBuyer.amountReceived,
+        revenueAccountId: revenueAccounts[0]?.accountId || 0
+      });
+    } else {
+      setFormValues({
+        grossLiters: 0,
+        lr: 0,
+        fat: 0,
+        netLiters: 0,
+        rate: 0,
+        amount: 0,
+        amountReceived: 0,
+        revenueAccountId: revenueAccounts[0]?.accountId || 0
+      });
+    }
+  }, [modalBuyer, revenueAccounts]);
+
+  const openForm = (buyer: Buyer) => setModalBuyer(buyer);
+  const closeForm = () => setModalBuyer(null);
+
+  const onSubmit = async (formData: {
+    grossLiters: number;
+    lr: number;
+    fat: number;
+    netLiters: number;
+    rate: number;
+    amount: number;
+    amountReceived: number;
+    revenueAccountId: number;
+  }) => {
+    if (!modalBuyer || !chillarId) return;
+
+    const payload = {
+      date,
+      accountId: modalBuyer.accountId,
+      revenueAccountId: formData.revenueAccountId,
+      chillarId,
+      grossLiters: formData.grossLiters,
+      lr: formData.lr,
+      fat: formData.fat,
+      netLiters: formData.netLiters,
+      rate: formData.rate,
+      amountReceived: formData.amountReceived
+    };
+
+    try {
+      if (modalBuyer.added && modalBuyer.saleId) {
+        await updateSale(modalBuyer.saleId, payload);
+      } else {
+        await createSale(payload);
+      }
+
+      // Refresh data after successful submission
+      const meta = await getSalesMetadata(date);
+      const updatedRemaining = meta.remainingAccounts.map(account => ({
+        id: account.accountId,
+        accountId: account.accountId,
+        name: account.accountName,
+        accountCode: account.accountCode,
+        added: false,
+        grossLiters: 0,
+        lr: 0,
+        fat: 0,
+        netLiters: 0,
+        rate: account.rate,
+        amount: 0,
+        amountReceived: 0
+      }));
+
+      const updatedAdded = meta.addedSales.map(sale => ({
+        id: sale.accountId,
+        accountId: sale.accountId,
+        name: sale.accountName,
+        accountCode: sale.accountCode,
+        added: true,
+        grossLiters: sale.grossLiters,
+        lr: sale.lr,
+        fat: sale.fat,
+        netLiters: sale.netLiters,
+        rate: sale.rate,
+        amount: sale.totalAmount,
+        amountReceived: sale.amountReceived ?? 0,
+        saleId: sale.saleId
+      }));
+
+      setBuyers([...updatedRemaining, ...updatedAdded]);
+      closeForm();
+    } catch (error) {
+      console.error('Error submitting sale:', error);
+      // Handle error (show toast, etc.)
+    }
+  };
 
   // Calculate totals
   const calculateTotals = () => {
@@ -54,164 +257,142 @@ export default function SalesPage() {
 
   const { salesTotal, amountTotal, stock, count } = calculateTotals();
 
-  useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 1000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const handleFormSubmit = (formData: Omit<Buyer, 'id' | 'name' | 'added' | 'rate'> & { rate?: number }) => {
-    if (!currentBuyer) return;
-
-    const updatedBuyers = buyers.map(buyer =>
-      buyer.id === currentBuyer.id
-        ? {
-          ...buyer,
-          added: true,
-          grossLiters: formData.grossLiters,
-          lr: formData.lr,
-          fat: formData.fat,
-          amount: formData.amount,
-          ...(isAdmin && formData.rate ? { rate: formData.rate } : {})
-        }
-        : buyer
-    );
-
-    setBuyers(updatedBuyers);
-    setShowModal(false);
-    setCurrentBuyer(null);
-  };
-
-  const handleBuyerClick = (buyer: Buyer) => {
-    setCurrentBuyer(buyer);
-    setShowModal(true);
-  };
-
-  const calculateNetLiters = (gross: number, lr: number, fat: number) => {
-    return gross - (lr * fat * 0.01);
-  };
-
-  if (isLoading) return <MilkLoader />;
+  if (loading) return <MilkLoader />;
 
   return (
     <ProtectedRoute allowedRoles={['admin', 'chillarincharge']}>
-      
-    <DynamicLayout allowedRoles={['admin', 'chillarincharge']}>
-      <div className="max-w-6xl mx-auto p-1 bg-gray-50 min-h-screen">
-        {/* Header */}
-        <header className="bg-white shadow-sm rounded-lg p-4 mb-6">
-          <h1 className="text-2xl font-bold flex items-center gap-2 text-blue-600">
-            <ShoppingCart className="w-6 h-6" />
-            Milk Sales
-          </h1>
-          <div className="mt-3">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="p-2 border border-gray-300 rounded-lg"
+      <DynamicLayout allowedRoles={['admin', 'chillarincharge']}>
+        <div className="max-w-6xl mx-auto p-1 bg-gray-50 min-h-screen">
+          {/* Header Section */}
+          <div className="bg-white shadow-sm rounded-lg p-4 mb-6">
+            <h1 className="text-2xl font-bold flex items-center gap-2 text-blue-600">
+              <ShoppingCart className="w-6 h-6" />
+              Milk Sales
+            </h1>
+            <div className="flex flex-wrap gap-4 mt-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                <input
+                  type="date"
+                  value={date}
+                  onChange={e => setDate(e.target.value)}
+                  className="p-2 border border-gray-300 rounded-lg"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <SummaryCard
+              title="Total Sales"
+              value={`${salesTotal.toFixed(2)} Ltrs`}
+              icon={<Milk className="w-5 h-5" />}
+              color="blue"
+            />
+            <SummaryCard
+              title="Chillar Receive"
+              value={`${chillarReceiveTotal.toFixed(2)} Ltrs`}
+              icon={<Scale className="w-5 h-5" />}
+              color="green"
+            />
+            <SummaryCard
+              title="Current Stock"
+              value={`${stock.toFixed(2)} Ltrs`}
+              icon={<Milk className="w-5 h-5" />}
+              color={stock >= 0 ? 'purple' : 'red'}
+            />
+            {isAdmin && (
+              <SummaryCard
+                title="Total Amount"
+                value={`Rs${amountTotal.toFixed(2)}`}
+                icon={<Scale className="w-5 h-5" />}
+                color="yellow"
+              />
+            )}
+          </div>
+
+          {/* Buyers Lists */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <RemainingList
+              title="Remaining Buyers"
+              items={buyers.filter(b => !b.added)}
+              getKey={b => String(b.id)}
+              getName={b => b.name}
+              getId={b => b.accountCode}
+              getStatusLabel={b => (
+                isAdmin ? (
+                  <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm">
+                    Rs{b.rate}/Ltr
+                  </span>
+                ) : (
+                  <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm">
+                    Pending
+                  </span>
+                )
+              )}
+              onItemClick={openForm}
+              icon={<User className="w-5 h-5" />}
+            />
+
+           
+
+            <AddedList
+              title="Added Buyers"
+              items={buyers.filter(b => b.added)}
+              getKey={b => String(b.id)}
+              getName={b => b.name}
+              getId={b => b.accountCode}
+              getDetails={b => (
+                <div className="text-right space-y-1">
+                  <p className="text-sm font-medium">{b.grossLiters.toFixed(2)} Ltrs</p>
+                  <div className="flex justify-between text-xs text-gray-600">
+                    <span>LR: {b.lr.toFixed(2)}</span>
+                    <span> Fat: {b.fat.toFixed(2)}</span>
+                    <span> Net: {b.netLiters.toFixed(2)}</span>
+                  </div>
+                  <p className="text-xs font-medium">Received: {b.amountReceived.toFixed(2)}</p>
+                  {isAdmin && (
+                    <p className="text-xs text-gray-600">Total: {b.amount.toFixed(2)}</p>
+                  )}
+                </div>
+              )}
+              onItemClick={openForm}
+              icon={<CheckCircle className="w-5 h-5" />}
             />
           </div>
-        </header>
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <SummaryCard
-            title="Total Sales"
-            value={`${salesTotal.toFixed(2)} Ltrs`}
-            icon={<Milk className="w-5 h-5" />}
-            color="blue"
-          />
-          <SummaryCard
-            title="Chillar Receive"
-            value={`${chillarReceiveTotal.toFixed(2)} Ltrs`}
-            icon={<Scale className="w-5 h-5" />}
-            color="green"
-          />
-          <SummaryCard
-            title="Current Stock"
-            value={`${stock.toFixed(2)} Ltrs`}
-            icon={<Milk className="w-5 h-5" />}
-            color={stock >= 0 ? 'purple' : 'red'}
-          />
-          {isAdmin && (
-            <SummaryCard
-              title="Total Amount"
-              value={`₹${amountTotal.toFixed(2)}`}
-              icon={<Scale className="w-5 h-5" />}
-              color="yellow"
-            />
-          )}
-        </div>
-
-        {/* Buyers Lists */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <RemainingList
-            title="Remaining Buyers"
-            items={buyers.filter(b => !b.added)}
-            getKey={(item) => item.id}
-            getName={(item) => item.name}
-            getId={(item) => item.id}
-            getStatusLabel={(item) => (
-              isAdmin ? (
-                <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm">
-                  ₹{item.rate}/Ltr
-                </span>
-              ) : (
-                <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm">
-                  Pending
-                </span>
-              )
-            )}
-            onItemClick={handleBuyerClick}
-            icon={<User className="w-5 h-5" />}
-          />
-
-          <AddedList
-            title="Added Buyers"
-            items={buyers.filter(b => b.added)}
-            getKey={(item) => item.id}
-            getName={(item) => item.name}
-            getId={(item) => item.id}
-            getDetails={(item) => (
-              <div className="text-right">
-                <p className="text-sm font-medium">{item.grossLiters} Ltrs</p>
-                {isAdmin && (
-                  <p className="text-xs text-gray-600">₹{item.amount.toFixed(2)}</p>
-                )}
-              </div>
-            )}
-            onItemClick={handleBuyerClick}
-            icon={<CheckCircle className="w-5 h-5" />}
+          {/* Modal */}
+          <SalesFormModal
+            isOpen={!!modalBuyer}
+            onClose={closeForm}
+            onSubmit={onSubmit}
+            initialData={
+              modalBuyer
+                ? {
+                  grossLiters: modalBuyer.grossLiters,
+                  lr: modalBuyer.lr,
+                  fat: modalBuyer.fat,
+                  netLiters: modalBuyer.netLiters,
+                  rate: modalBuyer.rate,
+                  amount: modalBuyer.amount,
+                  amountReceived: modalBuyer.amountReceived,
+                  revenueAccountId: formValues.revenueAccountId,
+                  date: date // Add date here
+                }
+                : undefined
+            }
+            buyerName={modalBuyer?.name || ''}
+            buyerId={modalBuyer?.accountCode || ''}
+            date={date}
+            isAdmin={isAdmin}
+            isFromAddedList={modalBuyer?.added || false}
+            revenueAccounts={revenueAccounts}
+            formValues={formValues}
+            onInputChange={handleInputChange}
           />
         </div>
-
-        {/* We'll implement the modal here in the next step */}
-
-        // In your SalesPage component, add the modal at the bottom:
-        <SalesFormModal
-          isOpen={showModal}
-          onClose={() => {
-            setShowModal(false);
-            setCurrentBuyer(null);
-          }}
-          onSubmit={handleFormSubmit}
-          initialData={currentBuyer ? {
-            grossLiters: currentBuyer.grossLiters,
-            lr: currentBuyer.lr,
-            fat: currentBuyer.fat,
-            rate: currentBuyer.rate,
-            amount: currentBuyer.amount,
-            date: date
-          } : undefined}
-          buyerName={currentBuyer?.name || ''}
-          buyerId={currentBuyer?.id || ''}
-          date={date}
-          isAdmin={isAdmin}
-          isFromAddedList={currentBuyer?.added || false}
-        />
-      </div>
-    </DynamicLayout>
+      </DynamicLayout>
     </ProtectedRoute>
   );
 }
