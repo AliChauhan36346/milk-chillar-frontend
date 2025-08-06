@@ -92,8 +92,15 @@ export function SalesFormModal({
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    const numValue = parseFloat(value) || 0;
-    onInputChange(name, numValue);
+    
+    // Update the string values in formData
+    setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // Only call onInputChange for numeric fields
+    if (name !== 'revenueAccountId') {
+      const numValue = parseFloat(value) || 0;
+      onInputChange(name, numValue);
+    }
   };
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -102,6 +109,13 @@ export function SalesFormModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    // Convert revenue account ID from string to number
+    const revenueAccountId = parseInt(formData.revenueAccountId, 10);
+    if (isNaN(revenueAccountId)) {
+      console.error('Invalid revenue account ID');
+      return;
+    }
+
     onSubmit({
       grossLiters: formValues.grossLiters,
       lr: formValues.lr,
@@ -110,7 +124,7 @@ export function SalesFormModal({
       rate: formValues.rate,
       amount: formValues.amount,
       amountReceived: formValues.amountReceived,
-      revenueAccountId: formValues.revenueAccountId,
+      revenueAccountId: revenueAccountId,
       date: formData.date
     });
   };

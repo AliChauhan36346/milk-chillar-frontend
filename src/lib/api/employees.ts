@@ -8,6 +8,8 @@ export type Employee = {
     contactNumber: string;
     salary: number;
     isActive: boolean;
+    chillarId: number;
+    chillarName: string;
 };
 
 export interface PagedEmployeeResponse {

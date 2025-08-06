@@ -107,6 +107,7 @@ export default function EmployeesPage() {
                 <Table.Head>Designation</Table.Head>
                 <Table.Head>Contact</Table.Head>
                 <Table.Head>Salary</Table.Head>
+                <Table.Head>Chillar</Table.Head>
                 <Table.Head>Status</Table.Head>
                 <Table.Head>Actions</Table.Head>
               </Table.Row>
@@ -114,11 +115,11 @@ export default function EmployeesPage() {
             <Table.Body>
               {isLoading ? (
                 <Table.Row>
-                  <Table.Cell colSpan={6} className="text-center">Loading...</Table.Cell>
+                  <Table.Cell colSpan={7} className="text-center">Loading...</Table.Cell>
                 </Table.Row>
               ) : employees.length === 0 ? (
                 <Table.Row>
-                  <Table.Cell colSpan={6} className="text-center">No employees found</Table.Cell>
+                  <Table.Cell colSpan={7} className="text-center">No employees found</Table.Cell>
                 </Table.Row>
               ) : (
                 employees.map((employee) => (
@@ -131,6 +132,11 @@ export default function EmployeesPage() {
                     </Table.Cell>
                     <Table.Cell>{employee.contactNumber}</Table.Cell>
                     <Table.Cell>Rs. {employee.salary.toLocaleString()}</Table.Cell>
+                    <Table.Cell>
+                      <Badge className="bg-blue-100 text-blue-800">
+                        {employee.chillarName}
+                      </Badge>
+                    </Table.Cell>
                     <Table.Cell>
                       <Badge
                         className={

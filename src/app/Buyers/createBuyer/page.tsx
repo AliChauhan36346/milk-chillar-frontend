@@ -58,7 +58,7 @@ export default function CreateBuyerPage() {
     try {
       const tenantId = user?.tenantId || 3;
       const mainAccounts = await getMainAccounts(tenantId);
-      const buyersMain = mainAccounts.find(acc => acc.mainAccountCode === '105');
+      const buyersMain = mainAccounts.find(acc => acc.mainAccountCode === '100');
       if (!buyersMain) {
         toast({ title: 'Buyers main account not found (code 105)', variant: 'error' });
         return;

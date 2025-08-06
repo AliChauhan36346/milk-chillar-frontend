@@ -1,66 +1,59 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Users, List, Plus, Search, CreditCard, AlertCircle } from 'lucide-react';
+import { Search, Filter } from 'lucide-react';
 import { DynamicLayout } from '@/components/layouts/DynamicLayout';
 import ProtectedRoute from '@/components/ProtectedRoutes';
-import { getBuyers } from '@/lib/api/buyers';
+import { getBuyersPaged, Buyer } from '@/lib/api/buyers';
 import { useAuth } from '@/lib/auth/AuthContext';
+import { useToast } from '@/hooks/useToast';
 
-type BuyerStats = {
-  total_buyers: number;
-  active_buyers: number;
-  total_credit_limit: number;
-  total_outstanding: number;
-  recent_transactions: {
-    id: number;
-    buyer_name: string;
-    amount: number;
-    date: string;
-    type: 'credit' | 'debit';
-  }[];
-  low_credit_buyers: {
-    id: number;
-    name: string;
-    credit_limit: number;
-    outstanding: number;
-  }[];
-};
-
-export default function BuyersPage() {
+export default function BuyerListPage() {
   const router = useRouter();
-  const [stats, setStats] = useState<BuyerStats | null>(null);
+  const { user } = useAuth?.() || {};
+  const [buyers, setBuyers] = useState<Buyer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { user } = useAuth();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [pageNumber, setPageNumber] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const { toast } = useToast();
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const [currentStep, setCurrentStep] = useState<'account' | 'supplier'>('account');
+
+  // Debounce search
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setPageNumber(1);
+      fetchBuyers();
+    }, 300);
+    return () => clearTimeout(handler);
+    // eslint-disable-next-line
+  }, [searchQuery]);
 
   useEffect(() => {
-    if (user?.tenantId) {
-      fetchStats();
-    }
+    fetchBuyers();
     // eslint-disable-next-line
-  }, [user]);
+  }, [statusFilter, pageNumber, pageSize]);
 
-  const fetchStats = async () => {
+  const fetchBuyers = async () => {
+    setIsLoading(true);
     try {
-      if (!user?.tenantId) return;
-      const buyers = await getBuyers(user.tenantId);
-
-      const total_buyers = buyers.length;
-      const active_buyers = buyers.filter(b => b.isActive).length;
-      const total_credit_limit = buyers.reduce((sum, b) => sum + b.creditLimit, 0);
-
-      setStats({
-        total_buyers,
-        active_buyers,
-        total_credit_limit,
-        // TODO: The following stats are not yet available from the API
-        total_outstanding: 0,
-        recent_transactions: [],
-        low_credit_buyers: [],
+      const tenantId = user?.tenantId || 3;
+      const isActive = statusFilter === 'all' ? undefined : statusFilter === 'active';
+      const data = await getBuyersPaged({
+        tenantId,
+        pageNumber,
+        pageSize,
+        search: searchQuery,
+        isActive,
       });
+      setBuyers(data.items);
+      setTotalPages(data.totalPages);
     } catch (error) {
-      console.error('Error fetching buyer stats:', error);
-      // TODO: Add proper error handling/notification
+      toast({ title: 'Error fetching buyers', description: (error as Error)?.message || 'An error occurred', variant: 'error' });
+      console.error('Error fetching buyers:', error);
     } finally {
       setIsLoading(false);
     }
@@ -85,191 +78,124 @@ export default function BuyersPage() {
           {/* Header */}
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold text-gray-800">Buyers</h1>
-            <div className="flex gap-4">
-              <button
-                onClick={() => router.push('/Buyers/buyerList')}
-                className="flex items-center gap-2 px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <List className="w-5 h-5" />
-                View All Buyers
-              </button>
-              <button
-                onClick={() => router.push('/Buyers/createBuyer')}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                <Plus className="w-5 h-5" />
-                Add New Buyer
-              </button>
-            </div>
+            <button
+              onClick={() => router.push('/Buyers/createBuyer')}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Add New Buyer
+            </button>
           </div>
 
-          {/* Quick Actions */}
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-            <button
-              onClick={() => router.push('/Buyers/buyerList')}
-              className="flex items-center gap-4 p-6 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow"
-            >
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <Users className="w-6 h-6 text-blue-600" />
+          {/* Filters */}
+          <div className="flex gap-4 mb-6">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  placeholder="Search buyers..."
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                  }}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
               </div>
-              <div className="text-left">
-                <h3 className="text-sm font-medium text-gray-500">Total Buyers</h3>
-                <p className="text-2xl font-semibold text-gray-900">{stats?.total_buyers || 0}</p>
-              </div>
-            </button>
-
-            <button
-              onClick={() => router.push('/Buyers/buyerList?status=active')}
-              className="flex items-center gap-4 p-6 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow"
-            >
-              <div className="p-3 bg-green-100 rounded-lg">
-                <Users className="w-6 h-6 text-green-600" />
-              </div>
-              <div className="text-left">
-                <h3 className="text-sm font-medium text-gray-500">Active Buyers</h3>
-                <p className="text-2xl font-semibold text-gray-900">{stats?.active_buyers || 0}</p>
-              </div>
-            </button>
-
-            <button
-              onClick={() => router.push('/Buyers/buyerList?sort=credit')}
-              className="flex items-center gap-4 p-6 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow"
-            >
-              <div className="p-3 bg-purple-100 rounded-lg">
-                <CreditCard className="w-6 h-6 text-purple-600" />
-              </div>
-              <div className="text-left">
-                <h3 className="text-sm font-medium text-gray-500">Total Credit Limit</h3>
-                <p className="text-2xl font-semibold text-gray-900">₨{(stats?.total_credit_limit || 0).toFixed(2)}</p>
-              </div>
-            </button>
-            {/*
-            <button
-              onClick={() => router.push('/Buyers/buyerList?sort=outstanding')}
-              className="flex items-center gap-4 p-6 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow"
-            >
-              <div className="p-3 bg-red-100 rounded-lg">
-                <AlertCircle className="w-6 h-6 text-red-600" />
-              </div>
-              <div className="text-left">
-                <h3 className="text-sm font-medium text-gray-500">Total Outstanding</h3>
-                <p className="text-2xl font-semibold text-gray-900">₨{(stats?.total_outstanding || 0).toFixed(2)}</p>
-              </div>
-            </button>
-            */}
-          </div>
-          
-
-          {/* Recent Transactions */}
-          {/*
-          <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold text-gray-800">Recent Transactions</h2>
-              <button
-                onClick={() => router.push('/Buyers/buyerList?view=transactions')}
-                className="text-sm text-blue-600 hover:text-blue-700"
-              >
-                View All
-              </button>
             </div>
+            <select
+              value={statusFilter}
+              onChange={(e) => { setStatusFilter(e.target.value as 'all' | 'active' | 'inactive'); setPageNumber(1); }}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="all">All Status</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
+
+          {/* Table */}
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <th className="px-6 py-3">Buyer</th>
-                    <th className="px-6 py-3">Amount</th>
-                    <th className="px-6 py-3">Date</th>
-                    <th className="px-6 py-3">Type</th>
+                  <tr className="bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3">Account Code</th>
+                    <th className="px-6 py-3">Name</th>
+                    <th className="px-6 py-3">Khata Number</th>
+                    <th className="px-6 py-3">Rate</th>
+                    <th className="px-6 py-3">Credit Limit</th>
+                    <th className="px-6 py-3">Status</th>
+                    <th className="px-6 py-3">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {stats?.recent_transactions.map((transaction) => (
-                    <tr key={transaction.id} className="hover:bg-gray-50">
+                  {buyers.map((buyer) => (
+                    <tr key={buyer.buyerId} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {buyer.accountCode}
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <button
-                          onClick={() => router.push(`/Buyers/buyerDetail?id=${transaction.id}`)}
+                          onClick={() => router.push(`/Buyers/buyerDetail?id=${buyer.buyerId}`)}
                           className="text-sm font-medium text-blue-600 hover:text-blue-700"
                         >
-                          {transaction.buyer_name}
+                          {buyer.accountName}
                         </button>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        ₨{transaction.amount.toFixed(2)}
+                        {buyer.khataNumber}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(transaction.date).toLocaleDateString()}
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {buyer.rate?.toFixed(2)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {buyer.creditLimit?.toFixed(2)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          transaction.type === 'credit' 
+                          buyer.isActive 
                             ? 'bg-green-100 text-green-800' 
                             : 'bg-red-100 text-red-800'
                         }`}>
-                          {transaction.type === 'credit' ? 'Credit' : 'Debit'}
+                          {buyer.isActive ? 'Active' : 'Inactive'}
                         </span>
                       </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-          */}
-
-          {/* Low Credit Buyers */}
-          {/*
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold text-gray-800">Low Credit Buyers</h2>
-              <button
-                onClick={() => router.push('/Buyers/buyerList?view=low-credit')}
-                className="text-sm text-blue-600 hover:text-blue-700"
-              >
-                View All
-              </button>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <th className="px-6 py-3">Buyer</th>
-                    <th className="px-6 py-3">Credit Limit</th>
-                    <th className="px-6 py-3">Outstanding</th>
-                    <th className="px-6 py-3">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {stats?.low_credit_buyers.map((buyer) => (
-                    <tr key={buyer.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         <button
-                          onClick={() => router.push(`/Buyers/buyerDetail?id=${buyer.id}`)}
-                          className="text-sm font-medium text-blue-600 hover:text-blue-700"
+                          onClick={() => router.push(`/Buyers/createBuyer?id=${buyer.buyerId}`)}
+                          className="text-blue-600 hover:text-blue-700"
                         >
-                          {buyer.name}
+                          Edit
                         </button>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        ₨{buyer.credit_limit.toFixed(2)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        ₨{buyer.outstanding.toFixed(2)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                          Low Credit
-                        </span>
-                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           </div>
-          */}
+
+          {/* Pagination */}
+          <div className="flex justify-end mt-4 gap-2">
+            <button
+              onClick={() => setPageNumber((p) => Math.max(1, p - 1))}
+              disabled={pageNumber === 1}
+              className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <span className="px-2 py-1">Page {pageNumber} of {totalPages}</span>
+            <button
+              onClick={() => setPageNumber((p) => Math.min(totalPages, p + 1))}
+              disabled={pageNumber === totalPages}
+              className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
         </div>
       </DynamicLayout>
     </ProtectedRoute>
   );
-} 
+}

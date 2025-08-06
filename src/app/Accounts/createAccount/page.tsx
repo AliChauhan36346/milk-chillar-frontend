@@ -7,7 +7,7 @@ import { BackButton } from '@/components/ui/BackButton';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
 import { Select } from '@/components/ui/Select';
-import { AccountFormModal } from '@/components/modals/AccountFormModal';
+import AccountFormModal from '@/components/modals/AccountFormModal';
 import ProtectedRoute from '@/components/ProtectedRoutes';
 import { getMainAccounts, getSubAccounts, createMainAccount, createSubAccount, createAccount, MainAccount, SubAccount, type CreateAccountRequest } from '@/lib/api/accounts';
 import { useAuth } from '@/lib/auth/AuthContext';
@@ -24,10 +24,11 @@ export default function CreateAccountPage() {
   const searchParams = useSearchParams();
   const { user } = useAuth();
   const accountId = searchParams.get('id');
+  const accountData = searchParams.get('data') ? JSON.parse(decodeURIComponent(searchParams.get('data') || '')) : null;
   const mainAccountId = searchParams.get('mainId');
   const subAccountId = searchParams.get('subId');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoading, setIsLoading] = useState(!!accountId);
+  const [isLoading, setIsLoading] = useState(false);
   const [mainAccounts, setMainAccounts] = useState<MainAccount[]>([]);
   const [subAccounts, setSubAccounts] = useState<SubAccount[]>([]);
   const [formData, setFormData] = useState<AccountFormData>({
@@ -42,52 +43,63 @@ export default function CreateAccountPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchMainAccounts();
-    if (accountId) {
-      fetchAccountDetails();
-    }
-  }, [accountId]);
-
-  useEffect(() => {
-    if (formData.mainAccountId) {
-      fetchSubAccounts();
-    }
-  }, [formData.mainAccountId]);
+    const initializeData = async () => {
+      // First, fetch main accounts
+      await fetchMainAccounts();
+      
+      // If we have a mainAccountId, set it and fetch its sub accounts
+      if (mainAccountId) {
+        setFormData(prev => ({ ...prev, mainAccountId: parseInt(mainAccountId) }));
+        const subAccounts = await fetchSubAccounts(parseInt(mainAccountId));
+        
+        // After sub accounts are loaded, set the subAccountId if it exists
+        if (subAccountId && subAccounts) {
+          setFormData(prev => ({ ...prev, subAccountId: parseInt(subAccountId) }));
+        }
+      }
+      
+      if (accountData) {
+        setAccountDetails();
+      }
+    };
+    
+    initializeData();
+  }, []);
 
   const fetchMainAccounts = async () => {
     try {
       if (!user?.tenantId) return;
       const data = await getMainAccounts(user.tenantId);
       setMainAccounts(data);
+      return data;
     } catch (error) {
       console.error('Error fetching main accounts:', error);
       // TODO: Add proper error handling/notification
     }
   };
 
-  const fetchSubAccounts = async () => {
-    if (!user?.tenantId || !formData.mainAccountId) return;
+  const fetchSubAccounts = async (mainId?: number) => {
+    if (!user?.tenantId) return;
+    const mainAccountId = mainId || formData.mainAccountId;
+    if (!mainAccountId) return;
+    
     try {
-      const data = await getSubAccounts(user.tenantId, formData.mainAccountId);
+      const data = await getSubAccounts(user.tenantId, mainAccountId);
       setSubAccounts(data);
+      return data;
     } catch (error) {
       console.error('Error fetching sub accounts:', error);
+      return null;
     }
   };
 
-  const fetchAccountDetails = async () => {
-    try {
-      // TODO: Replace with your API endpoint
-      const response = await fetch(`/api/accounts/${accountId}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch account details');
-      }
-      const data = await response.json();
-      setFormData(data);
-    } catch (error) {
-      console.error('Error fetching account details:', error);
-      // TODO: Add proper error handling/notification
-    } finally {
+  const setAccountDetails = () => {
+    if (accountData) {
+      setFormData({
+        mainAccountId: accountData.mainAccount.mainAccountId,
+        subAccountId: accountData.subAccount.subAccountId,
+        name: accountData.name
+      });
       setIsLoading(false);
     }
   };
@@ -111,7 +123,14 @@ export default function CreateAccountPage() {
           throw new Error('Failed to update account');
         }
       } else {
-        await createAccount({ tenantId: user.tenantId, ...formData });
+        if (formData.subAccountId === undefined) {
+          throw new Error('subAccountId is required');
+        }
+        await createAccount({
+          tenantId: user.tenantId,
+          subAccountId: formData.subAccountId,
+          name: formData.name
+        });
       }
       router.push('/Accounts/chartOfAccounts');
     } catch (error) {
@@ -154,9 +173,15 @@ export default function CreateAccountPage() {
     }
   };
 
-  const handleMainAccountChange = (mainAccountId: number) => {
-    setFormData(prev => ({ ...prev, mainAccountId, subAccountId: undefined }));
-    setSubAccounts([]);
+  const handleMainAccountChange = async (mainAccountId: number) => {
+    setFormData(prev => ({ 
+      ...prev, 
+      mainAccountId,
+      // Clear subAccountId when manually changing main account
+      subAccountId: undefined
+    }));
+    // Fetch sub accounts whenever main account changes
+    await fetchSubAccounts(mainAccountId);
   };
 
   const handleMainAccountSubmit = async (data: any) => {
@@ -314,10 +339,15 @@ export default function CreateAccountPage() {
             onSubmit={handleSubAccountSubmit}
             type="sub"
             mainAccounts={mainAccounts.map(acc => ({
-              main_account_id: acc.mainAccountId,
               main_account_code: acc.mainAccountCode,
               name: acc.name
             }))}
+            initialMainAccount={
+              formData.mainAccountId ? {
+                main_account_code: mainAccounts.find(acc => acc.mainAccountId === formData.mainAccountId)?.mainAccountCode || '',
+                name: mainAccounts.find(acc => acc.mainAccountId === formData.mainAccountId)?.name || ''
+              } : undefined
+            }
           />
         </div>
       </DynamicLayout>

@@ -80,6 +80,11 @@ export const getSubAccounts = async (tenantId: number, mainAccountId: number) =>
   return response.data;
 };
 
+export const getSubAccountsByMainCode = async (tenantId: number, mainAccountCode: string) => {
+  const response = await api.get<SubAccount[]>(`/accounts/sub/by-main-code?tenantId=${tenantId}&mainAccountCode=${mainAccountCode}`);
+  return response.data;
+};
+
 // Accounts API
 export const createAccount = async (data: CreateAccountRequest) => {
   const response = await api.post('/accounts', data);

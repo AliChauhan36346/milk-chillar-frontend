@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
 import { Select } from '@/components/ui/Select';
 import ProtectedRoute from '@/components/ProtectedRoutes';
-import { getMainAccounts, getSubAccounts, getAccounts, createAccount, MainAccount, SubAccount, Account } from '@/lib/api/accounts';
+import { getMainAccounts, getSubAccounts, getSubAccountsByMainCode, getAccounts, createAccount, MainAccount, SubAccount, Account } from '@/lib/api/accounts';
 import { createSupplier, updateSupplier, getSupplierById, Supplier } from '@/lib/api/suppliers';
 import { getEmployees, Employee } from '@/lib/api/employees'; // Import getEmployees
 import { useAuth } from '@/lib/auth/AuthContext';
@@ -68,8 +68,7 @@ export default function CreateSupplierPage() {
   const fetchSuppliersSubAccounts = async () => {
     try {
       const tenantId = user?.tenantId || 3;
-      // Directly fetch sub accounts for main account ID 202
-      const subAccs = await getSubAccounts(tenantId, 13);
+      const subAccs = await getSubAccountsByMainCode(tenantId, '200');
       setSubAccounts(subAccs);
     } catch (error) {
       toast({ title: 'Error fetching sub accounts', description: (error as Error)?.message || 'An error occurred', variant: 'error' });

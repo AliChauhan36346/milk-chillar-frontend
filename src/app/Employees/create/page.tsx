@@ -1,6 +1,6 @@
 //src/app/Employees/create/page.tsx
 'use client';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { DynamicLayout } from '@/components/layouts/DynamicLayout';
 import { Button } from '@/components/ui/Button';
@@ -19,11 +19,14 @@ const designations = [
   { value: 'admin', label: 'Admin' },
 ];
 
+import { getChillars, Chillar } from '@/lib/api/chillar';
+
 type FormData = {
   fullName: string;
   designation: string;
   contactNumber: string;
   salary: string;
+  chillarId: string;
 };
 
 export default function CreateEmployeePage() {
@@ -34,8 +37,10 @@ export default function CreateEmployeePage() {
     designation: '',
     contactNumber: '',
     salary: '',
+    chillarId: '',
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [chillars, setChillars] = useState<Chillar[]>([]);
 
   // Use useCallback to prevent unnecessary re-renders
   const handleInputChange = useCallback((field: keyof FormData) => {
@@ -48,17 +53,35 @@ export default function CreateEmployeePage() {
     };
   }, []);
 
-  const handleSelectChange = useCallback((value: string) => {
+  const handleSelectChange = useCallback((field: 'designation' | 'chillarId') => (value: string) => {
     setFormData(prev => ({
       ...prev,
-      designation: value
+      [field]: value
     }));
   }, []);
+
+  useEffect(() => {
+    const fetchChillars = async () => {
+      try {
+        const data = await getChillars();
+        setChillars(data);
+      } catch (error) {
+        console.error('Error fetching chillars:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to fetch chillars',
+          variant: 'error',
+        });
+      }
+    };
+
+    fetchChillars();
+  }, [toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.fullName || !formData.designation || !formData.contactNumber || !formData.salary) {
+    if (!formData.fullName || !formData.designation || !formData.contactNumber || !formData.salary || !formData.chillarId) {
       toast({
         title: 'Error',
         description: 'Please fill all required fields',
@@ -75,7 +98,8 @@ export default function CreateEmployeePage() {
         designation: formData.designation,
         contactNumber: formData.contactNumber,
         salary: parseFloat(formData.salary),
-        isActive: true
+        isActive: true,
+        chillarId: parseInt(formData.chillarId, 10)
       });
 
       toast({
@@ -127,7 +151,7 @@ export default function CreateEmployeePage() {
                   <Select
                     id="designation"
                     value={formData.designation}
-                    onChange={handleSelectChange}
+                    onChange={handleSelectChange('designation')}
                     options={designations}
                     placeholder="Select designation"
                     disabled={isLoading}
@@ -154,6 +178,21 @@ export default function CreateEmployeePage() {
                     min="0"
                     value={formData.salary}
                     onChange={handleInputChange('salary')}
+                    disabled={isLoading}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="chillar">Chillar</Label>
+                  <Select
+                    id="chillar"
+                    value={formData.chillarId}
+                    onChange={handleSelectChange('chillarId')}
+                    options={chillars.map(chillar => ({
+                      value: chillar.chillarId.toString(),
+                      label: `${chillar.name} (${chillar.location})`
+                    }))}
+                    placeholder="Select chillar"
                     disabled={isLoading}
                   />
                 </div>
