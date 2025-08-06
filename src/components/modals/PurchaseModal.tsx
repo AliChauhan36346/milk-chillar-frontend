@@ -3,6 +3,8 @@
 import { Sun, Moon, Milk, Save, UserPlus, Calendar } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
+import { ExpenseAccount } from '@/lib/api/purchases';
+
 type PurchaseModalProps = {
   isOpen: boolean;
   onClose: () => void;
@@ -10,14 +12,18 @@ type PurchaseModalProps = {
     morningQuantity?: number; 
     eveningQuantity?: number;
     rate?: number;
-    date: string 
+    date: string;
+    expenseAccountId?: number;
   }) => void;
   supplier?: {
-    id: string;
+    id: number;
     name: string;
+    code: string;
   } | null;
   time: 'morning' | 'evening' | 'both';
   isAdmin: boolean;
+  expenseAccounts: ExpenseAccount[];
+  selectedExpenseAccount: number | null;
   initialData?: {
     morningQuantity?: number;
     eveningQuantity?: number;
@@ -33,11 +39,14 @@ export default function PurchaseModal({
   supplier,
   time,
   isAdmin,
+  expenseAccounts,
+  selectedExpenseAccount,
   initialData
 }: PurchaseModalProps) {
   const [morningQuantity, setMorningQuantity] = useState<number | ''>('');
   const [eveningQuantity, setEveningQuantity] = useState<number | ''>('');
   const [rate, setRate] = useState<number | ''>('');
+  const [expenseAccountId, setExpenseAccountId] = useState<number | null>(selectedExpenseAccount);
   const [selectedDate, setSelectedDate] = useState(
     initialData?.date || new Date().toISOString().split('T')[0]
   );
@@ -58,16 +67,18 @@ export default function PurchaseModal({
       setRate('');
       setSelectedDate(new Date().toISOString().split('T')[0]);
     }
-  }, [initialData]);
+    setExpenseAccountId(selectedExpenseAccount);
+  }, [initialData, selectedExpenseAccount]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     const submitData = {
       date: selectedDate,
-      morningQuantity: time !== 'evening' ? Number(morningQuantity) || 0 : undefined,
-      eveningQuantity: time !== 'morning' ? Number(eveningQuantity) || 0 : undefined,
-      rate: isAdmin ? Number(rate) || 0 : undefined
+      morningQuantity: time !== 'evening' ? Number(morningQuantity) || undefined : undefined,
+      eveningQuantity: time !== 'morning' ? Number(eveningQuantity) || undefined : undefined,
+      rate: isAdmin ? Number(rate) || undefined : undefined,
+      expenseAccountId: expenseAccountId || undefined
     };
 
     onSubmit(submitData);
@@ -107,7 +118,7 @@ export default function PurchaseModal({
                   <label className="block text-sm font-medium text-gray-700 mb-1">Supplier Details</label>
                   <div className="p-3 bg-gray-100 rounded-lg border border-gray-200">
                     <p className="font-bold text-lg">{supplier.name}</p>
-                    <p className="text-sm text-gray-700 font-medium">ID: {supplier.id}</p>
+                    <p className="text-sm text-gray-700 font-medium">Code: {supplier.code}</p>
                   </div>
                 </div>
               )}

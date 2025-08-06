@@ -24,7 +24,7 @@ export function AddedList<T>({
   colorClass = "green"
 }: AddedListProps<T>) {
   return (
-    <div className={`bg-${colorClass}-50 rounded-xl p-4 border border-${colorClass}-100`}>
+    <div className={`bg-${colorClass}-50 rounded-xl p-3 border border-${colorClass}-100`}>
       <h3 className={`text-lg font-semibold mb-4 flex items-center gap-2 text-${colorClass}-700`}>
         {icon}
         {title} ({items.length})
@@ -33,7 +33,7 @@ export function AddedList<T>({
         {items.map((item) => (
           <div
             key={getKey(item)}
-            className="bg-white p-4 rounded-lg shadow-sm cursor-pointer hover:bg-green-50 transition-colors"
+            className="bg-white p-2 rounded-lg shadow-sm cursor-pointer hover:bg-green-50 transition-colors"
             onClick={() => onItemClick(item)}
           >
             <div className="flex justify-between items-center">

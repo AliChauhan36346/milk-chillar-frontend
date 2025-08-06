@@ -1,7 +1,7 @@
 
 // app/purchase/page.tsx
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Milk, Sun, Moon, CheckCircle, User } from 'lucide-react';
 import { useAuth } from '@/lib/auth/AuthContext';
 import PurchaseModal from '@/components/modals/PurchaseModal';
@@ -10,18 +10,21 @@ import { RemainingList } from '@/components/ui/List/RemainingList';
 import ProtectedRoute from '@/components/ProtectedRoutes';
 import { DynamicLayout } from '@/components/layouts/DynamicLayout';
 import { BackButton } from '@/components/ui/BackButton';
+import { getPurchaseMetadata, createPurchase, type PurchaseMetadata, type Purchase, type RemainingSupplier, type ExpenseAccount } from '@/lib/api/purchases';
 
 type Supplier = {
-  id: string;
+  id: number;
   name: string;
+  code: string;
   rate: number;
   morning: { added: boolean; quantity: number };
   evening: { added: boolean; quantity: number };
 };
 
 type ListItem = {
-  id: string;
+  id: number;
   name: string;
+  code: string;
   time: 'morning' | 'evening';
   quantity: number;
   rate: number;
@@ -31,37 +34,93 @@ type ListItem = {
 export default function PurchasePage() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
+  const isDodhi = user?.role === 'dodhi';
   const today = new Date().toISOString().split('T')[0];
 
-  const [suppliers, setSuppliers] = useState<Supplier[]>([
-    {
-      id: '001',
-      name: 'Rajesh Dairy',
-      rate: 42,
-      morning: { added: false, quantity: 0 },
-      evening: { added: false, quantity: 0 }
-    },
-    {
-      id: '002',
-      name: 'Ganesh Milk Farm',
-      rate: 41,
-      morning: { added: false, quantity: 0 },
-      evening: { added: false, quantity: 0 }
-    },
-    {
-      id: '003',
-      name: 'Shivam Suppliers',
-      rate: 43,
-      morning: { added: false, quantity: 0 },
-      evening: { added: false, quantity: 0 }
-    },
-  ]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [purchaseMetadata, setPurchaseMetadata] = useState<PurchaseMetadata | null>(null);
+  const [expenseAccounts, setExpenseAccounts] = useState<ExpenseAccount[]>([]);
+  const [selectedExpenseAccount, setSelectedExpenseAccount] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const [showModal, setShowModal] = useState(false);
   const [currentSupplier, setCurrentSupplier] = useState<Supplier | null>(null);
   const [currentTime, setCurrentTime] = useState<'morning' | 'evening' | 'both'>('both');
   const [date, setDate] = useState(today);
   const [timeFilter, setTimeFilter] = useState<'morning' | 'evening' | 'both'>('both');
+
+  // Load purchase metadata when component mounts or date/timeFilter changes
+  useEffect(() => {
+    loadPurchaseMetadata();
+  }, [date, timeFilter]);
+
+  // Auto-select expense account for dodhi users
+  useEffect(() => {
+    if (isDodhi && expenseAccounts.length > 0) {
+      const dodhiAccount = expenseAccounts.find(acc => acc.accountCode === '50001001');
+      if (dodhiAccount) {
+        setSelectedExpenseAccount(dodhiAccount.accountId);
+      }
+    }
+  }, [isDodhi, expenseAccounts]);
+
+  const loadPurchaseMetadata = async () => {
+    try {
+      setLoading(true);
+      const metadata = await getPurchaseMetadata(date, timeFilter);
+      setPurchaseMetadata(metadata);
+      setExpenseAccounts(metadata.expenseAccounts);
+      
+      // Convert remaining suppliers and added purchases to supplier format
+      const suppliersMap = new Map<number, Supplier>();
+      
+      // Add remaining suppliers
+      metadata.remainingSuppliers.forEach(supplier => {
+        const existingSupplier = suppliersMap.get(supplier.accountId) || {
+          id: supplier.accountId,
+          name: supplier.accountName,
+          code: supplier.accountCode,
+          rate: supplier.rate,
+          morning: { added: false, quantity: 0 },
+          evening: { added: false, quantity: 0 }
+        };
+        
+        if (supplier.timeOfDay === 'morning') {
+          existingSupplier.morning = { added: false, quantity: 0 };
+        } else {
+          existingSupplier.evening = { added: false, quantity: 0 };
+        }
+        
+        suppliersMap.set(supplier.accountId, existingSupplier);
+      });
+      
+      // Add already added purchases
+      metadata.addedPurchases.forEach(purchase => {
+        const existingSupplier = suppliersMap.get(purchase.accountId) || {
+          id: purchase.accountId,
+          name: purchase.accountName,
+          code: purchase.accountCode,
+          rate: purchase.rate,
+          morning: { added: false, quantity: 0 },
+          evening: { added: false, quantity: 0 }
+        };
+        
+        if (purchase.timeOfDay === 'morning') {
+          existingSupplier.morning = { added: true, quantity: purchase.grossLiters };
+        } else {
+          existingSupplier.evening = { added: true, quantity: purchase.grossLiters };
+        }
+        
+        suppliersMap.set(purchase.accountId, existingSupplier);
+      });
+      
+      setSuppliers(Array.from(suppliersMap.values()));
+    } catch (error) {
+      console.error('Failed to load purchase metadata:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const calculateTotals = () => {
     let morningTotal = 0;
@@ -99,36 +158,84 @@ export default function PurchasePage() {
     combinedAmount
   } = calculateTotals();
 
-  const handleFormSubmit = (data: {
+  const handleFormSubmit = async (data: {
     morningQuantity?: number;
     eveningQuantity?: number;
     rate?: number;
-    date: string
+    date: string;
+    expenseAccountId?: number;
   }) => {
-    if (!currentSupplier) return;
+    if (!currentSupplier || !purchaseMetadata) return;
+    
+    const expenseAccountId = data.expenseAccountId || selectedExpenseAccount;
+    if (!expenseAccountId) {
+      alert('Please select an expense account');
+      return;
+    }
 
-    const updatedSuppliers = suppliers.map(supplier => {
-      if (supplier.id === currentSupplier.id) {
-        return {
-          ...supplier,
-          rate: isAdmin ? (data.rate || supplier.rate) : supplier.rate,
-          morning: {
-            added: data.morningQuantity !== undefined,
-            quantity: data.morningQuantity || 0
-          },
-          evening: {
-            added: data.eveningQuantity !== undefined,
-            quantity: data.eveningQuantity || 0
-          }
+    try {
+      const purchases = [];
+      
+      // Create morning purchase if quantity provided
+      if (data.morningQuantity !== undefined && data.morningQuantity > 0) {
+        const morningPurchase = {
+          date: data.date,
+          timeOfDay: 'morning' as const,
+          accountId: currentSupplier.id,
+          expenseAccountId,
+          dodhiId: purchaseMetadata.dodhiId,
+          grossLiters: data.morningQuantity,
+          rate: isAdmin ? (data.rate || currentSupplier.rate) : currentSupplier.rate,
+          balance: 0 // You may want to calculate this based on your business logic
         };
+        purchases.push(await createPurchase(morningPurchase));
       }
-      return supplier;
-    });
+      
+      // Create evening purchase if quantity provided
+      if (data.eveningQuantity !== undefined && data.eveningQuantity > 0) {
+        const eveningPurchase = {
+          date: data.date,
+          timeOfDay: 'evening' as const,
+          accountId: currentSupplier.id,
+          expenseAccountId,
+          dodhiId: purchaseMetadata.dodhiId,
+          grossLiters: data.eveningQuantity,
+          rate: isAdmin ? (data.rate || currentSupplier.rate) : currentSupplier.rate,
+          balance: 0 // You may want to calculate this based on your business logic
+        };
+        purchases.push(await createPurchase(eveningPurchase));
+      }
+      
+      // Update local state to reflect the changes
+      const updatedSuppliers = suppliers.map(supplier => {
+        if (supplier.id === currentSupplier.id) {
+          return {
+            ...supplier,
+            rate: isAdmin ? (data.rate || supplier.rate) : supplier.rate,
+            morning: {
+              added: data.morningQuantity !== undefined && data.morningQuantity > 0,
+              quantity: data.morningQuantity || 0
+            },
+            evening: {
+              added: data.eveningQuantity !== undefined && data.eveningQuantity > 0,
+              quantity: data.eveningQuantity || 0
+            }
+          };
+        }
+        return supplier;
+      });
 
-    setSuppliers(updatedSuppliers);
-    setShowModal(false);
-    setCurrentSupplier(null);
-    setDate(data.date);
+      setSuppliers(updatedSuppliers);
+      setShowModal(false);
+      setCurrentSupplier(null);
+      setDate(data.date);
+      
+      // Reload metadata to get updated data
+      await loadPurchaseMetadata();
+    } catch (error) {
+      console.error('Failed to create purchase:', error);
+      alert('Failed to create purchase. Please try again.');
+    }
   };
 
   const prepareListItems = (isAdded: boolean): ListItem[] => {
@@ -140,6 +247,7 @@ export default function PurchasePage() {
         result.push({
           id: supplier.id,
           name: supplier.name,
+          code: supplier.code,
           time: 'morning',
           quantity: supplier.morning.quantity,
           rate: supplier.rate,
@@ -152,6 +260,7 @@ export default function PurchasePage() {
         result.push({
           id: supplier.id,
           name: supplier.name,
+          code: supplier.code,
           time: 'evening',
           quantity: supplier.evening.quantity,
           rate: supplier.rate,
@@ -181,33 +290,67 @@ export default function PurchasePage() {
   const remainingItems = prepareListItems(false);
   const addedItems = prepareListItems(true);
 
+  if (loading) {
+    return (
+      <ProtectedRoute allowedRoles={['admin', 'dodhi']}>
+        <DynamicLayout>
+          <div className="flex items-center justify-center min-h-screen">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading purchase data...</p>
+            </div>
+          </div>
+        </DynamicLayout>
+      </ProtectedRoute>
+    );
+  }
+
   return (
     <ProtectedRoute allowedRoles={['admin', 'dodhi']}>
       <DynamicLayout allowedRoles={['admin', 'dodhi']}>
-        <div className="max-w-6xl mx-auto p-1 bg-gray-50 min-h-screen">
-          {/* Header Section */}
-          <div className="bg-white rounded-xl shadow-sm p-4 mb-8">
-            <div className="flex items-center justify-between mb-6">
+        <div className="max-w-6xl mx-auto p-1 space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
               <BackButton />
-              <h1 className="text-2xl font-semibold flex items-center gap-2 text-blue-600">
-                <Milk className="w-6 h-6" />
-                Milk Purchase
-              </h1>
-              <div className="w-10"></div> {/* Spacer for layout balance */}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                <input
-                  type="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  required
-                />
+              <div className="flex items-center gap-2">
+                <Milk className="w-8 h-8 text-blue-600" />
+                <h1 className="text-3xl font-bold text-gray-900">Milk Purchase</h1>
               </div>
             </div>
+          </div>
+
+          {/* Expense Account Selection for Admin */}
+          {isAdmin && (
+            <div className="bg-white p-4 rounded-lg shadow border">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Expense Account
+              </label>
+              <select
+                value={selectedExpenseAccount || ''}
+                onChange={(e) => setSelectedExpenseAccount(Number(e.target.value))}
+                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                required
+              >
+                <option value="">Select Expense Account</option>
+                {expenseAccounts.map(account => (
+                  <option key={account.accountId} value={account.accountId}>
+                    {account.accountCode} - {account.accountName}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Date Selection */}
+          <div className="bg-white p-4 rounded-lg shadow border">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              required
+            />
           </div>
 
           {/* Summary Cards */}
@@ -247,24 +390,24 @@ export default function PurchasePage() {
           </div>
 
           {/* Time Filter */}
-          <div className="bg-white rounded-xl shadow-sm p-4 mb-6 flex gap-4 justify-center">
+          <div className="bg-white rounded-xl shadow-sm p-2 mb-6 flex gap-2 justify-center">
             <button
               onClick={() => setTimeFilter('morning')}
-              className={`px-2 py-1 rounded-lg flex items-center gap-1 ${timeFilter === 'morning' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100'}`}
+              className={`px-1 py-1 rounded-lg flex items-center gap-1 ${timeFilter === 'morning' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100'}`}
             >
               <Sun className="w-4 h-4" />
               Morning Only
             </button>
             <button
               onClick={() => setTimeFilter('evening')}
-              className={`px-2 py-1 rounded-lg flex items-center gap-1 ${timeFilter === 'evening' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100'}`}
+              className={`px-1 py-1 rounded-lg flex items-center gap-1 ${timeFilter === 'evening' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100'}`}
             >
               <Moon className="w-4 h-4" />
               Evening Only
             </button>
             <button
               onClick={() => setTimeFilter('both')}
-              className={`px-2 py-1 rounded-lg flex items-center gap-1 ${timeFilter === 'both' ? 'bg-green-100 text-green-700' : 'bg-gray-100'}`}
+              className={`px-1 py-1 rounded-lg flex items-center gap-1 ${timeFilter === 'both' ? 'bg-green-100 text-green-700' : 'bg-gray-100'}`}
             >
               <CheckCircle className="w-4 h-4" />
               Both
@@ -348,6 +491,8 @@ export default function PurchasePage() {
             supplier={currentSupplier}
             time={currentTime}
             isAdmin={isAdmin}
+            expenseAccounts={expenseAccounts}
+            selectedExpenseAccount={selectedExpenseAccount}
             initialData={currentSupplier ? {
               morningQuantity: currentSupplier.morning.added ? currentSupplier.morning.quantity : undefined,
               eveningQuantity: currentSupplier.evening.added ? currentSupplier.evening.quantity : undefined,
