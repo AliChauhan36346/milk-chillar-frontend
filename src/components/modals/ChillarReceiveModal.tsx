@@ -47,7 +47,8 @@ export function DodhiFormModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div className="fixed inset-0  bg-opacity-30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+
       <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
         {/* Header */}
         <div className={`p-4 ${isUpdateMode ? 'bg-green-50 border-b' : 'bg-blue-600 text-white'}`}>

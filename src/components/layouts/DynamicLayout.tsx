@@ -17,11 +17,15 @@ export function DynamicLayout({
 }: DynamicLayoutProps) {
   const { role, isLoading } = useUserRole();
 
+  // show loading for 3 seconds
   if (isLoading) {
     return (
+      
       <div className="flex items-center justify-center h-screen">
         <LoadingSpinner />
       </div>
+
+
     );
   }
 

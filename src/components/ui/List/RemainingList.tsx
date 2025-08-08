@@ -38,7 +38,7 @@ export function RemainingList<T>({
           >
             <div className="flex justify-between items-center">
               <div>
-                <p className="font-medium">{getName(item)}</p>
+                <p className="font-bold">{getName(item)}</p>
                 <p className="text-sm text-gray-600">ID: {getId(item)}</p>
               </div>
               {getStatusLabel(item)}

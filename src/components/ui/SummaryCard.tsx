@@ -1,5 +1,5 @@
 // components/ui/SummaryCard.tsx
-import { ReactNode } from 'react';
+/*import { ReactNode } from 'react';
 
 interface SummaryCardProps {
   title: string;
@@ -47,4 +47,60 @@ export default function SummaryCard({
       </div>
     </div>
   );
-}   
+}*/
+
+// components/ui/SummaryCard.tsx (Enhanced version)
+import { ReactNode } from 'react';
+
+interface SummaryCardProps {
+  title: string;
+  value: string;
+  icon: ReactNode;
+  color: 'blue' | 'green' | 'yellow' | 'red' | 'purple' | 'gray';
+  className?: string;
+  subtitle?: string;
+}
+
+export default function SummaryCard({ 
+  title, 
+  value, 
+  icon, 
+  color, 
+  className = '',
+  subtitle 
+}: SummaryCardProps) {
+  const colorClasses = {
+    blue: 'bg-blue-50 border-blue-200 text-blue-600',
+    green: 'bg-green-50 border-green-200 text-green-600',
+    yellow: 'bg-yellow-50 border-yellow-200 text-yellow-600',
+    red: 'bg-red-50 border-red-200 text-red-600',
+    purple: 'bg-purple-50 border-purple-200 text-purple-600',
+    gray: 'bg-gray-50 border-gray-200 text-gray-600'
+  };
+
+  const iconColorClasses = {
+    blue: 'text-blue-600',
+    green: 'text-green-600',
+    yellow: 'text-yellow-600',
+    red: 'text-red-600',
+    purple: 'text-purple-600',
+    gray: 'text-gray-600'
+  };
+
+  return (
+    <div className={`p-4 rounded-xl border shadow-sm hover:shadow-md transition-shadow ${colorClasses[color]} ${className}`}>
+      <div className="flex items-center justify-between">
+        <div className="flex-1">
+          <h3 className="text-sm font-medium text-gray-700 mb-1">{title}</h3>
+          <p className="text-2xl font-bold text-gray-900">{value}</p>
+          {subtitle && (
+            <p className="text-xs text-gray-500 mt-1">{subtitle}</p>
+          )}
+        </div>
+        <div className={`ml-4 ${iconColorClasses[color]}`}>
+          {icon}
+        </div>
+      </div>
+    </div>
+  );
+}
