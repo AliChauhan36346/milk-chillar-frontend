@@ -1,3 +1,4 @@
+//src/components/ui/Table/Table.tsx
 import { ReactNode } from 'react';
 import { twMerge } from 'tailwind-merge';
 

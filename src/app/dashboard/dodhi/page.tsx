@@ -8,7 +8,7 @@ import { useState, useEffect } from 'react';
 import { FieldStaffLayout } from '@/components/layouts/FieldStaffLayout';
 import ProtectedRoute from '@/components/ProtectedRoutes';
 import { useAuth } from '@/lib/auth/AuthContext';
-import { fetchDodhiDashboardStats, fetchMyDodhiId, type DodhiDashboardStats } from '@/lib/api/dodhiDashboard';
+import { fetchDodhiDashboardStats, fetchMyDodhiId, type DodhiDashboardStats } from '@/lib/api/reports';
 
 export default function DodhiDashboard() {
   const { user } = useAuth();
@@ -95,9 +95,13 @@ export default function DodhiDashboard() {
   const difference = dashboardStats.totalReceivedLiters - dashboardStats.totalPurchaseLiters;
 
   // Format numbers with commas for better readability
-  const formatNumber = (num: number) => {
-    return num.toLocaleString('en-US', { maximumFractionDigits: 1 });
-  };
+  const formatNumber = (num: number | undefined) => {
+  // Handle undefined, null, or NaN values
+  if (num === undefined || num === null || isNaN(num)) {
+    return '0';
+  }
+  return num.toLocaleString('en-US', { maximumFractionDigits: 1 });
+};
 
   if (error && !isLoading && !isLoadingStats) {
     return (

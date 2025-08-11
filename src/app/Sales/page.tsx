@@ -11,6 +11,9 @@ import { RemainingList } from '@/components/ui/List/RemainingList';
 import { SalesFormModal } from '@/components/modals/SalesFormModal';
 import ProtectedRoute from '@/components/ProtectedRoutes';
 import { getSalesMetadata, createSale, updateSale } from '@/lib/api/sales';
+import { BackButton } from '@/components/ui/BackButton';
+import { useRouter } from 'next/navigation';
+
 
 type Buyer = {
   id: number;
@@ -264,7 +267,28 @@ export default function SalesPage() {
       <DynamicLayout allowedRoles={['admin', 'chillarincharge']}>
         <div className="max-w-6xl mx-auto p-1 bg-gray-50 min-h-screen">
           {/* Header Section */}
-          <div className="bg-white shadow-sm rounded-lg p-4 mb-6">
+          <div className="block items-center justify-between">
+            <div className="flex items-center gap-4">
+              <BackButton />
+              <div className="flex items-center gap-2">
+                <ShoppingCart className="w-8 h-8 text-blue-600" />
+                <h1 className="text-3xl font-bold text-blue-600">Milk Sales</h1>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-4 mt-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                <input
+                  type="date"
+                  value={date}
+                  onChange={e => setDate(e.target.value)}
+                  className="p-2 border border-gray-300 rounded-lg mb-4"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* <div className="bg-white shadow-sm rounded-lg p-4 mb-6">
             <h1 className="text-2xl font-bold flex items-center gap-2 text-blue-600">
               <ShoppingCart className="w-6 h-6" />
               Milk Sales
@@ -280,7 +304,7 @@ export default function SalesPage() {
                 />
               </div>
             </div>
-          </div>
+          </div> */}
 
           {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -335,7 +359,7 @@ export default function SalesPage() {
               icon={<User className="w-5 h-5" />}
             />
 
-           
+
 
             <AddedList
               title="Added Buyers"

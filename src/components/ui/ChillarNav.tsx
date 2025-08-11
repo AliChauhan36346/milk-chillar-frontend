@@ -37,7 +37,7 @@ export default function ChillarNav() {
         <span className="text-xs mt-0.5">Sales</span>
       </Link>
       <Link 
-        href="/chillar/reports" 
+        href="/reports/chillar" 
         className="flex flex-col items-center justify-center p-1 w-full"
       >
         <div className={`p-1 rounded-full ${pathname.startsWith('/chillar/reports') ? 'bg-blue-100 text-blue-600' : 'text-gray-500'}`}>

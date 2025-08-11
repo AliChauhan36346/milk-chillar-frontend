@@ -9,6 +9,7 @@ import { AddedList } from '@/components/ui/List/AddedList';
 import { RemainingList } from '@/components/ui/List/RemainingList';
 import { DodhiFormModal } from '@/components/modals/ChillarReceiveModal';
 import ProtectedRoute from '@/components/ProtectedRoutes';
+import { BackButton } from '@/components/ui/BackButton';
 
 import {
   getMyChillar,
@@ -45,7 +46,7 @@ export default function ChillarReceivePage() {
     lr: 0,
     fat: 0,
     netLiters: 0,
-  });
+  }); 
 
   const calculateNetLiters = (lr: number, fat: number, volume: number, tsStandard: number = 13): number => {
     const fatOperations = 0.22 * fat + 0.72;
@@ -189,11 +190,14 @@ export default function ChillarReceivePage() {
       <DynamicLayout allowedRoles={['admin', 'chillarincharge']}>
         <div className="max-w-6xl mx-auto p-1 bg-gray-50 min-h-screen">
           {/* Header Section */}
-          <div className="bg-white shadow-sm rounded-lg p-4 mb-6">
-            <h1 className="text-2xl font-bold flex items-center gap-2 text-blue-600">
-              <Scale className="w-6 h-6" />
-              Chillar Receive
-            </h1>
+          <div className="bg-white shadow-sm rounded-lg p-2 mb-6">
+            <div className="flex items-center gap-4">
+              <BackButton />
+              <div className="flex items-center gap-2">
+                <Scale className="w-8 h-8 text-blue-600" />
+                <h1 className="text-3xl font-bold text-blue-600">chilar Receive</h1>
+              </div>
+            </div>
             <div className="flex flex-wrap gap-4 mt-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
@@ -282,11 +286,11 @@ export default function ChillarReceivePage() {
             initialData={
               modalDodhi
                 ? {
-                    grossLiters: modalDodhi.grossLiters,
-                    lr: modalDodhi.lr,
-                    fat: modalDodhi.fat,
-                    netLiters: modalDodhi.netLiters,
-                  }
+                  grossLiters: modalDodhi.grossLiters,
+                  lr: modalDodhi.lr,
+                  fat: modalDodhi.fat,
+                  netLiters: modalDodhi.netLiters,
+                }
                 : undefined
             }
             dodhiName={modalDodhi?.fullName || ''}
