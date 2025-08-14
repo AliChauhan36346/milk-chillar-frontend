@@ -16,13 +16,16 @@ import {
   Package,
   ArrowRight,
   FileText,
-  Activity
+  Activity,
+  Clock
 } from 'lucide-react';
 import { FieldStaffLayout } from '@/components/layouts/FieldStaffLayout';
 import ProtectedRoute from '@/components/ProtectedRoutes';
 import SummaryCard from '@/components/ui/SummaryCard';
 import { BackButton } from '@/components/ui/BackButton';
 import MilkLoader from '@/components/ui/Loader';
+import { fetchChillarInchargeDashboardStats, ChillarInchargeDashboardStats } from '@/lib/api/reports';
+import { getMyChillar } from '@/lib/api/chillarReceive';
 
 // Types for stock management
 interface StockSummary {
@@ -61,29 +64,19 @@ interface DailyStock {
 export default function ChillarReports() {
   const router = useRouter();
   const [dateRange, setDateRange] = useState({
-    startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    endDate: new Date().toISOString().split('T')[0]
+    startDate: new Date().toISOString().split('T')[0],
+    endDate: new Date().toISOString().split('T')[0],
+    startTime: '',
+    endTime: ''
   });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<'summary' | 'daily' | 'transactions'>('summary');
+  const [dashboardStats, setDashboardStats] = useState<ChillarInchargeDashboardStats | null>(null);
+  const [chillarInfo, setChillarInfo] = useState<{ chillarId: number; chillarInchargeId: number } | null>(null);
 
-  // Mock data - replace with actual API calls
-  const [stockData, setStockData] = useState<{
-    summary: StockSummary;
-    dailyStock: DailyStock[];
-    recentTransactions: StockTransaction[];
-  }>({
-    summary: {
-      previousStock: 150,
-      totalReceived: 2845,
-      totalSold: 2720,
-      currentStock: 275,
-      deficit: 0,
-      surplus: 125,
-      totalTransactions: 156,
-      uniqueDodhis: 15,
-      uniqueBuyers: 8
-    },
+  // Mock data for additional features (until we have more APIs)
+  const [additionalData] = useState({
     dailyStock: [
       { date: '2024-01-15', openingStock: 25, received: 385, sold: 365, closingStock: 45, deficit: 0, surplus: 20 },
       { date: '2024-01-14', openingStock: 15, received: 420, sold: 410, closingStock: 25, deficit: 0, surplus: 10 },
@@ -92,28 +85,77 @@ export default function ChillarReports() {
       { date: '2024-01-11', openingStock: 30, received: 410, sold: 420, closingStock: 20, deficit: 10, surplus: 0 },
     ],
     recentTransactions: [
-      { id: '1', date: '2024-01-15', type: 'receive', quantity: 45, party: 'Ramesh Kumar', partyType: 'dodhi', time: '06:30' },
-      { id: '2', date: '2024-01-15', type: 'sale', quantity: 25, rate: 58, party: 'City Dairy Shop', partyType: 'buyer', time: '08:15' },
-      { id: '3', date: '2024-01-15', type: 'receive', quantity: 38, party: 'Suresh Patel', partyType: 'dodhi', time: '07:00' },
-      { id: '4', date: '2024-01-15', type: 'sale', quantity: 50, rate: 57, party: 'Local Tea Stall', partyType: 'buyer', time: '09:30' },
+      { id: '1', date: '2024-01-15', type: 'receive' as const, quantity: 45, party: 'Ramesh Kumar', partyType: 'dodhi' as const, time: '06:30' },
+      { id: '2', date: '2024-01-15', type: 'sale' as const, quantity: 25, rate: 58, party: 'City Dairy Shop', partyType: 'buyer' as const, time: '08:15' },
+      { id: '3', date: '2024-01-15', type: 'receive' as const, quantity: 38, party: 'Suresh Patel', partyType: 'dodhi' as const, time: '07:00' },
+      { id: '4', date: '2024-01-15', type: 'sale' as const, quantity: 50, rate: 57, party: 'Local Tea Stall', partyType: 'buyer' as const, time: '09:30' },
     ]
   });
 
-  useEffect(() => {
-    const loadStockData = async () => {
-      setLoading(true);
-      // Replace with actual API calls based on dateRange
-      setTimeout(() => {
-        setLoading(false);
-      }, 1500);
-    };
+  // Helper function to format date to YYYY-MM-DD
+  const formatDate = (date: Date): string => {
+    return date.toISOString().split('T')[0];
+  };
 
-    loadStockData();
+  const fetchStockData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Get chillar info if not already available
+      let currentChillarInfo = chillarInfo;
+      if (!currentChillarInfo) {
+        currentChillarInfo = await getMyChillar();
+        setChillarInfo(currentChillarInfo);
+      }
+
+      // Fetch dashboard stats with date and time filters
+      const stats = await fetchChillarInchargeDashboardStats({
+        startDate: dateRange.startDate,
+        endDate: dateRange.endDate,
+        startTimeOfDay: dateRange.startTime,
+        endTimeOfDay: dateRange.endTime,
+        chillarId: currentChillarInfo.chillarId,
+        chillarInchargeId: currentChillarInfo.chillarInchargeId
+      });
+
+      setDashboardStats(stats);
+    } catch (err) {
+      console.error('Failed to fetch stock data:', err);
+      setError('Failed to load stock data. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchStockData();
   }, [dateRange]);
 
   const handleExportData = () => {
-    // Implement export functionality
-    alert('Export functionality would be implemented here');
+    if (!dashboardStats) {
+      alert('No data to export');
+      return;
+    }
+    
+    // Create CSV data
+    const csvData = [
+      ['Metric', 'Value (Liters)'],
+      ['Previous Stock', dashboardStats.previousStock.toString()],
+      ['Total Received', dashboardStats.totalChillarReceive.toString()],
+      ['Total Sold', dashboardStats.totalSales.toString()],
+      ['Current Stock', dashboardStats.currentStock.toString()],
+      ['Period', `${dateRange.startDate}${dateRange.startTime ? ` (${dateRange.startTime})` : ''} to ${dateRange.endDate}${dateRange.endTime ? ` (${dateRange.endTime})` : ''}`]
+    ];
+
+    const csvContent = csvData.map(row => row.join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `chillar-stock-report-${dateRange.startDate}-to-${dateRange.endDate}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
   };
 
   const navigateToReceiveReport = () => {
@@ -129,6 +171,50 @@ export default function ChillarReports() {
     if (current < threshold * 0.5) return 'text-yellow-600';
     return 'text-green-600';
   };
+
+  // Calculate derived data
+  const stockSummary: StockSummary = dashboardStats ? {
+    previousStock: dashboardStats.previousStock,
+    totalReceived: dashboardStats.totalChillarReceive,
+    totalSold: dashboardStats.totalSales,
+    currentStock: dashboardStats.currentStock,
+    deficit: Math.max(0, (dashboardStats.previousStock + dashboardStats.totalChillarReceive) - dashboardStats.totalSales - dashboardStats.currentStock),
+    surplus: Math.max(0, dashboardStats.currentStock - ((dashboardStats.previousStock + dashboardStats.totalChillarReceive) - dashboardStats.totalSales)),
+    totalTransactions: 0, // Would need separate API
+    uniqueDodhis: 0, // Would need separate API
+    uniqueBuyers: 0 // Would need separate API
+  } : {
+    previousStock: 0,
+    totalReceived: 0,
+    totalSold: 0,
+    currentStock: 0,
+    deficit: 0,
+    surplus: 0,
+    totalTransactions: 0,
+    uniqueDodhis: 0,
+    uniqueBuyers: 0
+  };
+
+  if (error) {
+    return (
+      <ProtectedRoute requiredRole="chillarincharge">
+        <FieldStaffLayout role="chillarIncharge">
+          <div className="flex items-center justify-center min-h-screen">
+            <div className="text-center">
+              <div className="text-red-600 text-lg mb-2">⚠️ Error Loading Reports</div>
+              <p className="text-gray-600 mb-4">{error}</p>
+              <button
+                onClick={fetchStockData}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+        </FieldStaffLayout>
+      </ProtectedRoute>
+    );
+  }
 
   if (loading) {
     return (
@@ -157,17 +243,22 @@ export default function ChillarReports() {
             </div>
             <button
               onClick={handleExportData}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              disabled={!dashboardStats}
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
               <Download className="w-4 h-4" />
               Export
             </button>
           </div>
 
-          {/* Date Range Filter */}
+          {/* Date and Time Range Filter */}
           <div className="bg-white rounded-xl shadow-sm p-4">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex-1">
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-blue-600" />
+              Filter by Date & Time Range
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
                 <input
                   type="date"
@@ -176,7 +267,22 @@ export default function ChillarReports() {
                   className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-              <div className="flex-1">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                  <Clock className="w-4 h-4" />
+                  Start Time
+                </label>
+                <select
+                  value={dateRange.startTime}
+                  onChange={(e) => setDateRange(prev => ({ ...prev, startTime: e.target.value }))}
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">All Day</option>
+                  <option value="Morning">Morning</option>
+                  <option value="Evening">Evening</option>
+                </select>
+              </div>
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
                 <input
                   type="date"
@@ -185,15 +291,41 @@ export default function ChillarReports() {
                   className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-              <div className="flex items-end">
-                <button
-                  onClick={() => window.location.reload()}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                  <Clock className="w-4 h-4" />
+                  End Time
+                </label>
+                <select
+                  value={dateRange.endTime}
+                  onChange={(e) => setDateRange(prev => ({ ...prev, endTime: e.target.value }))}
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
-                  <RefreshCw className="w-4 h-4" />
-                  Refresh
-                </button>
+                  <option value="">All Day</option>
+                  <option value="Morning">Morning</option>
+                  <option value="Evening">Evening</option>
+                </select>
               </div>
+            </div>
+            <div className="mt-4 flex justify-end">
+              <button
+                onClick={fetchStockData}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Apply Filter
+              </button>
+            </div>
+          </div>
+
+          {/* Data Status Indicator */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <div className="flex items-center gap-2 text-sm text-blue-800">
+              <Activity className="w-4 h-4" />
+              <span>
+                Showing data from {dateRange.startDate}{dateRange.startTime ? ` (${dateRange.startTime})` : ''} to {dateRange.endDate}{dateRange.endTime ? ` (${dateRange.endTime})` : ''}
+                {dashboardStats && ` • Last updated: ${new Date().toLocaleTimeString()}`}
+              </span>
             </div>
           </div>
 
@@ -201,7 +333,7 @@ export default function ChillarReports() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <SummaryCard
               title="Previous Stock"
-              value={`${stockData.summary.previousStock}L`}
+              value={`${stockSummary.previousStock}L`}
               icon={<Package className="w-6 h-6" />}
               color="gray"
               subtitle="Opening balance"
@@ -213,11 +345,11 @@ export default function ChillarReports() {
             >
               <SummaryCard
                 title="Total Received"
-                value={`${stockData.summary.totalReceived}L`}
+                value={`${stockSummary.totalReceived}L`}
                 icon={<Truck className="w-6 h-6" />}
                 color="blue"
                 subtitle="Received from dodhis"
-                showArrow
+                
               />
             </div>
 
@@ -227,17 +359,17 @@ export default function ChillarReports() {
             >
               <SummaryCard
                 title="Total Sold"
-                value={`${stockData.summary.totalSold}L`}
+                value={`${stockSummary.totalSold}L`}
                 icon={<ShoppingCart className="w-6 h-6" />}
                 color="green"
                 subtitle="Sold to buyers"
-                showArrow
+                
               />
             </div>
 
             <SummaryCard
               title="Current Stock"
-              value={`${stockData.summary.currentStock}L`}
+              value={`${stockSummary.currentStock}L`}
               icon={<Milk className="w-6 h-6" />}
               color="purple"
               subtitle="Available now"
@@ -246,39 +378,27 @@ export default function ChillarReports() {
 
           {/* Deficit/Surplus Alert */}
           <div className="grid md:grid-cols-2 gap-4">
-            {stockData.summary.deficit > 0 && (
+            {stockSummary.deficit > 0 && (
               <div className="bg-red-50 border border-red-200 rounded-xl p-4">
                 <div className="flex items-center gap-3">
                   <TrendingDown className="w-8 h-8 text-red-600" />
                   <div>
                     <h3 className="text-lg font-semibold text-red-800">Stock Deficit</h3>
-                    <p className="text-red-600">{stockData.summary.deficit}L shortage detected</p>
+                    <p className="text-red-600">{stockSummary.deficit}L shortage detected</p>
                     <p className="text-sm text-red-500 mt-1">Please verify stock records and investigate discrepancies</p>
                   </div>
                 </div>
               </div>
             )}
 
-            {stockData.summary.surplus > 0 && (
+            {stockSummary.surplus > 0 && (
               <div className="bg-green-50 border border-green-200 rounded-xl p-4">
                 <div className="flex items-center gap-3">
                   <TrendingUp className="w-8 h-8 text-green-600" />
                   <div>
                     <h3 className="text-lg font-semibold text-green-800">Stock Surplus</h3>
-                    <p className="text-green-600">{stockData.summary.surplus}L excess stock available</p>
+                    <p className="text-green-600">{stockSummary.surplus}L excess stock available</p>
                     <p className="text-sm text-green-500 mt-1">Good inventory management</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {stockData.summary.deficit === 0 && stockData.summary.surplus === 0 && (
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 md:col-span-2">
-                <div className="flex items-center gap-3">
-                  <Scale className="w-8 h-8 text-blue-600" />
-                  <div>
-                    <h3 className="text-lg font-semibold text-blue-800">Perfect Balance</h3>
-                    <p className="text-blue-600">Stock levels are perfectly balanced with no surplus or deficit</p>
                   </div>
                 </div>
               </div>
@@ -319,7 +439,8 @@ export default function ChillarReports() {
 
               <button
                 onClick={handleExportData}
-                className="flex items-center justify-between p-4 border border-purple-200 rounded-lg hover:bg-purple-50 transition-colors"
+                disabled={!dashboardStats}
+                className="flex items-center justify-between p-4 border border-purple-200 rounded-lg hover:bg-purple-50 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
               >
                 <div className="flex items-center gap-3">
                   <Download className="w-6 h-6 text-purple-600" />
@@ -370,46 +491,46 @@ export default function ChillarReports() {
                         <div className="space-y-3">
                           <div className="flex justify-between items-center">
                             <span className="text-gray-600">Opening Stock:</span>
-                            <span className="font-medium text-gray-900">{stockData.summary.previousStock}L</span>
+                            <span className="font-medium text-gray-900">{stockSummary.previousStock}L</span>
                           </div>
                           <div className="flex justify-between items-center">
                             <span className="text-gray-600">+ Total Received:</span>
-                            <span className="font-medium text-blue-600">+{stockData.summary.totalReceived}L</span>
+                            <span className="font-medium text-blue-600">+{stockSummary.totalReceived}L</span>
                           </div>
                           <div className="flex justify-between items-center">
                             <span className="text-gray-600">- Total Sold:</span>
-                            <span className="font-medium text-green-600">-{stockData.summary.totalSold}L</span>
+                            <span className="font-medium text-green-600">-{stockSummary.totalSold}L</span>
                           </div>
                           <hr className="border-gray-300" />
                           <div className="flex justify-between items-center text-lg">
                             <span className="font-medium text-gray-900">Closing Stock:</span>
-                            <span className={`font-bold ${getStockStatusColor(stockData.summary.currentStock)}`}>
-                              {stockData.summary.currentStock}L
+                            <span className={`font-bold ${getStockStatusColor(stockSummary.currentStock)}`}>
+                              {stockSummary.currentStock}L
                             </span>
                           </div>
                         </div>
                       </div>
 
                       <div className="space-y-4">
-                        <h4 className="font-medium text-gray-900">Activity Overview</h4>
+                        <h4 className="font-medium text-gray-900">Period Information</h4>
                         <div className="space-y-3">
                           <div className="flex justify-between items-center">
-                            <span className="text-gray-600">Total Transactions:</span>
-                            <span className="font-medium text-purple-600">{stockData.summary.totalTransactions}</span>
+                            <span className="text-gray-600">Start Date & Time:</span>
+                            <span className="font-medium text-gray-900">{dateRange.startDate}{dateRange.startTime ? ` (${dateRange.startTime})` : ''}</span>
                           </div>
                           <div className="flex justify-between items-center">
-                            <span className="text-gray-600">Active Dodhis:</span>
-                            <span className="font-medium text-blue-600">{stockData.summary.uniqueDodhis}</span>
+                            <span className="text-gray-600">End Date & Time:</span>
+                            <span className="font-medium text-gray-900">{dateRange.endDate}{dateRange.endTime ? ` (${dateRange.endTime})` : ''}</span>
                           </div>
                           <div className="flex justify-between items-center">
-                            <span className="text-gray-600">Active Buyers:</span>
-                            <span className="font-medium text-green-600">{stockData.summary.uniqueBuyers}</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-gray-600">Period:</span>
-                            <span className="font-medium text-gray-600">
-                              {stockData.dailyStock.length} days
+                            <span className="text-gray-600">Net Movement:</span>
+                            <span className={`font-medium ${stockSummary.totalReceived - stockSummary.totalSold >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {stockSummary.totalReceived - stockSummary.totalSold >= 0 ? '+' : ''}{stockSummary.totalReceived - stockSummary.totalSold}L
                             </span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-600">Data Status:</span>
+                            <span className="font-medium text-green-600">Real-time</span>
                           </div>
                         </div>
                       </div>
@@ -421,7 +542,10 @@ export default function ChillarReports() {
               {/* Daily Stock View */}
               {activeView === 'daily' && (
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Daily Stock Movement</h3>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold">Daily Stock Movement</h3>
+                    <span className="text-sm text-gray-500">Historical data (sample)</span>
+                  </div>
                   
                   <div className="overflow-x-auto">
                     <table className="min-w-full bg-white border border-gray-200 rounded-lg">
@@ -436,7 +560,7 @@ export default function ChillarReports() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200">
-                        {stockData.dailyStock.map((day) => (
+                        {additionalData.dailyStock.map((day) => (
                           <tr key={day.date} className="hover:bg-gray-50">
                             <td className="px-4 py-3 text-sm font-medium text-gray-900">
                               {new Date(day.date).toLocaleDateString('en-IN')}

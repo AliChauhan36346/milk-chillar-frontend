@@ -287,25 +287,6 @@ export default function SalesPage() {
               </div>
             </div>
           </div>
-
-          {/* <div className="bg-white shadow-sm rounded-lg p-4 mb-6">
-            <h1 className="text-2xl font-bold flex items-center gap-2 text-blue-600">
-              <ShoppingCart className="w-6 h-6" />
-              Milk Sales
-            </h1>
-            <div className="flex flex-wrap gap-4 mt-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                <input
-                  type="date"
-                  value={date}
-                  onChange={e => setDate(e.target.value)}
-                  className="p-2 border border-gray-300 rounded-lg"
-                />
-              </div>
-            </div>
-          </div> */}
-
           {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <SummaryCard
