@@ -2,7 +2,8 @@ import axios from 'axios';
 
 // Create axios instance with base URL
 export const api = axios.create({
-  baseURL: 'https://localhost:7013/api', // Match the backend URL from login page
+  // baseURL: 'https://localhost:7013/api', // Match the backend URL from login page
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'https://localhost:7013/api',
   headers: {
     'Content-Type': 'application/json',
   },
