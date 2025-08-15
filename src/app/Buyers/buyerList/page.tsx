@@ -7,8 +7,18 @@ import ProtectedRoute from '@/components/ProtectedRoutes';
 import { getBuyersPaged, Buyer } from '@/lib/api/buyers';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { useToast } from '@/hooks/useToast';
+import { Suspense } from 'react';
 
-export default function BuyerListPage() {
+export default function BuyerListPageWrapper() {
+  return (
+    <Suspense fallback={<div className="p-6">Loading buyers...</div>}>
+      <BuyerListPage />
+    </Suspense>
+  );
+}
+
+
+function BuyerListPage() {
   const router = useRouter();
   const { user } = useAuth?.() || {};
   const [buyers, setBuyers] = useState<Buyer[]>([]);
