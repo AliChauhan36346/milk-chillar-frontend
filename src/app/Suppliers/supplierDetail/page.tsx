@@ -7,8 +7,18 @@ import { BackButton } from '@/components/ui/BackButton';
 import ProtectedRoute from '@/components/ProtectedRoutes';
 import { getSupplierById, Supplier, deleteSupplier } from '@/lib/api/suppliers';
 import { useToast } from '@/hooks/useToast';
+import { Suspense } from 'react';
+import MilkLoader from '@/components/ui/Loader';
 
-export default function SupplierDetailPage() {
+export default function SupplierDetailPageWrapper() {
+  return (
+    <Suspense fallback={<MilkLoader />}>
+      <SupplierDetailPage />
+    </Suspense>
+  );
+}
+
+function SupplierDetailPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const supplierId = searchParams.get('id');

@@ -13,9 +13,20 @@ import { createSupplier, updateSupplier, getSupplierById, Supplier } from '@/lib
 import { getEmployees, Employee } from '@/lib/api/employees'; // Import getEmployees
 import { useAuth } from '@/lib/auth/AuthContext';
 import { useToast } from '@/hooks/useToast';
+import { Suspense } from 'react';
+import MilkLoader from '@/components/ui/Loader';
 
 
-export default function CreateSupplierPage() {
+export default function CreateSupplierPageWrapper() {
+  return (
+    <Suspense fallback={<MilkLoader />}>
+      <CreateSupplierPage />
+    </Suspense>
+  );
+}
+
+
+function CreateSupplierPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuth?.() || {};
