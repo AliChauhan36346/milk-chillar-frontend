@@ -51,7 +51,7 @@ export default function LoginPage() {
         admin: '/dashboard/admin',
         manager: '/dashboard/manager',
         dodhi: '/dashboard/dodhi',
-        chillarincharge: '/dashboard/chillarIncharge'
+        chillarincharge: '/dashboard/ChillarIncharge'
       };
       const redirectPath = role && redirectPaths[role as keyof typeof redirectPaths] 
         ? redirectPaths[role as keyof typeof redirectPaths] 
