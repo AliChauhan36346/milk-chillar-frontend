@@ -210,45 +210,7 @@ export default function DodhiDashboard() {
               />
             </div>
 
-            {/* Additional Info Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-              <div className="bg-white rounded-xl p-4 shadow-sm border">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-medium text-gray-900">Purchase Rate</h3>
-                    <p className="text-2xl font-bold text-blue-600">
-                      {dashboardStats.totalPurchaseLiters > 0 
-                        ? `${((dashboardStats.totalReceivedLiters / dashboardStats.totalPurchaseLiters) * 100).toFixed(1)}%`
-                        : '0%'
-                      }
-                    </p>
-                    <p className="text-sm text-gray-600">Received vs Purchased</p>
-                  </div>
-                  <div className="text-blue-600">
-                    <Calendar className="w-8 h-8" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-xl p-4 shadow-sm border">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-medium text-gray-900">Status</h3>
-                    <p className={`text-2xl font-bold ${
-                      difference >= 0 ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                      {difference >= 0 ? 'Good' : 'Review'}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      {difference >= 0 ? 'Meeting targets' : 'Below targets'}
-                    </p>
-                  </div>
-                  <div className={difference >= 0 ? 'text-green-600' : 'text-red-600'}>
-                    <User className="w-8 h-8" />
-                  </div>
-                </div>
-              </div>
-            </div>
+            
 
             {/* Big Action Buttons */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">

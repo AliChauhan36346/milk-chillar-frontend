@@ -13,7 +13,7 @@ export default function ChillarNav() {
         href="/dashboard/chillarIncharge" 
         className="flex flex-col items-center justify-center p-1 w-full"
       >
-        <div className={`p-1 rounded-full ${pathname === '/dashboard/chillarIncharge' ? 'bg-blue-100 text-blue-600' : 'text-gray-500'}`}>
+        <div className={`p-1 rounded-full ${pathname === '/dashboard/ChillarIncharge' ? 'bg-blue-100 text-blue-600' : 'text-gray-500'}`}>
           <Home className="w-5 h-5" />
         </div>
         <span className="text-xs mt-0.5">Home</span>

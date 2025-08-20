@@ -15,6 +15,7 @@ import { DynamicLayout } from '@/components/layouts/DynamicLayout';
 import ProtectedRoute from '@/components/ProtectedRoutes';
 import { getSuppliersPaged, Supplier } from '@/lib/api/suppliers';
 import { useToast } from '@/hooks/useToast';
+import MilkLoader from '@/components/ui/Loader';
 
 export default function SupplierListPage() {
   const router = useRouter();
@@ -62,7 +63,7 @@ export default function SupplierListPage() {
       });
       setSuppliers(data.items);
       setTotalPages(data.totalPages);
-      setTotalItems(data.items.length);
+      setTotalItems(data.totalCount);
     } catch (error) {
       toast({ 
         title: 'Error fetching suppliers', 
