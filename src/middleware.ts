@@ -43,11 +43,11 @@ export async function middleware(request: NextRequest) {
     admin: '/dashboard/admin',
     manager: '/dashboard/manager',
     dodhi: '/dashboard/dodhi',
-    chillarincharge: '/dashboard/chillarIncharge'
+    chillarincharge: '/dashboard/ChillarIncharge'
   };
 
   if (role && !pathname.startsWith(rolePaths[role])) {
-    return NextResponse.redirect(new URL('/unauthorized', request.url));
+    return NextResponse.redirect(new URL('/login', request.url));
   }
 
   return NextResponse.next();
