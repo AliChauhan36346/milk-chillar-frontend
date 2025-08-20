@@ -31,8 +31,20 @@ export default function Home() {
               </p>
             </div>
 
+            {/* CTA Button */}
+            <div className="text-center">
+              <a
+                href="/login"
+                className="inline-flex items-center gap-4 mb-5 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-bold text-xl px-12 py-6 rounded-2xl shadow-2xl hover:shadow-3xl transform hover:scale-105 transition-all duration-300 group"
+              >
+                <Users className="w-6 h-6" />
+                <span> لاگ ان / Login</span>
+                <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+              </a>
+            </div>
+
             {/* Main Value Proposition */}
-            <div className="bg-gradient-to-r from-green-600 to-blue-600 text-white rounded-3xl p-8 mb-12 shadow-2xl">
+            <div className="bg-gradient-to-r from-green-600 to-blue-600 text-white rounded-3xl p-8 mb-5 shadow-2xl">
               <div className="text-center mb-8">
                 <h2 className="text-3xl md:text-4xl font-bold mb-4">
                   آپ کے دودھ کی بہترین قیمت
@@ -66,17 +78,7 @@ export default function Home() {
               </div>
             </div>
 
-            {/* CTA Button */}
-            <div className="text-center">
-              <a
-                href="/login"
-                className="inline-flex items-center gap-4 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-bold text-xl px-12 py-6 rounded-2xl shadow-2xl hover:shadow-3xl transform hover:scale-105 transition-all duration-300 group"
-              >
-                <Users className="w-6 h-6" />
-                <span>سپلائر لاگ ان / Supplier Login</span>
-                <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
-              </a>
-            </div>
+            
           </div>
         </div>
       </header>
@@ -272,7 +274,7 @@ export default function Home() {
                 href="tel:+923001234567"
                 className="bg-white/20 text-white hover:bg-white/30 font-bold px-8 py-4 rounded-xl border border-white/30 transition-all"
               >
-                رابطہ: 0300-1234567
+                رابطہ: 03120000189
               </a>
             </div>
           </div>
@@ -294,7 +296,7 @@ export default function Home() {
               © 2024 Chauhan Dairy Farming. تمام حقوق محفوظ ہیں۔
             </p>
             <div className="mt-4 flex justify-center gap-6 text-sm">
-              <span className="text-green-300">📞 رابطہ: 0300-1234567</span>
+              <span className="text-green-300">📞 رابطہ: 03120000189</span>
               <span className="text-blue-300">📧 info@chauhandairy.com</span>
             </div>
           </div>

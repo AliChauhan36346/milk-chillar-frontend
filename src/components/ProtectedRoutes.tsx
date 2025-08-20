@@ -101,7 +101,7 @@ export default function ProtectedRoute({
     }
 
     if (!hasAccess) {
-      router.push('/unauthorized');
+      router.push('/login');
     }
   }, [isInitialized, isAuthenticated, user, requiredRole, allowedRoles]);
 
