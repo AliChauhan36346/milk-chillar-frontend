@@ -10,7 +10,7 @@ export default function ChillarNav() {
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around py-2 h-16">
       <Link 
-        href="/dashboard/chillarIncharge" 
+        href="/dashboard/ChillarIncharge" 
         className="flex flex-col items-center justify-center p-1 w-full"
       >
         <div className={`p-1 rounded-full ${pathname === '/dashboard/ChillarIncharge' ? 'bg-blue-100 text-blue-600' : 'text-gray-500'}`}>
