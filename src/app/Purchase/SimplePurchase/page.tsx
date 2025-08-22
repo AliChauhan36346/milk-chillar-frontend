@@ -384,7 +384,7 @@ export default function PurchasePage() {
                 <Sun className="w-4 h-4 text-yellow-500" />
                 <span className="font-medium">Morning Total</span>
               </div>
-              <p className="text-2xl font-bold text-blue-600">{totals.morningTotal} Ltrs</p>
+              <p className="text-2xl font-bold text-blue-600">{totals.morningTotal.toFixed(2)} Ltrs</p>
               {isAdmin && (
                 <p className="text-sm text-gray-600">₹{totals.morningAmount.toFixed(2)}</p>
               )}
@@ -395,7 +395,7 @@ export default function PurchasePage() {
                 <Moon className="w-4 h-4 text-purple-500" />
                 <span className="font-medium">Evening Total</span>
               </div>
-              <p className="text-2xl font-bold text-purple-600">{totals.eveningTotal} Ltrs</p>
+              <p className="text-2xl font-bold text-purple-600">{totals.eveningTotal.toFixed(2)} Ltrs</p>
               {isAdmin && (
                 <p className="text-sm text-gray-600">₹{totals.eveningAmount.toFixed(2)}</p>
               )}
@@ -406,7 +406,7 @@ export default function PurchasePage() {
                 <CheckCircle className="w-4 h-4 text-green-500" />
                 <span className="font-medium">Combined Total</span>
               </div>
-              <p className="text-2xl font-bold text-green-600">{totals.combinedTotal} Ltrs</p>
+              <p className="text-2xl font-bold text-green-600">{totals.combinedTotal.toFixed(2)} Ltrs</p>
               {isAdmin && (
                 <p className="text-sm text-gray-600">{totals.combinedAmount.toFixed(2)}</p>
               )}
