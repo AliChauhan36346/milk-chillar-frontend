@@ -170,7 +170,7 @@ export default function Sidebar({
         ))}
       </nav>
 
-      {/* User Info */}
+      {/* User Info
       <div className="p-4 border-t border-gray-200">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
@@ -185,7 +185,7 @@ export default function Sidebar({
             </div>
           )}
         </div>
-      </div>
+      </div> */}
     </aside>
   );
 }

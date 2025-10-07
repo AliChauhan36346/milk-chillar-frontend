@@ -120,3 +120,122 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Thermal Printer Styles */
+@media print {
+  * {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  
+  @page {
+    size: 80mm auto; /* 80mm width, auto height for continuous paper */
+    margin: 0;
+  }
+  
+  /* Hide everything when printing */
+  body * {
+    visibility: hidden !important;
+  }
+  
+  /* Show only thermal receipt and its children */
+  .thermal-receipt,
+  .thermal-receipt * {
+    visibility: visible !important;
+  }
+  
+  /* Position thermal receipt at top of page */
+  .thermal-receipt {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100mm !important;
+    max-width: 100mm !important;
+    margin: 0 !important;
+    padding: 3mm !important;
+    font-family: 'Courier New', 'Arial', monospace !important;
+    font-size: 13pt !important; /* Increased from 11pt */
+    line-height: 1.4 !important;
+    color: #000 !important;
+    background: #fff !important;
+  }
+  
+  .thermal-receipt .text-xs {
+    font-size: 11pt !important;
+  }
+  
+  .thermal-receipt .text-sm {
+    font-size: 12pt !important;
+  }
+  
+  .thermal-receipt .text-base {
+    font-size: 14pt !important;
+  }
+  
+  .thermal-receipt .text-lg {
+    font-size: 16pt !important;
+  }
+  
+  .thermal-receipt .text-xl {
+    font-size: 18pt !important;
+  }
+  
+  .thermal-receipt .text-2xl {
+    font-size: 20pt !important;
+  }
+  
+  .thermal-receipt .text-3xl {
+    font-size: 24pt !important;
+  }
+
+  
+  .page-break {
+    page-break-after: always !important;
+    page-break-inside: avoid !important;
+  }
+  
+  /* Ensure borders and colors print */
+  .thermal-receipt * {
+    border-color: #000 !important;
+  }
+  
+  .thermal-receipt .bg-gray-100 {
+    background: #f3f4f6 !important;
+  }
+  
+  .thermal-receipt .border-dashed {
+    border-style: dashed !important;
+  }
+  
+  .thermal-receipt .text-green-700 {
+    color: #15803d !important;
+  }
+  
+  .thermal-receipt .text-red-700 {
+    color: #b91c1c !important;
+  }
+  
+  .thermal-receipt .text-amber-700 {
+    color: #b45309 !important;
+  }
+}
+
+/* Screen preview styles */
+@media screen {
+  .thermal-receipt {
+    max-width: 100mm;
+    margin: 10px auto;
+    padding: 10mm;
+    border: 1px solid #ddd;
+    background: #fff;
+    font-family: 'Courier New', monospace;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+}

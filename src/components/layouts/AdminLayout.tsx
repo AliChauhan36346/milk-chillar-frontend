@@ -15,7 +15,10 @@ import {
   Wallet,
   Building2,
   IndianRupee,
-  Receipt
+  Receipt,
+  BookOpen,
+  Building,
+  Banknote
 } from 'lucide-react';
 
 const adminNavigation = [
@@ -45,9 +48,27 @@ const adminNavigation = [
   {
     section: 'Finance',
     items: [
-      { label: 'Accounts', href: '/Accounts', icon: <Wallet size={18} /> },
-      { label: 'Payments', href: '/Accounts/payments', icon: <IndianRupee size={18} /> },
-      { label: 'Invoices', href: '/Accounts/invoices', icon: <Receipt size={18} /> }
+      { 
+        label: 'Accounts', 
+        icon: <Wallet size={18} />,
+        href: '/Accounts',
+        subItems: [
+          { label: 'Chart of Accounts', href: '/Accounts/chartOfAccounts', icon: <FileText size={18} /> },
+          { label: 'Account Ledgers', href: '/Accounts/ledgers', icon: <BookOpen size={18} /> }
+        ]
+      },
+      { 
+        label: 'Payments & Receipts', 
+        icon: <IndianRupee size={18} />,
+        href: '/Accounts/transactions',
+        subItems: [
+          { label: 'Cash Payments', href: '/Accounts/transactions/cashPayments', icon: <Banknote size={18} /> },
+          { label: 'Bank Payments', href: '/Accounts/transactions/bank', icon: <Building size={18} /> },
+          { label: 'Receipts', href: '/Accounts/transactions/receipts', icon: <Receipt size={18} /> }
+        ]
+      },
+      { label: 'Opening Balances', href: '/Accounts/openingBalances', icon: <Scale size={18} /> },
+      { label: 'Supplier Parchi', href: '/Accounts/parchi', icon: <FileText size={18} /> }
     ]
   },
   {

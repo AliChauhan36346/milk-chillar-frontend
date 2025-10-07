@@ -4,6 +4,8 @@ import { AdminLayout } from '@/components/layouts/AdminLayout'; // Update import
 import { Card, CardContent } from '@/components/ui/card';
 import ProtectedRoute from '@/components/ProtectedRoutes';
 import { Line, Pie } from 'react-chartjs-2';
+import Link from 'next/link';
+import { Banknote, Building, Receipt, BookOpen, Clock } from 'lucide-react';
 import {
   Chart,
   CategoryScale,
@@ -33,36 +35,36 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {[
           { 
-            label: 'Total Loss', 
-            value: '15,200 L', 
-            change: '+2.5%', 
-            icon: '📉',
-            bg: 'bg-red-50',
-            text: 'text-red-600'
+            label: 'Cash Balance', 
+            value: 'PKR 850K', 
+            change: '+15K today', 
+            icon: <Banknote className="w-6 h-6" />,
+            bg: 'bg-blue-50',
+            text: 'text-blue-600'
           },
           { 
-            label: 'Revenue', 
+            label: 'Bank Balance', 
             value: 'PKR 2.1M', 
-            change: '+8.2%', 
-            icon: '💰',
-            bg: 'bg-green-50',
-            text: 'text-green-600'
-          },
-          { 
-            label: 'Expenses', 
-            value: 'PKR 1.4M', 
-            change: '-1.3%', 
-            icon: '📤',
-            bg: 'bg-orange-50',
-            text: 'text-orange-600'
-          },
-          { 
-            label: 'Net Profit', 
-            value: 'PKR 700K', 
-            change: '+15%', 
-            icon: '📊',
+            change: '+120K today', 
+            icon: <Building className="w-6 h-6" />,
             bg: 'bg-purple-50',
             text: 'text-purple-600'
+          },
+          { 
+            label: 'Pending Payments', 
+            value: 'PKR 450K', 
+            change: '12 suppliers', 
+            icon: <Clock className="w-6 h-6" />,
+            bg: 'bg-amber-50',
+            text: 'text-amber-600'
+          },
+          { 
+            label: 'Due Receipts', 
+            value: 'PKR 380K', 
+            change: '8 buyers', 
+            icon: <Receipt className="w-6 h-6" />,
+            bg: 'bg-green-50',
+            text: 'text-green-600'
           },
         ].map((item) => (
           <Card key={item.label} className={`${item.bg} shadow-sm`}>
@@ -76,6 +78,76 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
         ))}
+      </div>
+
+      {/* Quick Actions */}
+      <div className="mb-6">
+        <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Link href="/Accounts/transactions/cashPayments">
+            <Card className="bg-blue-50 hover:bg-blue-100 transition-colors cursor-pointer">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-100 rounded-lg">
+                    <Banknote className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium">Cash Payment</h4>
+                    <p className="text-sm text-gray-600">Record cash transactions</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/Accounts/transactions/bank">
+            <Card className="bg-purple-50 hover:bg-purple-100 transition-colors cursor-pointer">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-purple-100 rounded-lg">
+                    <Building className="w-5 h-5 text-purple-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium">Bank Payment</h4>
+                    <p className="text-sm text-gray-600">Record bank transactions</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/Accounts/transactions/receipts">
+            <Card className="bg-green-50 hover:bg-green-100 transition-colors cursor-pointer">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-green-100 rounded-lg">
+                    <Receipt className="w-5 h-5 text-green-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium">Receipts</h4>
+                    <p className="text-sm text-gray-600">incoming payments</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/Accounts/accountLedger">
+            <Card className="bg-orange-50 hover:bg-orange-100 transition-colors cursor-pointer">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-orange-100 rounded-lg">
+                    <BookOpen className="w-5 h-5 text-orange-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium">Ledger</h4>
+                    <p className="text-sm text-gray-600">View account statements</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

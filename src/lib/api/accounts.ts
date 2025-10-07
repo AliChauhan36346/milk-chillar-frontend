@@ -1,3 +1,4 @@
+
 import { api } from './api';
 
 export interface MainAccount {
@@ -20,6 +21,13 @@ export interface Account {
   fullCode: string;
   name: string;
   subAccountId: number;
+}
+
+export interface SearchAccountResult {
+  accountId: number;
+  accountCode: string;
+  name: string;
+  balance: number;
 }
 
 export interface CreateMainAccountRequest {
@@ -100,3 +108,84 @@ export const getChartOfAccounts = async (tenantId: number) => {
   const response = await api.get<ChartAccount[]>(`/accounts/chart?tenantId=${tenantId}`);
   return response.data;
 }; 
+
+// Search accounts
+export const searchAccounts = async (query: string, mainAccountCode?: string, tenantId?: number) => {
+  try {
+    const queryParams = new URLSearchParams();
+    if (query) queryParams.append('query', query);
+    if (mainAccountCode) queryParams.append('mainAccountCode', mainAccountCode);
+    if (tenantId) queryParams.append('tenantId', tenantId.toString());
+
+    const response = await api.get<SearchAccountResult[]>(`/Accounts/search?${queryParams}`);
+    return response.data;
+  } catch (error: any) {
+    console.error('Error searching accounts:', error?.response?.data || error?.message || error);
+    throw new Error(error?.response?.data?.message || 'Failed to search accounts');
+  }
+};
+
+// NEW: Get accounts by code prefix (first 3 digits)
+export const getAccountsByCodePrefix = async (codePrefix: string) => {
+  try {
+    if (!codePrefix || codePrefix.trim().length === 0) {
+      throw new Error('Code prefix is required');
+    }
+
+    const trimmedPrefix = codePrefix.trim();
+    if (trimmedPrefix.length !== 3) {
+      throw new Error('Code prefix must be exactly 3 digits');
+    }
+
+    const response = await api.get<SearchAccountResult[]>(`/Accounts/by-code-prefix?codePrefix=${trimmedPrefix}`);
+    return response.data;
+  } catch (error: any) {
+    console.error('Error getting accounts by code prefix:', error?.response?.data || error?.message || error);
+    throw new Error(error?.response?.data?.message || 'Failed to get accounts by code prefix');
+  }
+};
+
+// Utility function to get accounts by financial statement component
+export const getAccountsByComponent = async (component: 'assets' | 'liabilities' | 'equity' | 'revenue' | 'expenses') => {
+  try {
+    const componentPrefixes = {
+      assets: '100',
+      liabilities: '200', 
+      equity: '300',
+      revenue: '400',
+      expenses: '500'
+    };
+
+    const prefix = componentPrefixes[component];
+    if (!prefix) {
+      throw new Error('Invalid financial statement component');
+    }
+
+    return await getAccountsByCodePrefix(prefix);
+  } catch (error: any) {
+    console.error(`Error getting ${component} accounts:`, error?.response?.data || error?.message || error);
+    throw new Error(error?.response?.data?.message || `Failed to get ${component} accounts`);
+  }
+};
+
+// Export all account-related functions
+export const accountsApi = {
+  // Main accounts
+  createMainAccount,
+  getMainAccounts,
+  
+  // Sub accounts
+  createSubAccount,
+  getSubAccounts,
+  getSubAccountsByMainCode,
+  
+  // Accounts
+  createAccount,
+  getAccounts,
+  getChartOfAccounts,
+  
+  // Search and filtering
+  searchAccounts,
+  getAccountsByCodePrefix,
+  getAccountsByComponent
+};

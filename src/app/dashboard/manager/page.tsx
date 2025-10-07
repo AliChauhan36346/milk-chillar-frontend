@@ -53,7 +53,7 @@ export default function ManagerDashboard() {
         <h2 className="text-lg font-bold mb-4">Quick Actions</h2>
         <div className="grid grid-cols-2 gap-3">
           <Link 
-            href="/payments/add" 
+            href="/Accounts/transactions/cashPayments/create" 
             className="bg-blue-50 hover:bg-blue-100 p-3 rounded-lg text-center border border-blue-100"
           >
             <p className="font-medium text-blue-600">Add Payment</p>

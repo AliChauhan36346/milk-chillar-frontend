@@ -56,7 +56,7 @@ interface SummaryCardProps {
   title: string;
   value: string;
   icon: ReactNode;
-  color: 'blue' | 'green' | 'yellow' | 'red' | 'purple' | 'gray';
+  color: 'blue' | 'green' | 'yellow' | 'red' | 'purple' | 'gray' | 'orange';
   className?: string;
   subtitle?: string;
 }
@@ -75,7 +75,9 @@ export default function SummaryCard({
     yellow: 'bg-yellow-50 border-yellow-200 text-yellow-600',
     red: 'bg-red-50 border-red-200 text-red-600',
     purple: 'bg-purple-50 border-purple-200 text-purple-600',
-    gray: 'bg-gray-50 border-gray-200 text-gray-600'
+    gray: 'bg-gray-50 border-gray-200 text-gray-600',
+    orange: 'bg-orange-50 border-orange-200 text-orange-600'
+
   };
 
   const iconColorClasses = {
@@ -84,7 +86,8 @@ export default function SummaryCard({
     yellow: 'text-yellow-600',
     red: 'text-red-600',
     purple: 'text-purple-600',
-    gray: 'text-gray-600'
+    gray: 'text-gray-600',
+    orange: 'text-orange-600'
   };
 
   return (
