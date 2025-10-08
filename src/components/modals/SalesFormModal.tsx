@@ -62,15 +62,18 @@ export function SalesFormModal({
   formValues,
   onInputChange
 }: BuyerFormModalProps) {
+  // Helper: show empty string instead of "0"
+  const numToStr = (v?: number) => (typeof v === 'number' && v !== 0 ? v.toString() : '');
+
   const [formData, setFormData] = useState({
-    grossLiters: formValues.grossLiters.toString(),
-    lr: formValues.lr.toString(),
-    fat: formValues.fat.toString(),
-    netLiters: formValues.netLiters.toString(),
-    rate: formValues.rate.toString(),
-    amount: formValues.amount.toString(),
-    amountReceived: formValues.amountReceived.toString(),
-    revenueAccountId: formValues.revenueAccountId.toString(),
+    grossLiters: numToStr(formValues.grossLiters),
+    lr: numToStr(formValues.lr),
+    fat: numToStr(formValues.fat),
+    netLiters: numToStr(formValues.netLiters),
+    rate: numToStr(formValues.rate),
+    amount: numToStr(formValues.amount),
+    amountReceived: numToStr(formValues.amountReceived),
+    revenueAccountId: numToStr(formValues.revenueAccountId),
     date: initialDate
   });
 
@@ -78,28 +81,33 @@ export function SalesFormModal({
 
   useEffect(() => {
     setFormData({
-      grossLiters: formValues.grossLiters.toString(),
-      lr: formValues.lr.toString(),
-      fat: formValues.fat.toString(),
-      netLiters: formValues.netLiters.toString(),
-      rate: formValues.rate.toString(),
-      amount: formValues.amount.toString(),
-      amountReceived: formValues.amountReceived.toString(),
-      revenueAccountId: formValues.revenueAccountId.toString(),
+      grossLiters: numToStr(formValues.grossLiters),
+      lr: numToStr(formValues.lr),
+      fat: numToStr(formValues.fat),
+      netLiters: numToStr(formValues.netLiters),
+      rate: numToStr(formValues.rate),
+      amount: numToStr(formValues.amount),
+      amountReceived: numToStr(formValues.amountReceived),
+      revenueAccountId: numToStr(formValues.revenueAccountId),
       date: initialDate
     });
   }, [formValues, initialDate]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    
+
     // Update the string values in formData
     setFormData(prev => ({ ...prev, [name]: value }));
-    
-    // Only call onInputChange for numeric fields
+
+    // Only call onInputChange for numeric fields except revenueAccountId (handled as select)
     if (name !== 'revenueAccountId') {
-      const numValue = parseFloat(value) || 0;
+      // If user clears the field, treat as empty -> send 0 to parent (keeps parent's numeric model consistent)
+      const numValue = value === '' ? 0 : parseFloat(value) || 0;
       onInputChange(name, numValue);
+    } else {
+      // revenueAccountId comes from select: ensure number
+      const id = parseInt(value, 10) || 0;
+      onInputChange(name, id);
     }
   };
 
@@ -109,6 +117,22 @@ export function SalesFormModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate required fields are not empty (don't allow save when empty)
+    const missing: string[] = [];
+    if (formData.grossLiters.trim() === '') missing.push('Gross Liters');
+    if (formData.lr.trim() === '') missing.push('LR');
+    if (formData.fat.trim() === '') missing.push('Fat %');
+    if (formData.netLiters.trim() === '') missing.push('Net Liters');
+    if (isAdmin && formData.rate.trim() === '') missing.push('Rate per Liter');
+    if (formData.revenueAccountId.trim() === '') missing.push('Revenue Account');
+    if (formData.date.trim() === '') missing.push('Date');
+
+    if (missing.length > 0) {
+      alert('Please fill the following fields before saving: ' + missing.join(', '));
+      return;
+    }
+
     // Convert revenue account ID from string to number
     const revenueAccountId = parseInt(formData.revenueAccountId, 10);
     if (isNaN(revenueAccountId)) {
@@ -199,8 +223,6 @@ export function SalesFormModal({
                   value={formData.grossLiters}
                   onChange={handleChange}
                   className="flex-1 p-1 text-sm focus:outline-none"
-                  required
-                  step="0.01"
                   placeholder="0.00"
                 />
               </div>
@@ -219,8 +241,6 @@ export function SalesFormModal({
                   value={formData.lr}
                   onChange={handleChange}
                   className="flex-1 p-1 text-sm focus:outline-none"
-                  required
-                  step="0.01"
                   placeholder="0.00"
                 />
               </div>
@@ -239,8 +259,6 @@ export function SalesFormModal({
                   value={formData.fat}
                   onChange={handleChange}
                   className="flex-1 p-1 text-sm focus:outline-none"
-                  required
-                  step="0.01"
                   placeholder="0.00"
                 />
               </div>
@@ -271,8 +289,6 @@ export function SalesFormModal({
                   value={formData.rate}
                   onChange={handleChange}
                   className="flex-1 p-1 text-sm focus:outline-none"
-                  required
-                  step="0.01"
                   placeholder="0.00"
                 />
               </div>
@@ -287,8 +303,8 @@ export function SalesFormModal({
               value={formData.revenueAccountId}
               onChange={handleChange}
               className="w-full p-1 border border-gray-300 rounded-lg text-sm"
-              required
             >
+              <option value="">Select account</option>
               {revenueAccounts.map(account => (
                 <option key={account.accountId} value={account.accountId}>
                   {account.accountName} ({account.accountCode})
@@ -308,7 +324,6 @@ export function SalesFormModal({
                 value={formData.amountReceived}
                 onChange={handleChange}
                 className="flex-1 p-1 text-sm focus:outline-none"
-                step="0.01"
                 placeholder="0.00"
               />
             </div>
