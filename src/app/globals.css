@@ -1,5 +1,17 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import url('https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap');
+
+
+
+/* For print media */
+@media print {
+  .urdu-text {
+    font-family: 'Noto Nastaliq Urdu', sans-serif;
+    direction: rtl;
+    text-align: right;
+  }
+}
 
 @custom-variant dark (&:is(.dark *));
 
@@ -149,6 +161,12 @@
   .thermal-receipt,
   .thermal-receipt * {
     visibility: visible !important;
+  }
+
+  .urdu-text {
+    font-family: 'Noto Nastaliq Urdu', sans-serif;
+    direction: rtl;
+    text-align: right;
   }
   
   /* Position thermal receipt at top of page */

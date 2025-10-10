@@ -10,14 +10,14 @@ interface ParchiPrintSlipProps {
   companyLogo?: string;
 }
 
-export function ParchiPrintSlip({ 
-  parchi, 
-  startDate, 
+export function ParchiPrintSlip({
+  parchi,
+  startDate,
   endDate,
   companyName = "MILK CHILLAR",
-  companyLogo 
+  companyLogo
 }: ParchiPrintSlipProps) {
-  
+
   const formatCurrency = (amount: number) => {
     return `Rs ${amount.toLocaleString('en-PK', { minimumFractionDigits: 0 })}`;
   };
@@ -55,10 +55,26 @@ export function ParchiPrintSlip({
 
       {/* Supplier Info */}
       <div className="mb-3 pb-2 border-b border-dashed border-gray-600 text-base">
-        <div className="flex justify-between mb-2">
+        {/* <div className="flex justify-between mb-2">
           <span className="font-bold">Supplier:</span>
           <span className="text-right font-semibold">{parchi.accountName}</span>
+        </div> */}
+
+        {/* Supplier Info */}
+        <div className="flex justify-between mb-2">
+          <span className="font-bold">Supplier:</span>
+          <span
+            className="text-right font-semibold"
+            style={{
+              fontFamily: parchi.accountNameUrdu
+                ? 'Noto Nastaliq Urdu, sans-serif'
+                : 'inherit'
+            }}
+          >
+            {parchi.accountNameUrdu || parchi.accountName}
+          </span>
         </div>
+
         <div className="flex justify-between mb-2">
           <span className="font-bold">Code:</span>
           <span className="font-semibold">{parchi.accountCode}</span>
@@ -173,11 +189,11 @@ export function ParchiPrintSlip({
       {/* Footer */}
       <div className="text-center text-xs mt-4 pt-2 border-t-2 border-dashed border-gray-600">
         <p className="font-semibold mb-1">Thank you for your business!</p>
-        <p className="text-[10px]">Printed: {new Date().toLocaleString('en-PK', { 
-          day: '2-digit', 
-          month: 'short', 
-          hour: '2-digit', 
-          minute: '2-digit' 
+        <p className="text-[10px]">Printed: {new Date().toLocaleString('en-PK', {
+          day: '2-digit',
+          month: 'short',
+          hour: '2-digit',
+          minute: '2-digit'
         })}</p>
       </div>
     </div>

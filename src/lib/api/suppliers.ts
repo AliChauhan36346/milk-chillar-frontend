@@ -4,6 +4,7 @@ export interface Supplier {
   supplierId: number;
   accountId: number;
   fullName: string;
+  nameUrdu?: string; // ← ADD THIS LINE
   rate: number;
   khataNumber: string;
   creditLimit: number;
@@ -27,6 +28,7 @@ export interface SupplierPagedResponse {
 export interface CreateSupplierRequest {
   accountId: number;
   fullName: string;
+  nameUrdu?: string; // ← ADD THIS LINE
   rate: number;
   khataNumber: string;
   creditLimit: number;

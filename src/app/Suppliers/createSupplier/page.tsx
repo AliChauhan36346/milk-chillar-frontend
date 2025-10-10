@@ -46,6 +46,7 @@ function CreateSupplierPage() {
 
   const [formData, setFormData] = useState({
     fullName: '',
+    nameUrdu: '', // ← ADD THIS LINE
     khataNumber: '',
     rate: 0,
     creditLimit: 0,
@@ -59,6 +60,7 @@ function CreateSupplierPage() {
   const clearFormFields = () => {
     setFormData(prev => ({
       fullName: '',
+      nameUrdu: '',
       khataNumber: '',
       rate: 0,
       creditLimit: 0,
@@ -150,6 +152,7 @@ function CreateSupplierPage() {
       const data: Supplier = await getSupplierById(Number(supplierId));
       setFormData({
         fullName: data.fullName,
+        nameUrdu: data.nameUrdu || '',
         khataNumber: data.khataNumber,
         rate: data.rate,
         creditLimit: data.creditLimit,
@@ -189,6 +192,7 @@ function CreateSupplierPage() {
         await updateSupplier(Number(supplierId), {
           accountId,
           fullName: formData.fullName,
+          nameUrdu: formData.nameUrdu,
           rate: formData.rate,
           khataNumber: formData.khataNumber,
           creditLimit: formData.creditLimit,
@@ -203,6 +207,7 @@ function CreateSupplierPage() {
         await createSupplier({
           accountId,
           fullName: formData.fullName,
+          nameUrdu: formData.nameUrdu,
           rate: formData.rate,
           khataNumber: formData.khataNumber,
           creditLimit: formData.creditLimit,
@@ -283,6 +288,20 @@ function CreateSupplierPage() {
                       required
                     />
                   </div>
+
+                  {/* Name in Urdu */}
+                  <div>
+                    <Label htmlFor="nameUrdu">Name (Urdu) - Optional</Label>
+                    <Input
+                      id="nameUrdu"
+                      value={formData.nameUrdu}
+                      onChange={e => setFormData(prev => ({ ...prev, nameUrdu: e.target.value }))}
+                      placeholder="اردو میں نام"
+                      style={{ fontFamily: 'Noto Nastaliq Urdu, sans-serif' }}
+                      dir="rtl"
+                    />
+                  </div>
+
                   {/* Khata Number */}
                   <div>
                     <Label htmlFor="khataNumber">Khata Number</Label>

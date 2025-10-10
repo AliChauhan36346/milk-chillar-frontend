@@ -4,6 +4,7 @@ import { api } from './api';
 export interface ParchiDto {
   accountCode: string;
   accountName: string;
+  accountNameUrdu?: string; // ← ADD THIS LINE
   khataNumber: string;
   dodhiId?: number;
   dodhiName?: string;

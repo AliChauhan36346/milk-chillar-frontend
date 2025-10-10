@@ -1,12 +1,12 @@
 'use client';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
-  Search, 
-  Plus, 
-  Filter, 
-  Eye, 
-  Edit, 
+import {
+  Search,
+  Plus,
+  Filter,
+  Eye,
+  Edit,
   ChevronLeft,
   ChevronRight,
   RefreshCw
@@ -65,10 +65,10 @@ export default function SupplierListPage() {
       setTotalPages(data.totalPages);
       setTotalItems(data.totalCount);
     } catch (error) {
-      toast({ 
-        title: 'Error fetching suppliers', 
-        description: (error as Error)?.message || 'An error occurred', 
-        variant: 'error' 
+      toast({
+        title: 'Error fetching suppliers',
+        description: (error as Error)?.message || 'An error occurred',
+        variant: 'error'
       });
       console.error('Error fetching suppliers:', error);
     } finally {
@@ -189,14 +189,29 @@ export default function SupplierListPage() {
                               {getAccountNumber(supplier.accountCode)}
                             </span>
                           </td>
-                          <td className="px-4 py-3">
+                          {/* <td className="px-4 py-3">
                             <button
                               onClick={() => router.push(`/Suppliers/supplierDetail?id=${supplier.supplierId}`)}
                               className="font-medium text-blue-600 hover:text-blue-700 hover:underline"
                             >
                               {supplier.accountName}
                             </button>
+                          </td> */}
+
+                          <td className="px-4 py-3">
+                            <button
+                              onClick={() => router.push(`/Suppliers/supplierDetail?id=${supplier.supplierId}`)}
+                              className="font-medium text-blue-600 hover:text-blue-700 hover:underline"
+                              style={{
+                                fontFamily: supplier.nameUrdu
+                                  ? 'Noto Nastaliq Urdu, sans-serif'
+                                  : 'inherit'
+                              }}
+                            >
+                              {supplier.nameUrdu || supplier.accountName}
+                            </button>
                           </td>
+
                           <td className="px-4 py-3 text-gray-700">
                             {supplier.khataNumber || '-'}
                           </td>
@@ -210,11 +225,10 @@ export default function SupplierListPage() {
                             {supplier.dodhiName || '-'}
                           </td>
                           <td className="px-4 py-3">
-                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                              supplier.isActive 
-                                ? 'bg-green-100 text-green-800' 
+                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${supplier.isActive
+                                ? 'bg-green-100 text-green-800'
                                 : 'bg-red-100 text-red-800'
-                            }`}>
+                              }`}>
                               {supplier.isActive ? 'Active' : 'Inactive'}
                             </span>
                           </td>
@@ -255,7 +269,7 @@ export default function SupplierListPage() {
                     >
                       <ChevronLeft className="w-4 h-4" />
                     </button>
-                    
+
                     <span className="px-2 py-1 text-gray-700">
                       {pageNumber} / {totalPages}
                     </span>
