@@ -18,7 +18,10 @@ import {
   Receipt,
   BookOpen,
   Building,
-  Banknote
+  Banknote,
+  ClipboardList,
+  PackageOpen,
+  DollarSign
 } from 'lucide-react';
 
 const adminNavigation = [
@@ -54,7 +57,7 @@ const adminNavigation = [
         href: '/Accounts',
         subItems: [
           { label: 'Chart of Accounts', href: '/Accounts/chartOfAccounts', icon: <FileText size={18} /> },
-          { label: 'Account Ledgers', href: '/Accounts/ledgers', icon: <BookOpen size={18} /> }
+          { label: 'Account Ledgers', href: '/Accounts/accountledgers', icon: <BookOpen size={18} /> }
         ]
       },
       { 
@@ -74,8 +77,36 @@ const adminNavigation = [
   {
     section: 'Reports',
     items: [
-      { label: 'Financial Reports', href: '/reports/financial', icon: <BarChart2 size={18} /> },
-      { label: 'Inventory Reports', href: '/reports/inventory', icon: <FileText size={18} /> }
+      { 
+        label: 'Financial Reports', 
+        icon: <BarChart2 size={18} />,
+        href: '/reports/financial',
+        subItems: [
+          { label: 'Trial Balance', href: '/reports/financial/trial-balance', icon: <Scale size={18} /> },
+          { label: 'Profit & Loss', href: '/reports/financial/profit-loss', icon: <DollarSign size={18} /> },
+          { label: 'Balance Sheet', href: '/reports/financial/balance-sheet', icon: <FileText size={18} /> }
+        ]
+      },
+      { 
+        label: 'Inventory Reports', 
+        icon: <Package size={18} />,
+        href: '/reports/inventory',
+        subItems: [
+          { label: 'Stock Summary', href: '/reports/inventory/stock-summary', icon: <PackageOpen size={18} /> },
+          { label: 'Stock Movement', href: '/reports/inventory/stock-movement', icon: <ClipboardList size={18} /> }
+        ]
+      },
+      // ✅ NEW REPORTS SECTION
+      { 
+        label: 'Transaction Reports', 
+        icon: <ClipboardList size={18} />,
+        href: '/reports/transactions',
+        subItems: [
+          { label: 'Sales Report', href: '/reports/sale', icon: <ShoppingBag size={18} /> },
+          { label: 'Purchase Report', href: '/reports/purchase/dodhiPurchaseReport', icon: <ShoppingCart size={18} /> },
+          { label: 'Chillar Receive Report', href: '/reports/chillarReceive', icon: <Scale size={18} /> }
+        ]
+      }
     ]
   },
   {

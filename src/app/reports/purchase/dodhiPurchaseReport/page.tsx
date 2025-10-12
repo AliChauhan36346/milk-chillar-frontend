@@ -1,10 +1,14 @@
+
 // 'use client';
 // import { useState, useEffect } from 'react';
-// import { Calendar, Milk, Scale, Filter, ChevronDown, AlertCircle } from 'lucide-react';
+// import { Calendar, Milk, Scale, Filter, ChevronDown, AlertCircle, Edit, Trash2 } from 'lucide-react';
 // import ProtectedRoute from '@/components/ProtectedRoutes';
 // import { FieldStaffLayout } from '@/components/layouts/FieldStaffLayout';
 // import { BackButton } from '@/components/ui/BackButton';
 // import SummaryCard from '@/components/ui/SummaryCard';
+// import { Table } from '@/components/ui/Table/Table';
+// import PurchaseModal from '@/components/modals/PurchaseModal';
+// import MilkLoader from '@/components/ui/Loader';
 // import { 
 //   fetchMyDodhiId, 
 //   fetchDodhiDashboardRecords, 
@@ -26,6 +30,10 @@
 //     const [receives, setReceives] = useState<ReceiveRecord[]>([]);
 //     const [loading, setLoading] = useState<boolean>(true);
 //     const [error, setError] = useState<string | null>(null);
+
+//     // Modal State for editing receives
+//     const [isReceiveModalOpen, setIsReceiveModalOpen] = useState(false);
+//     const [editingReceive, setEditingReceive] = useState<ReceiveRecord | null>(null);
 
 //     // Fetch dodhi ID on component mount
 //     useEffect(() => {
@@ -99,15 +107,36 @@
 //     const receiveTotal = receives.reduce((sum, r) => sum + r.grossLiters, 0);
 //     const differenceTotal = receiveTotal - purchaseTotal;
 
+//     // Handle receive edit
+//     const handleEditReceive = (receive: ReceiveRecord) => {
+//         setEditingReceive(receive);
+//         setIsReceiveModalOpen(true);
+//     };
+
+//     // Handle receive delete (placeholder - you'll need to implement the delete API)
+//     const handleDeleteReceive = (receiveId: number) => {
+//         if (window.confirm('Are you sure you want to delete this receive record?')) {
+//             // Implement delete functionality
+//             console.log('Delete receive:', receiveId);
+//             // After successful delete, refresh the records
+//         }
+//     };
+
+//     // Handle receive modal submit (placeholder - you'll need to implement the update API)
+//     const handleReceiveModalSubmit = (data: any) => {
+//         console.log('Update receive data:', data);
+//         // Implement update functionality
+//         setIsReceiveModalOpen(false);
+//         setEditingReceive(null);
+//         // After successful update, refresh the records
+//     };
+
 //     if (loading && !dodhiId) {
 //         return (
 //             <ProtectedRoute requiredRole="dodhi">
 //                 <FieldStaffLayout role="dodhi">
 //                     <div className="max-w-6xl mx-auto p-1 bg-gray-50 min-h-screen flex items-center justify-center">
-//                         <div className="text-center">
-//                             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-//                             <p className="text-gray-600">Loading your dashboard...</p>
-//                         </div>
+//                         <MilkLoader />
 //                     </div>
 //                 </FieldStaffLayout>
 //             </ProtectedRoute>
@@ -267,48 +296,38 @@
 //                         </h2>
 
 //                         {purchases.length > 0 ? (
-//                             <div className="overflow-x-auto">
-//                                 <table className="min-w-full divide-y divide-gray-200">
-//                                     <thead className="bg-gray-50">
-//                                         <tr>
-//                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-//                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
-//                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Supplier</th>
-//                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Account Code</th>
-//                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity (Ltrs)</th>
-//                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rate</th>
-//                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-//                                         </tr>
-//                                     </thead>
-//                                     <tbody className="bg-white divide-y divide-gray-200">
-//                                         {purchases.map((purchase) => (
-//                                             <tr key={purchase.purchaseId} className="hover:bg-gray-50">
-//                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-//                                                     {new Date(purchase.date).toLocaleDateString()}
-//                                                 </td>
-//                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-//                                                     {purchase.timeOfDay}
-//                                                 </td>
-//                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-//                                                     {purchase.accountName}
-//                                                 </td>
-//                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-//                                                     {purchase.accountCode}
-//                                                 </td>
-//                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
-//                                                     {purchase.grossLiters.toFixed(2)}
-//                                                 </td>
-//                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-//                                                     ₹{purchase.rate.toFixed(2)}
-//                                                 </td>
-//                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
-//                                                     ₹{purchase.totalAmount.toFixed(2)}
-//                                                 </td>
-//                                             </tr>
-//                                         ))}
-//                                     </tbody>
-//                                 </table>
-//                             </div>
+//                             <Table>
+//                                 <Table.Header>
+//                                     <Table.Row>
+//                                         <Table.Head>Date</Table.Head>
+//                                         <Table.Head>Account Code</Table.Head>
+//                                         <Table.Head>Account Name</Table.Head>
+//                                         <Table.Head>Time</Table.Head>
+//                                         <Table.Head>Liters</Table.Head>
+//                                     </Table.Row>
+//                                 </Table.Header>
+//                                 <Table.Body>
+//                                     {purchases.map((purchase) => (
+//                                         <Table.Row key={purchase.purchaseId}>
+//                                             <Table.Cell>
+//                                                 {new Date(purchase.date).toLocaleDateString()}
+//                                             </Table.Cell>
+//                                             <Table.Cell className="font-mono text-sm">
+//                                                 {purchase.accountCode}
+//                                             </Table.Cell>
+//                                             <Table.Cell>
+//                                                 {purchase.accountName}
+//                                             </Table.Cell>
+//                                             <Table.Cell className="capitalize">
+//                                                 {purchase.timeOfDay}
+//                                             </Table.Cell>
+//                                             <Table.Cell className="font-medium">
+//                                                 {purchase.grossLiters.toFixed(2)}
+//                                             </Table.Cell>
+//                                         </Table.Row>
+//                                     ))}
+//                                 </Table.Body>
+//                             </Table>
 //                         ) : (
 //                             <div className="text-center py-8 text-gray-500">
 //                                 No purchase records found for selected date range
@@ -324,73 +343,109 @@
 //                         </h2>
 
 //                         {receives.length > 0 ? (
-//                             <div className="overflow-x-auto">
-//                                 <table className="min-w-full divide-y divide-gray-200">
-//                                     <thead className="bg-gray-50">
-//                                         <tr>
-//                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-//                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
-//                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Chillar</th>
-//                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Incharge</th>
-//                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gross Ltrs</th>
-//                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">LR</th>
-//                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fat</th>
-//                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Net Ltrs</th>
-//                                         </tr>
-//                                     </thead>
-//                                     <tbody className="bg-white divide-y divide-gray-200">
-//                                         {receives.map((receive) => (
-//                                             <tr key={receive.receiveId} className="hover:bg-gray-50">
-//                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-//                                                     {new Date(receive.date).toLocaleDateString()}
-//                                                 </td>
-//                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-//                                                     {receive.timeOfDay}
-//                                                 </td>
-//                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-//                                                     {receive.chillarName}
-//                                                 </td>
-//                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-//                                                     {receive.inchargeName}
-//                                                 </td>
-//                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
-//                                                     {receive.grossLiters.toFixed(2)}
-//                                                 </td>
-//                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-//                                                     {receive.lr.toFixed(2)}
-//                                                 </td>
-//                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-//                                                     {receive.fat.toFixed(2)}
-//                                                 </td>
-//                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
-//                                                     {receive.netLiters.toFixed(2)}
-//                                                 </td>
-//                                             </tr>
-//                                         ))}
-//                                     </tbody>
-//                                 </table>
-//                             </div>
+//                             <Table>
+//                                 <Table.Header>
+//                                     <Table.Row>
+//                                         <Table.Head>Date</Table.Head>
+//                                         <Table.Head>Time</Table.Head>
+//                                         <Table.Head>Gross Ltrs</Table.Head>
+//                                         <Table.Head>LR</Table.Head>
+//                                         <Table.Head>Fat</Table.Head>
+//                                         <Table.Head>Net Ltrs</Table.Head>
+//                                         <Table.Head>Actions</Table.Head>
+//                                     </Table.Row>
+//                                 </Table.Header>
+//                                 <Table.Body>
+//                                     {receives.map((receive) => (
+//                                         <Table.Row key={receive.receiveId}>
+//                                             <Table.Cell>
+//                                                 {new Date(receive.date).toLocaleDateString()}
+//                                             </Table.Cell>
+//                                             <Table.Cell className="capitalize">
+//                                                 {receive.timeOfDay}
+//                                             </Table.Cell>
+//                                             <Table.Cell className="font-medium">
+//                                                 {receive.grossLiters.toFixed(2)}
+//                                             </Table.Cell>
+//                                             <Table.Cell>
+//                                                 {receive.lr.toFixed(2)}
+//                                             </Table.Cell>
+//                                             <Table.Cell>
+//                                                 {receive.fat.toFixed(2)}
+//                                             </Table.Cell>
+//                                             <Table.Cell className="font-medium">
+//                                                 {receive.netLiters.toFixed(2)}
+//                                             </Table.Cell>
+//                                             <Table.Cell>
+//                                                 <div className="flex items-center gap-2">
+//                                                     <button
+//                                                         onClick={() => handleEditReceive(receive)}
+//                                                         className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+//                                                         title="Edit record"
+//                                                     >
+//                                                         <Edit className="w-4 h-4" />
+//                                                     </button>
+//                                                     <button
+//                                                         onClick={() => handleDeleteReceive(receive.receiveId)}
+//                                                         className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
+//                                                         title="Delete record"
+//                                                     >
+//                                                         <Trash2 className="w-4 h-4" />
+//                                                     </button>
+//                                                 </div>
+//                                             </Table.Cell>
+//                                         </Table.Row>
+//                                     ))}
+//                                 </Table.Body>
+//                             </Table>
 //                         ) : (
 //                             <div className="text-center py-8 text-gray-500">
 //                                 No receive records found for selected date range
 //                             </div>
 //                         )}
 //                     </div>
+
+//                     {/* Receive Edit Modal - Placeholder */}
+//                     {/* Note: You'll need to create a proper ReceiveModal component similar to PurchaseModal */}
+//                     {isReceiveModalOpen && editingReceive && (
+//                         <div className="fixed inset-0 bg-black bg-opacity-30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+//                             <div className="bg-white rounded-xl shadow-lg w-full max-w-md p-6">
+//                                 <h2 className="text-xl font-semibold mb-4">Edit Receive Record</h2>
+//                                 <p className="text-gray-600 mb-4">
+//                                     Editing receive record for {new Date(editingReceive.date).toLocaleDateString()} - {editingReceive.timeOfDay}
+//                                 </p>
+//                                 <div className="flex gap-3">
+//                                     <button
+//                                         onClick={() => {
+//                                             setIsReceiveModalOpen(false);
+//                                             setEditingReceive(null);
+//                                         }}
+//                                         className="flex-1 py-2 px-4 bg-gray-200 text-gray-800 rounded-lg font-medium hover:bg-gray-300"
+//                                     >
+//                                         Close
+//                                     </button>
+//                                 </div>
+//                             </div>
+//                         </div>
+//                     )}
 //                 </div>
 //             </FieldStaffLayout>
 //         </ProtectedRoute>
 //     );
 // }
 
+
+
 'use client';
-import { useState, useEffect } from 'react';
-import { Calendar, Milk, Scale, Filter, ChevronDown, AlertCircle, Edit, Trash2 } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Calendar, Milk, Scale, Filter, ChevronDown, AlertCircle, Edit, Trash2, Download, Users } from 'lucide-react';
+import { useAuth } from '@/lib/auth/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoutes';
-import { FieldStaffLayout } from '@/components/layouts/FieldStaffLayout';
+import { DynamicLayout } from '@/components/layouts/DynamicLayout';
 import { BackButton } from '@/components/ui/BackButton';
 import SummaryCard from '@/components/ui/SummaryCard';
 import { Table } from '@/components/ui/Table/Table';
-import PurchaseModal from '@/components/modals/PurchaseModal';
+import { Select } from '@/components/ui/Select';
 import MilkLoader from '@/components/ui/Loader';
 import { 
   fetchMyDodhiId, 
@@ -399,420 +454,676 @@ import {
   ReceiveRecord,
   DodhiDashboardRecords
 } from '@/lib/api/reports';
+import { getDodhis, Dodhi } from '@/lib/api/dodhi';
+import { getChillars, Chillar } from '@/lib/api/chillar';
+import { getEmployees, Employee } from '@/lib/api/employees';
 
-export default function DailyReport() {
-    const today = new Date().toISOString().split('T')[0];
-    const [dateRange, setDateRange] = useState<string>('today');
-    const [startDate, setStartDate] = useState<string>(today);
-    const [endDate, setEndDate] = useState<string>(today);  
-    const [showDatePicker, setShowDatePicker] = useState(false);
-    
-    // API State
-    const [dodhiId, setDodhiId] = useState<number | null>(null);
-    const [purchases, setPurchases] = useState<PurchaseRecord[]>([]);
-    const [receives, setReceives] = useState<ReceiveRecord[]>([]);
-    const [loading, setLoading] = useState<boolean>(true);
-    const [error, setError] = useState<string | null>(null);
+interface PurchaseSummary {
+  totalPurchased: number;
+  totalReceived: number;
+  difference: number;
+  totalTransactions: number;
+  uniqueSuppliers: number;
+}
 
-    // Modal State for editing receives
-    const [isReceiveModalOpen, setIsReceiveModalOpen] = useState(false);
-    const [editingReceive, setEditingReceive] = useState<ReceiveRecord | null>(null);
+export default function PurchaseReport() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
 
-    // Fetch dodhi ID on component mount
-    useEffect(() => {
-        const fetchDodhiId = async () => {
-            try {
-                const id = await fetchMyDodhiId();
-                setDodhiId(id);
-            } catch (error) {
-                console.error('Error fetching dodhi ID:', error);
-                setError('Failed to fetch dodhi information');
-                setLoading(false);
-            }
-        };
+  const today = new Date().toISOString().split('T')[0];
+  const [dateRange, setDateRange] = useState<string>('today');
+  const [startDate, setStartDate] = useState<string>(today);
+  const [endDate, setEndDate] = useState<string>(today);  
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  
+  // API State
+  const [dodhiId, setDodhiId] = useState<number | null>(null);
+  const [selectedChillarId, setSelectedChillarId] = useState<number | undefined>(undefined);
+  const [selectedDodhiId, setSelectedDodhiId] = useState<number | undefined>(undefined);
+  const [chillars, setChillars] = useState<Chillar[]>([]);
+  const [allDodhis, setAllDodhis] = useState<Employee[]>([]);
+  const [filteredDodhis, setFilteredDodhis] = useState<Employee[]>([]);
+  const [purchases, setPurchases] = useState<PurchaseRecord[]>([]);
+  const [receives, setReceives] = useState<ReceiveRecord[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
-        fetchDodhiId();
-    }, []);
+  // Modal State for editing receives
+  const [isReceiveModalOpen, setIsReceiveModalOpen] = useState(false);
+  const [editingReceive, setEditingReceive] = useState<ReceiveRecord | null>(null);
 
-    // Calculate date ranges
-    useEffect(() => {
-        const today = new Date();
-        const newEndDate = today.toISOString().split('T')[0];
-
-        if (dateRange === 'today') {
-            setStartDate(newEndDate);
-            setEndDate(newEndDate);
-        } else if (dateRange === '7days') {
-            const sevenDaysAgo = new Date();
-            sevenDaysAgo.setDate(today.getDate() - 7);
-            setStartDate(sevenDaysAgo.toISOString().split('T')[0]);
-            setEndDate(newEndDate);
-        } else if (dateRange === '15days') {
-            const fifteenDaysAgo = new Date();
-            fifteenDaysAgo.setDate(today.getDate() - 15);
-            setStartDate(fifteenDaysAgo.toISOString().split('T')[0]);
-            setEndDate(newEndDate);
+  // Load chillars and dodhis for admin
+  useEffect(() => {
+    const loadData = async () => {
+      if (isAdmin) {
+        try {
+          const [chillarData, dodhiData] = await Promise.all([
+            getChillars(),
+            getEmployees()
+          ]);
+          setChillars(chillarData);
+          setAllDodhis(dodhiData);
+        } catch (error) {
+          console.error('Failed to fetch data:', error);
         }
-    }, [dateRange]);
-
-    // Fetch records when dodhiId or date range changes
-    useEffect(() => {
-        const fetchRecords = async () => {
-            if (!dodhiId) return;
-
-            setLoading(true);
-            setError(null);
-
-            try {
-                const data: DodhiDashboardRecords = await fetchDodhiDashboardRecords({
-                    startDate,
-                    endDate,
-                    dodhiId
-                });
-
-                setPurchases(data.purchases || []);
-                setReceives(data.receives || []);
-            } catch (error) {
-                console.error('Error fetching dashboard records:', error);
-                setError('Failed to fetch dashboard records');
-                setPurchases([]);
-                setReceives([]);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchRecords();
-    }, [dodhiId, startDate, endDate]);
-
-    // Calculate totals
-    const purchaseTotal = purchases.reduce((sum, p) => sum + p.grossLiters, 0);
-    const receiveTotal = receives.reduce((sum, r) => sum + r.grossLiters, 0);
-    const differenceTotal = receiveTotal - purchaseTotal;
-
-    // Handle receive edit
-    const handleEditReceive = (receive: ReceiveRecord) => {
-        setEditingReceive(receive);
-        setIsReceiveModalOpen(true);
+      }
     };
 
-    // Handle receive delete (placeholder - you'll need to implement the delete API)
-    const handleDeleteReceive = (receiveId: number) => {
-        if (window.confirm('Are you sure you want to delete this receive record?')) {
-            // Implement delete functionality
-            console.log('Delete receive:', receiveId);
-            // After successful delete, refresh the records
+    loadData();
+  }, [isAdmin]);
+
+  // Filter dodhis based on selected chillar
+  useEffect(() => {
+    if (selectedChillarId) {
+      const filtered = allDodhis.filter(dodhi => dodhi.chillarId === selectedChillarId);
+      setFilteredDodhis(filtered);
+      // Reset dodhi selection when chillar changes
+      setSelectedDodhiId(undefined);
+    } else {
+      setFilteredDodhis(allDodhis);
+    }
+  }, [selectedChillarId, allDodhis]);
+
+  // Fetch dodhi ID on component mount for non-admin users
+  useEffect(() => {
+    const fetchDodhiId = async () => {
+      if (!isAdmin) {
+        try {
+          const id = await fetchMyDodhiId();
+          setDodhiId(id);
+        } catch (error) {
+          console.error('Error fetching dodhi ID:', error);
+          setError('Failed to fetch dodhi information');
+          setLoading(false);
         }
+      }
     };
 
-    // Handle receive modal submit (placeholder - you'll need to implement the update API)
-    const handleReceiveModalSubmit = (data: any) => {
-        console.log('Update receive data:', data);
-        // Implement update functionality
-        setIsReceiveModalOpen(false);
-        setEditingReceive(null);
-        // After successful update, refresh the records
+    fetchDodhiId();
+  }, [isAdmin]);
+
+  // Calculate date ranges
+  useEffect(() => {
+    const today = new Date();
+    const newEndDate = today.toISOString().split('T')[0];
+
+    if (dateRange === 'today') {
+      setStartDate(newEndDate);
+      setEndDate(newEndDate);
+    } else if (dateRange === '7days') {
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(today.getDate() - 7);
+      setStartDate(sevenDaysAgo.toISOString().split('T')[0]);
+      setEndDate(newEndDate);
+    } else if (dateRange === '15days') {
+      const fifteenDaysAgo = new Date();
+      fifteenDaysAgo.setDate(today.getDate() - 15);
+      setStartDate(fifteenDaysAgo.toISOString().split('T')[0]);
+      setEndDate(newEndDate);
+    }
+  }, [dateRange]);
+
+  // Fetch records when filters change
+  useEffect(() => {
+    const fetchRecords = async () => {
+      if (!isAdmin && !dodhiId) return;
+      if (isAdmin && selectedChillarId && !selectedDodhiId) {
+        // If chillar is selected but no dodhi, don't fetch yet
+        setPurchases([]);
+        setReceives([]);
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        const targetDodhiId = isAdmin ? selectedDodhiId : dodhiId;
+        
+        if (isAdmin && !targetDodhiId) {
+          // No specific dodhi selected for admin
+          setPurchases([]);
+          setReceives([]);
+        } else {
+          const data: DodhiDashboardRecords = await fetchDodhiDashboardRecords({
+            startDate,
+            endDate,
+            dodhiId: targetDodhiId!
+          });
+
+          setPurchases(data.purchases || []);
+          setReceives(data.receives || []);
+        }
+      } catch (error) {
+        console.error('Error fetching dashboard records:', error);
+        setError('Failed to fetch dashboard records');
+        setPurchases([]);
+        setReceives([]);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    if (loading && !dodhiId) {
-        return (
-            <ProtectedRoute requiredRole="dodhi">
-                <FieldStaffLayout role="dodhi">
-                    <div className="max-w-6xl mx-auto p-1 bg-gray-50 min-h-screen flex items-center justify-center">
-                        <MilkLoader />
-                    </div>
-                </FieldStaffLayout>
-            </ProtectedRoute>
-        );
-    }
+    fetchRecords();
+  }, [dodhiId, startDate, endDate, isAdmin, selectedChillarId, selectedDodhiId]);
 
-    if (error && !dodhiId) {
-        return (
-            <ProtectedRoute requiredRole="dodhi">
-                <FieldStaffLayout role="dodhi">
-                    <div className="max-w-6xl mx-auto p-1 bg-gray-50 min-h-screen flex items-center justify-center">
-                        <div className="text-center">
-                            <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-                            <p className="text-red-600 mb-4">{error}</p>
-                            <button 
-                                onClick={() => window.location.reload()} 
-                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                            >
-                                Retry
-                            </button>
-                        </div>
-                    </div>
-                </FieldStaffLayout>
-            </ProtectedRoute>
-        );
-    }
+  // Calculate totals and summary
+  const purchaseSummary: PurchaseSummary = useMemo(() => {
+    const totalPurchased = purchases.reduce((sum, p) => sum + p.grossLiters, 0);
+    const totalReceived = receives.reduce((sum, r) => sum + r.grossLiters, 0);
+    const difference = totalReceived - totalPurchased;
+    const totalTransactions = purchases.length + receives.length;
+    const uniqueSuppliers = new Set(purchases.map(p => p.accountId)).size;
 
+    return {
+      totalPurchased,
+      totalReceived,
+      difference,
+      totalTransactions,
+      uniqueSuppliers
+    };
+  }, [purchases, receives]);
+
+  // Handle receive edit
+  const handleEditReceive = (receive: ReceiveRecord) => {
+    setEditingReceive(receive);
+    setIsReceiveModalOpen(true);
+  };
+
+  // Handle receive delete
+  const handleDeleteReceive = (receiveId: number) => {
+    if (window.confirm('Are you sure you want to delete this receive record?')) {
+      // Implement delete functionality
+      console.log('Delete receive:', receiveId);
+      // After successful delete, refresh the records
+    }
+  };
+
+  // Handle receive modal submit
+  const handleReceiveModalSubmit = (data: any) => {
+    console.log('Update receive data:', data);
+    // Implement update functionality
+    setIsReceiveModalOpen(false);
+    setEditingReceive(null);
+    // After successful update, refresh the records
+  };
+
+  // Handle export data
+  const handleExportData = () => {
+    const headers = [
+      'Type',
+      'Date',
+      'Time',
+      'Account Code',
+      'Account Name',
+      'Gross Liters',
+      'LR',
+      'Fat',
+      'Net Liters'
+    ];
+
+    const csvContent = [
+      headers.join(','),
+      ...purchases.map(purchase => [
+        'Purchase',
+        purchase.date,
+        purchase.timeOfDay,
+        purchase.accountCode,
+        `"${purchase.accountName}"`,
+        purchase.grossLiters,
+        '',
+        '',
+        ''
+      ].join(',')),
+      ...receives.map(receive => [
+        'Receive',
+        receive.date,
+        receive.timeOfDay,
+        '',
+        '',
+        receive.grossLiters,
+        receive.lr,
+        receive.fat,
+        receive.netLiters
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `purchase-report-${startDate}-to-${endDate}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
+  // Get current selected dodhi and chillar names for display
+  const selectedChillarName = selectedChillarId 
+    ? chillars.find(c => c.chillarId === selectedChillarId)?.name 
+    : null;
+
+  const selectedDodhiName = selectedDodhiId 
+    ? filteredDodhis.find(d => d.employeeId === selectedDodhiId)?.fullName 
+    : null;
+
+  if (loading && (!dodhiId && !isAdmin)) {
     return (
-        <ProtectedRoute requiredRole="dodhi">
-            <FieldStaffLayout role="dodhi">
-                <div className="max-w-6xl mx-auto p-1 bg-gray-50 min-h-screen">
-                    {/* Header */}
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-                        <div className="flex items-center gap-4">
-                            <BackButton />
-                            <h1 className="text-2xl font-bold flex items-center gap-2 text-blue-600">
-                                <Calendar className="w-6 h-6" />
-                                Daily Milk Report
-                            </h1>
-                        </div>
-
-                        {/* Date Filter */}
-                        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-                            <div className="relative">
-                                <button
-                                    onClick={() => setShowDatePicker(!showDatePicker)}
-                                    className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg border border-gray-300 shadow-sm"
-                                >
-                                    <Filter className="w-4 h-4" />
-                                    {dateRange === 'today' && 'Today'}
-                                    {dateRange === '7days' && 'Last 7 Days'}
-                                    {dateRange === '15days' && 'Last 15 Days'}
-                                    {dateRange === 'custom' && 'Custom Range'}
-                                    <ChevronDown className="w-4 h-4" />
-                                </button>
-
-                                {showDatePicker && (
-                                    <div className="absolute z-10 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 p-2 w-48">
-                                        <button
-                                            onClick={() => { setDateRange('today'); setShowDatePicker(false); }}
-                                            className={`w-full text-left px-3 py-2 rounded-md ${dateRange === 'today' ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-100'}`}
-                                        >
-                                            Today
-                                        </button>
-                                        <button
-                                            onClick={() => { setDateRange('7days'); setShowDatePicker(false); }}
-                                            className={`w-full text-left px-3 py-2 rounded-md ${dateRange === '7days' ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-100'}`}
-                                        >
-                                            Last 7 Days
-                                        </button>
-                                        <button
-                                            onClick={() => { setDateRange('15days'); setShowDatePicker(false); }}
-                                            className={`w-full text-left px-3 py-2 rounded-md ${dateRange === '15days' ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-100'}`}
-                                        >
-                                            Last 15 Days
-                                        </button>
-                                        <div className="border-t border-gray-200 mt-1 pt-1">
-                                            <div className="px-3 py-2 text-sm text-gray-500">Custom Range</div>
-                                            <div className="px-3 pb-2 flex flex-col gap-2">
-                                                <input
-                                                    type="date"
-                                                    value={startDate}
-                                                    onChange={(e) => { setStartDate(e.target.value); setDateRange('custom'); }}
-                                                    className="border border-gray-300 rounded-md p-1 text-sm"
-                                                />
-                                                <input
-                                                    type="date"
-                                                    value={endDate}
-                                                    onChange={(e) => { setEndDate(e.target.value); setDateRange('custom'); }}
-                                                    className="border border-gray-300 rounded-md p-1 text-sm"
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="text-sm bg-white px-4 py-2 rounded-lg border border-gray-200 flex items-center justify-center">
-                                {startDate === endDate ? (
-                                    <span>{new Date(startDate).toLocaleDateString()}</span>
-                                ) : (
-                                    <span>
-                                        {new Date(startDate).toLocaleDateString()} - {new Date(endDate).toLocaleDateString()}
-                                    </span>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Loading indicator for data refresh */}
-                    {loading && dodhiId && (
-                        <div className="flex items-center justify-center py-4 mb-4">
-                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mr-3"></div>
-                            <span className="text-gray-600">Loading records...</span>
-                        </div>
-                    )}
-
-                    {/* Error message */}
-                    {error && dodhiId && (
-                        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-                            <div className="flex items-center">
-                                <AlertCircle className="h-5 w-5 text-red-500 mr-2" />
-                                <span className="text-red-700">{error}</span>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Summary Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                        <SummaryCard
-                            title="Total Purchased"
-                            value={`${purchaseTotal.toFixed(2)} Ltrs`}
-                            icon={<Milk className="w-5 h-5" />}
-                            color="blue"
-                        />
-
-                        <SummaryCard
-                            title="Total Received"
-                            value={`${receiveTotal.toFixed(2)} Ltrs`}
-                            icon={<Scale className="w-5 h-5" />}
-                            color="green"
-                        />
-
-                        <SummaryCard
-                            title="Difference"
-                            value={`${differenceTotal >= 0 ? '+' : ''}${differenceTotal.toFixed(2)} Ltrs`}
-                            icon={<Scale className="w-5 h-5" />}
-                            color={differenceTotal >= 0 ? 'yellow' : 'red'}
-                        />
-                    </div>
-
-                    {/* Purchase Records */}
-                    <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-                        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2 text-blue-600">
-                            <Milk className="w-5 h-5" />
-                            Purchase Records
-                        </h2>
-
-                        {purchases.length > 0 ? (
-                            <Table>
-                                <Table.Header>
-                                    <Table.Row>
-                                        <Table.Head>Date</Table.Head>
-                                        <Table.Head>Account Code</Table.Head>
-                                        <Table.Head>Account Name</Table.Head>
-                                        <Table.Head>Time</Table.Head>
-                                        <Table.Head>Liters</Table.Head>
-                                    </Table.Row>
-                                </Table.Header>
-                                <Table.Body>
-                                    {purchases.map((purchase) => (
-                                        <Table.Row key={purchase.purchaseId}>
-                                            <Table.Cell>
-                                                {new Date(purchase.date).toLocaleDateString()}
-                                            </Table.Cell>
-                                            <Table.Cell className="font-mono text-sm">
-                                                {purchase.accountCode}
-                                            </Table.Cell>
-                                            <Table.Cell>
-                                                {purchase.accountName}
-                                            </Table.Cell>
-                                            <Table.Cell className="capitalize">
-                                                {purchase.timeOfDay}
-                                            </Table.Cell>
-                                            <Table.Cell className="font-medium">
-                                                {purchase.grossLiters.toFixed(2)}
-                                            </Table.Cell>
-                                        </Table.Row>
-                                    ))}
-                                </Table.Body>
-                            </Table>
-                        ) : (
-                            <div className="text-center py-8 text-gray-500">
-                                No purchase records found for selected date range
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Receive Records */}
-                    <div className="bg-white rounded-xl shadow-sm p-6">
-                        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2 text-green-600">
-                            <Scale className="w-5 h-5" />
-                            Receive Records
-                        </h2>
-
-                        {receives.length > 0 ? (
-                            <Table>
-                                <Table.Header>
-                                    <Table.Row>
-                                        <Table.Head>Date</Table.Head>
-                                        <Table.Head>Time</Table.Head>
-                                        <Table.Head>Gross Ltrs</Table.Head>
-                                        <Table.Head>LR</Table.Head>
-                                        <Table.Head>Fat</Table.Head>
-                                        <Table.Head>Net Ltrs</Table.Head>
-                                        <Table.Head>Actions</Table.Head>
-                                    </Table.Row>
-                                </Table.Header>
-                                <Table.Body>
-                                    {receives.map((receive) => (
-                                        <Table.Row key={receive.receiveId}>
-                                            <Table.Cell>
-                                                {new Date(receive.date).toLocaleDateString()}
-                                            </Table.Cell>
-                                            <Table.Cell className="capitalize">
-                                                {receive.timeOfDay}
-                                            </Table.Cell>
-                                            <Table.Cell className="font-medium">
-                                                {receive.grossLiters.toFixed(2)}
-                                            </Table.Cell>
-                                            <Table.Cell>
-                                                {receive.lr.toFixed(2)}
-                                            </Table.Cell>
-                                            <Table.Cell>
-                                                {receive.fat.toFixed(2)}
-                                            </Table.Cell>
-                                            <Table.Cell className="font-medium">
-                                                {receive.netLiters.toFixed(2)}
-                                            </Table.Cell>
-                                            <Table.Cell>
-                                                <div className="flex items-center gap-2">
-                                                    <button
-                                                        onClick={() => handleEditReceive(receive)}
-                                                        className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                                                        title="Edit record"
-                                                    >
-                                                        <Edit className="w-4 h-4" />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDeleteReceive(receive.receiveId)}
-                                                        className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
-                                                        title="Delete record"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </button>
-                                                </div>
-                                            </Table.Cell>
-                                        </Table.Row>
-                                    ))}
-                                </Table.Body>
-                            </Table>
-                        ) : (
-                            <div className="text-center py-8 text-gray-500">
-                                No receive records found for selected date range
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Receive Edit Modal - Placeholder */}
-                    {/* Note: You'll need to create a proper ReceiveModal component similar to PurchaseModal */}
-                    {isReceiveModalOpen && editingReceive && (
-                        <div className="fixed inset-0 bg-black bg-opacity-30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                            <div className="bg-white rounded-xl shadow-lg w-full max-w-md p-6">
-                                <h2 className="text-xl font-semibold mb-4">Edit Receive Record</h2>
-                                <p className="text-gray-600 mb-4">
-                                    Editing receive record for {new Date(editingReceive.date).toLocaleDateString()} - {editingReceive.timeOfDay}
-                                </p>
-                                <div className="flex gap-3">
-                                    <button
-                                        onClick={() => {
-                                            setIsReceiveModalOpen(false);
-                                            setEditingReceive(null);
-                                        }}
-                                        className="flex-1 py-2 px-4 bg-gray-200 text-gray-800 rounded-lg font-medium hover:bg-gray-300"
-                                    >
-                                        Close
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            </FieldStaffLayout>
-        </ProtectedRoute>
+      <ProtectedRoute allowedRoles={['admin', 'dodhi']}>
+        <DynamicLayout>
+          <div className="max-w-6xl mx-auto p-1 bg-gray-50 min-h-screen flex items-center justify-center">
+            <MilkLoader />
+          </div>
+        </DynamicLayout>
+      </ProtectedRoute>
     );
+  }
+
+  if (error && (!dodhiId && !isAdmin)) {
+    return (
+      <ProtectedRoute allowedRoles={['admin', 'dodhi']}>
+        <DynamicLayout>
+          <div className="max-w-6xl mx-auto p-1 bg-gray-50 min-h-screen flex items-center justify-center">
+            <div className="text-center">
+              <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+              <p className="text-red-600 mb-4">{error}</p>
+              <button 
+                onClick={() => window.location.reload()} 
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+        </DynamicLayout>
+      </ProtectedRoute>
+    );
+  }
+
+  return (
+    <ProtectedRoute allowedRoles={['admin', 'dodhi']}>
+      <DynamicLayout>
+        <div className="max-w-6xl mx-auto p-1 sm:p-4 bg-gray-50 min-h-screen space-y-6">
+          {/* Header */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div className="flex items-center gap-4">
+              <BackButton />
+              <h1 className="text-2xl font-bold flex items-center gap-2 text-blue-600">
+                <Calendar className="w-6 h-6" />
+                Purchase Report
+              </h1>
+            </div>
+
+            <div className="flex gap-3 w-full md:w-auto">
+              <button
+                onClick={handleExportData}
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              >
+                <Download className="w-4 h-4" />
+                Export CSV
+              </button>
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                <Filter className="w-4 h-4" />
+                {showFilters ? 'Hide' : 'Show'} Filters
+              </button>
+            </div>
+          </div>
+
+          {/* Filters */}
+          <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+              {/* Date Range Selector */}
+              <div className="relative">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
+                <button
+                  onClick={() => setShowDatePicker(!showDatePicker)}
+                  className="flex items-center justify-between w-full bg-white px-3 py-2 rounded-lg border border-gray-300 shadow-sm text-left"
+                >
+                  <span>
+                    {dateRange === 'today' && 'Today'}
+                    {dateRange === '7days' && 'Last 7 Days'}
+                    {dateRange === '15days' && 'Last 15 Days'}
+                    {dateRange === 'custom' && 'Custom Range'}
+                  </span>
+                  <ChevronDown className="w-4 h-4" />
+                </button>
+
+                {showDatePicker && (
+                  <div className="absolute z-10 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 p-2 w-full">
+                    <button
+                      onClick={() => { setDateRange('today'); setShowDatePicker(false); }}
+                      className={`w-full text-left px-3 py-2 rounded-md ${dateRange === 'today' ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-100'}`}
+                    >
+                      Today
+                    </button>
+                    <button
+                      onClick={() => { setDateRange('7days'); setShowDatePicker(false); }}
+                      className={`w-full text-left px-3 py-2 rounded-md ${dateRange === '7days' ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-100'}`}
+                    >
+                      Last 7 Days
+                    </button>
+                    <button
+                      onClick={() => { setDateRange('15days'); setShowDatePicker(false); }}
+                      className={`w-full text-left px-3 py-2 rounded-md ${dateRange === '15days' ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-100'}`}
+                    >
+                      Last 15 Days
+                    </button>
+                    <div className="border-t border-gray-200 mt-1 pt-1">
+                      <div className="px-3 py-2 text-sm text-gray-500">Custom Range</div>
+                      <div className="px-3 pb-2 flex flex-col gap-2">
+                        <input
+                          type="date"
+                          value={startDate}
+                          onChange={(e) => { setStartDate(e.target.value); setDateRange('custom'); }}
+                          className="border border-gray-300 rounded-md p-1 text-sm"
+                        />
+                        <input
+                          type="date"
+                          value={endDate}
+                          onChange={(e) => { setEndDate(e.target.value); setDateRange('custom'); }}
+                          className="border border-gray-300 rounded-md p-1 text-sm"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Chillar Selection - Only for Admin */}
+              {isAdmin && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Chillar</label>
+                  <Select
+                    value={selectedChillarId?.toString() || ''}
+                    onChange={(value) => setSelectedChillarId(value ? Number(value) : undefined)}
+                    options={[
+                      { value: '', label: 'All Chillars' },
+                      ...chillars.map(chillar => ({
+                        value: chillar.chillarId.toString(),
+                        label: chillar.name
+                      }))
+                    ]}
+                  />
+                </div>
+              )}
+
+              {/* Dodhi Selection - Only for Admin */}
+              {isAdmin && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Dodhi</label>
+                  <Select
+                    value={selectedDodhiId?.toString() || ''}
+                    onChange={(value) => setSelectedDodhiId(value ? Number(value) : undefined)}
+                    options={[
+                      { value: '', label: selectedChillarId ? 'All Dodhis in Chillar' : 'All Dodhis' },
+                      ...filteredDodhis.map(dodhi => ({
+                        value: dodhi.employeeId.toString(),
+                        label: dodhi.fullName
+                      }))
+                    ]}
+                    disabled={!selectedChillarId && filteredDodhis.length === 0}
+                  />
+                </div>
+              )}
+
+              {/* Date Display */}
+              <div className="flex items-end">
+                <div className="text-sm bg-white px-4 py-2 rounded-lg border border-gray-200 w-full">
+                  {startDate === endDate ? (
+                    <span>{new Date(startDate).toLocaleDateString()}</span>
+                  ) : (
+                    <span>
+                      {new Date(startDate).toLocaleDateString()} - {new Date(endDate).toLocaleDateString()}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Advanced Filters */}
+            {showFilters && (
+              <div className="pt-4 border-t border-gray-200">
+                <div className="text-sm text-gray-600">
+                  {isAdmin ? (
+                    <>
+                      {selectedChillarName && selectedDodhiName && (
+                        <span>Viewing data for <span className="font-semibold text-blue-600">{selectedDodhiName}</span> in <span className="font-semibold text-green-600">{selectedChillarName}</span></span>
+                      )}
+                      {selectedChillarName && !selectedDodhiName && (
+                        <span>Select a dodhi from <span className="font-semibold text-green-600">{selectedChillarName}</span> to view data</span>
+                      )}
+                      {!selectedChillarName && selectedDodhiName && (
+                        <span>Viewing data for <span className="font-semibold text-blue-600">{selectedDodhiName}</span></span>
+                      )}
+                      {!selectedChillarName && !selectedDodhiName && (
+                        <span>Select a chillar and dodhi to view specific data</span>
+                      )}
+                    </>
+                  ) : (
+                    <span>Viewing your purchase data</span>
+                  )}
+                  <span className="ml-2">• {purchases.length + receives.length} records</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Loading indicator for data refresh */}
+          {loading && (dodhiId || isAdmin) && (
+            <div className="flex items-center justify-center py-4">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mr-3"></div>
+              <span className="text-gray-600">Loading records...</span>
+            </div>
+          )}
+
+          {/* Error message */}
+          {error && (dodhiId || isAdmin) && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="flex items-center">
+                <AlertCircle className="h-5 w-5 text-red-500 mr-2" />
+                <span className="text-red-700">{error}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Summary Cards */}
+          {(!isAdmin || selectedDodhiId) && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <SummaryCard
+                title="Total Purchased"
+                value={`${purchaseSummary.totalPurchased.toFixed(2)} Ltrs`}
+                icon={<Milk className="w-5 h-5" />}
+                color="blue"
+                subtitle={`${purchaseSummary.uniqueSuppliers} suppliers`}
+              />
+
+              <SummaryCard
+                title="Total Received"
+                value={`${purchaseSummary.totalReceived.toFixed(2)} Ltrs`}
+                icon={<Scale className="w-5 h-5" />}
+                color="green"
+                subtitle={`${receives.length} receive records`}
+              />
+
+              <SummaryCard
+                title="Difference"
+                value={`${purchaseSummary.difference >= 0 ? '+' : ''}${purchaseSummary.difference.toFixed(2)} Ltrs`}
+                icon={<Users className="w-5 h-5" />}
+                color={purchaseSummary.difference >= 0 ? 'yellow' : 'red'}
+                subtitle={`${purchases.length} purchase records`}
+              />
+            </div>
+          )}
+
+          {/* Purchase Records */}
+          {(!isAdmin || selectedDodhiId) && (
+            <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
+              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2 text-blue-600">
+                <Milk className="w-5 h-5" />
+                Purchase Records
+              </h2>
+
+              {purchases.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <Table.Header>
+                      <Table.Row>
+                        <Table.Head>Date</Table.Head>
+                        <Table.Head>Account Code</Table.Head>
+                        <Table.Head>Account Name</Table.Head>
+                        <Table.Head>Time</Table.Head>
+                        <Table.Head>Liters</Table.Head>
+                      </Table.Row>
+                    </Table.Header>
+                    <Table.Body>
+                      {purchases.map((purchase) => (
+                        <Table.Row key={purchase.purchaseId}>
+                          <Table.Cell>
+                            {new Date(purchase.date).toLocaleDateString()}
+                          </Table.Cell>
+                          <Table.Cell className="font-mono text-sm">
+                            {purchase.accountCode}
+                          </Table.Cell>
+                          <Table.Cell>
+                            {purchase.accountName}
+                          </Table.Cell>
+                          <Table.Cell className="capitalize">
+                            {purchase.timeOfDay}
+                          </Table.Cell>
+                          <Table.Cell className="font-medium">
+                            {purchase.grossLiters.toFixed(2)}
+                          </Table.Cell>
+                        </Table.Row>
+                      ))}
+                    </Table.Body>
+                  </Table>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  No purchase records found for selected filters
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Receive Records */}
+          {(!isAdmin || selectedDodhiId) && (
+            <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
+              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2 text-green-600">
+                <Scale className="w-5 h-5" />
+                Receive Records
+              </h2>
+
+              {receives.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <Table.Header>
+                      <Table.Row>
+                        <Table.Head>Date</Table.Head>
+                        <Table.Head>Time</Table.Head>
+                        <Table.Head>Gross Ltrs</Table.Head>
+                        <Table.Head>LR</Table.Head>
+                        <Table.Head>Fat</Table.Head>
+                        <Table.Head>Net Ltrs</Table.Head>
+                        <Table.Head>Actions</Table.Head>
+                      </Table.Row>
+                    </Table.Header>
+                    <Table.Body>
+                      {receives.map((receive) => (
+                        <Table.Row key={receive.receiveId}>
+                          <Table.Cell>
+                            {new Date(receive.date).toLocaleDateString()}
+                          </Table.Cell>
+                          <Table.Cell className="capitalize">
+                            {receive.timeOfDay}
+                          </Table.Cell>
+                          <Table.Cell className="font-medium">
+                            {receive.grossLiters.toFixed(2)}
+                          </Table.Cell>
+                          <Table.Cell>
+                            {receive.lr.toFixed(2)}
+                          </Table.Cell>
+                          <Table.Cell>
+                            {receive.fat.toFixed(2)}
+                          </Table.Cell>
+                          <Table.Cell className="font-medium">
+                            {receive.netLiters.toFixed(2)}
+                          </Table.Cell>
+                          <Table.Cell>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => handleEditReceive(receive)}
+                                className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                title="Edit record"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteReceive(receive.receiveId)}
+                                className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
+                                title="Delete record"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </Table.Cell>
+                        </Table.Row>
+                      ))}
+                    </Table.Body>
+                  </Table>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  No receive records found for selected filters
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Info message for admin when no dodhi selected */}
+          {isAdmin && !selectedDodhiId && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
+              <div className="flex items-center justify-center mb-2">
+                <Users className="h-8 w-8 text-blue-500 mr-2" />
+                <h3 className="text-lg font-semibold text-blue-800">Select a Dodhi to View Data</h3>
+              </div>
+              <p className="text-blue-600">
+                {selectedChillarId 
+                  ? `Choose a dodhi from ${selectedChillarName} to view their purchase and receive records.`
+                  : 'Select a chillar and then choose a dodhi to view their specific purchase data.'
+                }
+              </p>
+            </div>
+          )}
+
+          {/* Receive Edit Modal */}
+          {isReceiveModalOpen && editingReceive && (
+            <div className="fixed inset-0 bg-black bg-opacity-30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+              <div className="bg-white rounded-xl shadow-lg w-full max-w-md p-6">
+                <h2 className="text-xl font-semibold mb-4">Edit Receive Record</h2>
+                <p className="text-gray-600 mb-4">
+                  Editing receive record for {new Date(editingReceive.date).toLocaleDateString()} - {editingReceive.timeOfDay}
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      setIsReceiveModalOpen(false);
+                      setEditingReceive(null);
+                    }}
+                    className="flex-1 py-2 px-4 bg-gray-200 text-gray-800 rounded-lg font-medium hover:bg-gray-300"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </DynamicLayout>
+    </ProtectedRoute>
+  );
 }
