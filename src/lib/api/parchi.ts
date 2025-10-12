@@ -2,27 +2,28 @@
 import { api } from './api';
 
 export interface ParchiDto {
+  accountId: number;
   accountCode: string;
   accountName: string;
-  accountNameUrdu?: string; // ← ADD THIS LINE
+  accountNameUrdu?: string;
   khataNumber: string;
   dodhiId?: number;
   dodhiName?: string;
-  
+
   // Previous Balance (before period)
   previousBalance: number;
   previousBalanceType: string; // "Debit" or "Credit"
-  
+
   // Period Transactions
   totalLiters: number;
   purchaseAmount: number;
   paymentsInPeriod: number;
   receiptsInPeriod: number;
-  
+
   // Closing Balance
   closingBalance: number;
   closingBalanceType: string;
-  
+
   // Credit Logic
   creditLimit: number;
   isCreditAllowed: boolean;
@@ -58,20 +59,20 @@ export const getSupplierParchi = async (params: ParchiQueryParams): Promise<Parc
   const queryParams = new URLSearchParams();
   queryParams.append('StartDate', params.startDate);
   queryParams.append('EndDate', params.endDate);
-  
+
   if (params.dodhiId) queryParams.append('DodhiId', params.dodhiId.toString());
   if (params.supplierId) queryParams.append('SupplierId', params.supplierId.toString());
   if (params.search) queryParams.append('Search', params.search);
   if (params.isActive !== undefined) queryParams.append('IsActive', params.isActive.toString());
-  
+
   const resp = await api.get<ParchiResult>(`/Parchi/suppliers?${queryParams.toString()}`);
   return resp.data;
 };
 
 // Get parchi for single supplier
 export const getSingleSupplierParchi = async (
-  supplierId: number, 
-  startDate: string, 
+  supplierId: number,
+  startDate: string,
   endDate: string
 ): Promise<ParchiDto> => {
   const resp = await api.get<ParchiDto>(

@@ -7,6 +7,8 @@ import { Table } from '@/components/ui/Table/Table';
 import SummaryCard from '@/components/ui/SummaryCard';
 import { Select } from '@/components/ui/Select';
 import ProtectedRoute from '@/components/ProtectedRoutes';
+import { PayParchiModal } from '@/components/modals/PayParchiModal';
+import { cashPaymentsApi } from '@/lib/api/cashPayments';
 import {
   Download,
   Calendar,
@@ -28,6 +30,8 @@ import { getEmployees, Employee } from '@/lib/api/employees';
 import { useToast } from '@/hooks/useToast';
 
 export default function ParchiPage() {
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [selectedParchisForPayment, setSelectedParchisForPayment] = useState<ParchiDto[]>([]);
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [parchiData, setParchiData] = useState<ParchiResult | null>(null);
@@ -35,21 +39,21 @@ export default function ParchiPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [printMode, setPrintMode] = useState(false);
   const [selectedParchiForPrint, setSelectedParchiForPrint] = useState<ParchiDto[]>([]);
-  
+
   // Set default dates (last 15 days)
   const getDefaultDates = () => {
     const endDate = new Date();
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - 15);
-    
+
     return {
       startDate: startDate.toISOString().split('T')[0],
       endDate: endDate.toISOString().split('T')[0]
     };
   };
-  
+
   const defaultDates = getDefaultDates();
-  
+
   const [filters, setFilters] = useState<ParchiQueryParams>({
     startDate: defaultDates.startDate,
     endDate: defaultDates.endDate,
@@ -62,6 +66,8 @@ export default function ParchiPage() {
     loadEmployees();
     loadParchiData();
   }, []);
+
+
 
   const loadEmployees = async () => {
     try {
@@ -100,6 +106,112 @@ export default function ParchiPage() {
     loadParchiData();
   };
 
+  const handlePayAllParchis = () => {
+    if (!parchiData || parchiData.items.length === 0) {
+      toast({
+        title: 'No parchis to pay',
+        description: 'Generate parchi data first',
+        variant: 'error'
+      });
+      return;
+    }
+
+    // Filter only parchis with amount > 0
+    const payableParchis = parchiData.items.filter(p => p.parchiAmount > 0);
+
+    if (payableParchis.length === 0) {
+      toast({
+        title: 'No payable parchis',
+        description: 'All parchi amounts are zero',
+        variant: 'error'
+      });
+      return;
+    }
+
+    setSelectedParchisForPayment(payableParchis);
+    setPaymentModalOpen(true);
+  };
+
+  const handleConfirmPayments = async (cashAccountId: number, confirmationText: string) => {
+  try {
+    // Group parchis into batches of 5
+    const batches: ParchiDto[][] = [];
+    for (let i = 0; i < selectedParchisForPayment.length; i += 5) {
+      batches.push(selectedParchisForPayment.slice(i, i + 5));
+    }
+
+    let successCount = 0;
+    let failCount = 0;
+
+    // Helper function to format date
+    const formatDateShort = (dateString: string) => {
+      return new Date(dateString).toLocaleDateString('en-PK', {
+        day: '2-digit',
+        month: 'short'
+      });
+    };
+
+    // Create payments for each batch
+    for (let i = 0; i < batches.length; i++) {
+      try {
+        const batch = batches[i];
+        const totalAmount = batch.reduce((sum, p) => sum + p.parchiAmount, 0);
+
+        // ✅ UPDATED: Create payment lines with new description format
+        const paymentLines = batch.map(parchi => {
+          // Format: "Parchi Payment 26-Sept to 11-Oct - 24.50 Ltrs"
+          const description = `Parchi Payment ${formatDateShort(filters.startDate)} to ${formatDateShort(filters.endDate)} - ${parchi.totalLiters.toFixed(2)} Ltrs`;
+          
+          return {
+            accountId: parchi.accountId,
+            description: description,
+            amount: parchi.parchiAmount
+          };
+        });
+
+        // Create cash payment
+        await cashPaymentsApi.createPayment({
+          paymentDate: new Date().toISOString(),
+          jobDescription: `Parchi Payment ${i + 1}/${batches.length} - ${formatDateShort(filters.startDate)} to ${formatDateShort(filters.endDate)}`,
+          cashAccountId: cashAccountId,
+          totalAmount: totalAmount,
+          remarks: `Bulk parchi payment for ${batch.length} suppliers`,
+          paymentLines: paymentLines
+        });
+
+        successCount++;
+      } catch (error) {
+        console.error(`Failed to create payment batch ${i + 1}:`, error);
+        failCount++;
+      }
+    }
+
+    // Show results
+    if (successCount > 0) {
+      toast({
+        title: `Created ${successCount} payment(s) successfully`,
+        description: failCount > 0 ? `${failCount} payment(s) failed` : undefined,
+        variant: 'success'
+      });
+      setPaymentModalOpen(false); // ✅ Close modal on success
+      loadParchiData(); // Refresh data
+    } else {
+      toast({
+        title: 'Failed to create payments',
+        description: 'Please try again or contact support',
+        variant: 'error'
+      });
+    }
+  } catch (error) {
+    toast({
+      title: 'Error creating payments',
+      description: (error as Error)?.message || 'An error occurred',
+      variant: 'error'
+    });
+    throw error;
+  }
+};
+
   const handlePrintSelected = (parchi: ParchiDto) => {
     setSelectedParchiForPrint([parchi]);
     setPrintMode(true);
@@ -114,13 +226,15 @@ export default function ParchiPage() {
     }
   };
 
+
+
   // After print cleanup
   useEffect(() => {
     const afterPrint = () => {
       setPrintMode(false);
       setSelectedParchiForPrint([]);
     };
-    
+
     window.addEventListener('afterprint', afterPrint);
     return () => window.removeEventListener('afterprint', afterPrint);
   }, []);
@@ -141,6 +255,7 @@ export default function ParchiPage() {
     });
   };
 
+
   return (
     <ProtectedRoute requiredRole="admin">
       <AdminLayout>
@@ -152,6 +267,14 @@ export default function ParchiPage() {
               <p className="text-gray-600">Generate billing statements for suppliers</p>
             </div>
             <div className="flex gap-2">
+              <button
+                onClick={handlePayAllParchis}
+                disabled={!parchiData || parchiData.items.length === 0 || loading}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Wallet className="w-4 h-4" />
+                Create Payments
+              </button>
               <button
                 onClick={handlePrintAll}
                 className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
@@ -197,7 +320,7 @@ export default function ParchiPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     End Date
@@ -331,30 +454,30 @@ export default function ParchiPage() {
                   <Table.Row>
                     <Table.Head>Account</Table.Head>
                     <Table.Head>Khata No</Table.Head>
-                    <Table.Head className="text-right">Prev. Balance</Table.Head>
-                    <Table.Head className="text-right">Liters</Table.Head>
-                    <Table.Head className="text-right">Purchase Amt</Table.Head>
-                    <Table.Head className="text-right">Payments</Table.Head>
-                    <Table.Head className="text-right">Closing Bal.</Table.Head>
-                    <Table.Head className="text-right">Credit Limit</Table.Head>
-                    <Table.Head className="text-right">Parchi Amt</Table.Head>
-                    <Table.Head className="text-right">Final Bal.</Table.Head>
-                    <Table.Head className="text-center print:hidden">Actions</Table.Head>
+                    <Table.Head><div className="text-right">Prev. Balance</div></Table.Head>
+                    <Table.Head><div className="text-right">Liters</div></Table.Head>
+                    <Table.Head><div className="text-right">Purchase Amt</div></Table.Head>
+                    <Table.Head><div className="text-right">Payments</div></Table.Head>
+                    <Table.Head><div className="text-right">Closing Bal.</div></Table.Head>
+                    <Table.Head><div className="text-right">Credit Limit</div></Table.Head>
+                    <Table.Head><div className="text-right">Parchi Amt</div></Table.Head>
+                    <Table.Head><div className="text-right">Final Bal.</div></Table.Head>
+                    <Table.Head><div className="text-center print:hidden">Actions</div></Table.Head>
                   </Table.Row>
                 </Table.Header>
                 <Table.Body>
                   {loading ? (
                     <Table.Row>
-                      <Table.Cell colSpan={10} className="text-center py-12">
+                      <td colSpan={10} className="text-center py-12">
                         <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-gray-400" />
                         <p className="text-gray-500">Loading parchi data...</p>
-                      </Table.Cell>
+                      </td>
                     </Table.Row>
                   ) : !parchiData || parchiData.items.length === 0 ? (
                     <Table.Row>
-                      <Table.Cell colSpan={10} className="text-center py-12">
+                      <td colSpan={10} className="text-center py-12">
                         <p className="text-gray-500">No data found. Please select filters and generate parchi.</p>
-                      </Table.Cell>
+                      </td>
                     </Table.Row>
                   ) : (
                     parchiData.items.map((item, index) => (
@@ -414,19 +537,30 @@ export default function ParchiPage() {
 
           {/* Print View */}
           {printMode && (
-            <div className="print:block hidden">
+            <div className="print-container">
               {selectedParchiForPrint.map((parchi, index) => (
-                <ParchiPrintSlip
-                  key={index}
-                  parchi={parchi}
-                  startDate={filters.startDate}
-                  endDate={filters.endDate}
-                  companyName="Milk Chillar"
-                />
+                <div key={index} className="receipt-wrapper">
+                  <ParchiPrintSlip
+                    parchi={parchi}
+                    startDate={filters.startDate}
+                    endDate={filters.endDate}
+                    companyName="CHAUHAN DAIRY FARMS"
+                  />
+                </div>
               ))}
             </div>
           )}
         </div>
+
+        <PayParchiModal
+          isOpen={paymentModalOpen}
+          onClose={() => setPaymentModalOpen(false)}
+          onConfirm={handleConfirmPayments}
+          parchis={selectedParchisForPayment}
+          startDate={filters.startDate}
+          endDate={filters.endDate}
+        />
+
       </AdminLayout>
     </ProtectedRoute>
   );
