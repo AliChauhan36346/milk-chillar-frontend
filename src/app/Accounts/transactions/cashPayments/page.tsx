@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/card';
 import { PaymentCard } from '@/components/ui/transactions/PaymentCard';
 import { cashPaymentsApi, CashPayment, CashPaymentSearchParams } from '@/lib/api/cashPayments';
 import { useToast } from '@/hooks/useToast';
-import { AdminLayout } from '@/components/layouts/AdminLayout';
+import { DynamicLayout } from '@/components/layouts/DynamicLayout';
 
 export default function CashPaymentsPage() {
   const router = useRouter();
@@ -95,8 +95,8 @@ export default function CashPaymentsPage() {
   };
 
   return (
-    <AdminLayout>
-      <div className="p-1 sm:p-2 max-w-7xl mx-auto space-y-4 sm:space-y-6">
+    <DynamicLayout allowedRoles={['Admin', 'manager']}>
+      <div className="p-1 sm:p-1 max-w-7xl mx-auto space-y-4 sm:space-y-6">
         {/* Header - Mobile Optimized */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-3 sm:space-y-0">
           <div>
@@ -318,6 +318,6 @@ export default function CashPaymentsPage() {
           </Card>
         )}
       </div>
-    </AdminLayout>
+    </DynamicLayout>
   );
 }

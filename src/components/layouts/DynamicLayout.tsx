@@ -2,6 +2,7 @@
 'use client';
 import { AdminLayout } from './AdminLayout';
 import { FieldStaffLayout } from './FieldStaffLayout';
+import { ManagerLayout } from './ManagerLayout';
 import { useUserRole } from '@/hooks/useUserRole';
 import LoadingSpinner from '@/components/ui/Loader';
 import { Unauthorized } from '@/components/Unauthorized';
@@ -40,8 +41,9 @@ export function DynamicLayout({
   // Return the appropriate layout based on the user's actual role (now in lowercase)
   switch(role) {
     case 'admin':
-    case 'manager':
       return <AdminLayout>{children}</AdminLayout>;
+    case 'manager':
+      return <ManagerLayout>{children}</ManagerLayout>;
     
     case 'chillarincharge': // Note: now lowercase
       return <FieldStaffLayout role="chillarIncharge">{children}</FieldStaffLayout>;

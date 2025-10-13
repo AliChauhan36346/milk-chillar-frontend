@@ -7,7 +7,7 @@ export function ManagerLayout({ children }: { children: React.ReactNode }) {
   return (
     <PageLayout 
       role="manager"
-      showSidebar={true}
+      showSidebar={false}
       showHeader={true}
       contentClassName="max-w-screen-xl mx-auto"
     >
