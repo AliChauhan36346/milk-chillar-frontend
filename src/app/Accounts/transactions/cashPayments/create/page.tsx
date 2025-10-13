@@ -11,7 +11,7 @@ import { cashPaymentsApi, CashPaymentCreateUpdate } from '@/lib/api/cashPayments
 import { accountsApi, SearchAccountResult } from '@/lib/api/accounts';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/useToast';
-import { AdminLayout } from '@/components/layouts/AdminLayout';
+import { DynamicLayout } from '@/components/layouts/DynamicLayout';
 import { BackButton } from '@/components/ui/BackButton';
 import { Button } from '@/components/ui/Button';
 import { AccountSearchInline } from '@/components/forms/AccountSearchInline';
@@ -270,18 +270,18 @@ export default function CashPaymentForm() {
 
   if (loading) {
     return (
-      <AdminLayout>
+      <DynamicLayout allowedRoles={['Admin', 'manager']}>
         <div className="p-6 max-w-4xl mx-auto">
           <div className="text-center py-8">
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
           </div>
         </div>
-      </AdminLayout>
+      </DynamicLayout>
     );
   }
 
   return (
-    <AdminLayout>
+    <DynamicLayout allowedRoles={['Admin', 'manager']}>
       <div className="p-1 sm:p-4 max-w-6xl mx-auto">
         {/* Compact Header */}
         <div className="flex items-center justify-between mb-3">
@@ -525,7 +525,7 @@ export default function CashPaymentForm() {
           </Card>
         </form>
       </div>
-    </AdminLayout>
+    </DynamicLayout>
   );
 }
 
