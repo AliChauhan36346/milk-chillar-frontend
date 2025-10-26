@@ -1,280 +1,3 @@
-// // components/modals/PurchaseModal.tsx
-// 'use client';
-// import { Sun, Moon, Save, UserPlus, Calendar, Edit } from 'lucide-react';
-// import { useState, useEffect, useMemo } from 'react';
-// import { ExpenseAccount } from '@/lib/api/purchases';
-
-// type PurchaseModalProps = {
-//   isOpen: boolean;
-//   onClose: () => void;
-//   onSubmit: (data: { 
-//     morningQuantity?: number; 
-//     eveningQuantity?: number;
-//     rate?: number;
-//     date: string;
-//     expenseAccountId?: number;
-//   }) => void;
-//   supplier: {
-//     id: number;
-//     name: string;
-//     code: string;
-//     rate: number;
-//   };
-//   time: 'morning' | 'evening';
-//   isAdmin: boolean;
-//   expenseAccounts: ExpenseAccount[];
-//   selectedExpenseAccount: number | null;
-//   initialData?: {
-//     morningQuantity?: number;
-//     eveningQuantity?: number;
-//     rate?: number;
-//     date?: string;
-//   };
-// };
-
-// export default function PurchaseModal({
-//   isOpen,
-//   onClose,
-//   onSubmit,
-//   supplier,
-//   time,
-//   isAdmin,
-//   expenseAccounts,
-//   selectedExpenseAccount,
-//   initialData
-// }: PurchaseModalProps) {
-//   const [quantity, setQuantity] = useState<number | ''>('');
-//   const [rate, setRate] = useState<number | ''>('');
-//   const [expenseAccountId, setExpenseAccountId] = useState<number | null>(selectedExpenseAccount);
-//   const [selectedDate, setSelectedDate] = useState(
-//     initialData?.date || new Date().toISOString().split('T')[0]
-//   );
-
-//   // Determine if this is an update operation
-//   const isEditing = useMemo(() => {
-//     return Boolean(
-//       (time === 'morning' && initialData?.morningQuantity) ||
-//       (time === 'evening' && initialData?.eveningQuantity)
-//     );
-//   }, [time, initialData]);
-
-//   // Initialize form values
-//   useEffect(() => {
-//     if (initialData) {
-//       const initialQuantity = time === 'morning' 
-//         ? initialData.morningQuantity 
-//         : initialData.eveningQuantity;
-      
-//       setQuantity(initialQuantity || '');
-//       setRate(initialData.rate || supplier.rate);
-//       if (initialData.date) setSelectedDate(initialData.date);
-//     } else {
-//       setQuantity('');
-//       setRate(supplier.rate);
-//       setSelectedDate(new Date().toISOString().split('T')[0]);
-//     }
-//     setExpenseAccountId(selectedExpenseAccount);
-//   }, [initialData, supplier.rate, selectedExpenseAccount, time]);
-
-//   // Calculate total amount
-//   const totalAmount = useMemo(() => {
-//     const qty = Number(quantity) || 0;
-//     const currentRate = Number(rate) || 0;
-//     return qty * currentRate;
-//   }, [quantity, rate]);
-
-//   const handleSubmit = (e: React.FormEvent) => {
-//     e.preventDefault();
-    
-//     if (!quantity || Number(quantity) <= 0) {
-//       alert('Please enter a valid quantity');
-//       return;
-//     }
-
-//     const submitData = {
-//       date: selectedDate,
-//       [time === 'morning' ? 'morningQuantity' : 'eveningQuantity']: Number(quantity),
-//       rate: isAdmin ? Number(rate) || undefined : undefined,
-//       expenseAccountId: expenseAccountId || undefined
-//     };
-
-//     onSubmit(submitData);
-//   };
-
-//   // Get modal title and icon
-//   const { title, icon, colorClasses } = useMemo(() => {
-//     const baseTitle = isEditing ? 'Update' : 'New';
-//     const timeTitle = time === 'morning' ? 'Morning' : 'Evening';
-    
-//     return {
-//       title: `${baseTitle} ${timeTitle} Purchase`,
-//       icon: time === 'morning' ? <Sun className="w-5 h-5 text-yellow-500" /> : <Moon className="w-5 h-5 text-purple-500" />,
-//       colorClasses: time === 'morning' 
-//         ? 'border-blue-300 bg-blue-50 focus:ring-blue-500' 
-//         : 'border-purple-300 bg-purple-50 focus:ring-purple-500'
-//     };
-//   }, [time, isEditing]);
-
-//   if (!isOpen) return null;
-
-//   return (
-//     <div className="fixed inset-0 bg-black bg-opacity-30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-//       <div className="bg-white rounded-xl shadow-lg w-full max-w-md">
-//         <div className="p-6">
-//           <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-//             {icon}
-//             {title}
-//           </h2>
-
-//           <form onSubmit={handleSubmit}>
-//             <div className="space-y-4">
-//               {/* Supplier Details */}
-//               <div>
-//                 <label className="block text-sm font-medium text-gray-700 mb-1">Supplier Details</label>
-//                 <div className="p-3 bg-gray-100 rounded-lg border border-gray-200">
-//                   <p className="font-bold text-lg">{supplier.name}</p>
-//                   <p className="text-sm text-gray-700 font-medium">Code: {supplier.code}</p>
-//                 </div>
-//               </div>
-
-//               {/* Date */}
-//               <div>
-//                 <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
-//                   <Calendar className="w-4 h-4" />
-//                   Date
-//                 </label>
-//                 <input
-//                   type="date"
-//                   value={selectedDate}
-//                   onChange={(e) => setSelectedDate(e.target.value)}
-//                   className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-//                   required
-//                 />
-//               </div>
-
-//               {/* Quantity Input */}
-//               <div className={`p-3 rounded-lg border ${colorClasses}`}>
-//                 <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
-//                   {icon}
-//                   {time.charAt(0).toUpperCase() + time.slice(1)} Quantity (Ltrs)
-//                   {isEditing && (
-//                     <span className="text-xs text-blue-600 flex items-center gap-1">
-//                       <Edit className="w-3 h-3" />
-//                       Editing
-//                     </span>
-//                   )}
-//                 </label>
-//                 <input
-//                   type="number"
-//                   value={quantity}
-//                   onChange={(e) => setQuantity(e.target.value === '' ? '' : Number(e.target.value))}
-//                   className={`w-full p-2 border border-gray-300 rounded-lg focus:ring-2 ${colorClasses}`}
-//                   required
-//                   min="0"
-//                   step="0.1"
-//                   placeholder={isEditing ? "Current quantity" : "Enter quantity"}
-//                 />
-//               </div>
-
-//               {/* Rate Input for Admin */}
-//               {isAdmin && (
-//                 <div className="p-3 rounded-lg border border-green-200 bg-green-50">
-//                   <label className="block text-sm font-medium text-gray-700 mb-1">
-//                     Rate per Liter (₹)
-//                   </label>
-//                   <input
-//                     type="number"
-//                     value={rate}
-//                     onChange={(e) => setRate(e.target.value === '' ? '' : Number(e.target.value))}
-//                     className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-//                     required
-//                     min="0"
-//                     step="0.01"
-//                   />
-//                   {totalAmount > 0 && (
-//                     <div className="mt-2 text-right">
-//                       <p className="text-sm text-gray-600">Total Amount:</p>
-//                       <p className="text-lg font-bold text-green-600">
-//                         ₹{totalAmount.toFixed(2)}
-//                       </p>
-//                     </div>
-//                   )}
-//                 </div>
-//               )}
-
-//               {/* Expense Account for Admin */}
-//               {isAdmin && (
-//                 <div>
-//                   <label className="block text-sm font-medium text-gray-700 mb-1">
-//                     Expense Account
-//                   </label>
-//                   <select
-//                     value={expenseAccountId || ''}
-//                     onChange={(e) => setExpenseAccountId(Number(e.target.value))}
-//                     className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-//                     required
-//                   >
-//                     <option value="">Select Expense Account</option>
-//                     {expenseAccounts.map(account => (
-//                       <option key={account.accountId} value={account.accountId}>
-//                         {account.accountCode} - {account.accountName}
-//                       </option>
-//                     ))}
-//                   </select>
-//                 </div>
-//               )}
-
-//               {/* Editing Context */}
-//               {isEditing && (
-//                 <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-//                   <div className="flex items-center gap-2 text-amber-800">
-//                     <Edit className="w-4 h-4" />
-//                     <span className="text-sm font-medium">
-//                       Updating existing {time} entry
-//                     </span>
-//                   </div>
-//                 </div>
-//               )}
-//             </div>
-
-//             {/* Action Buttons */}
-//             <div className="mt-6 flex gap-3">
-//               <button
-//                 type="submit"
-//                 className={`flex-1 py-2 px-4 rounded-lg font-medium flex items-center justify-center gap-2 text-white ${
-//                   time === 'morning' 
-//                     ? 'bg-blue-600 hover:bg-blue-700' 
-//                     : 'bg-purple-600 hover:bg-purple-700'
-//                 }`}
-//               >
-//                 {isEditing ? (
-//                   <>
-//                     <Save className="w-5 h-5" />
-//                     Update
-//                   </>
-//                 ) : (
-//                   <>
-//                     <UserPlus className="w-5 h-5" />
-//                     Add
-//                   </>
-//                 )}
-//               </button>
-
-//               <button
-//                 type="button"
-//                 onClick={onClose}
-//                 className="flex-1 py-2 px-4 bg-gray-200 text-gray-800 rounded-lg font-medium hover:bg-gray-300"
-//               >
-//                 Cancel
-//               </button>
-//             </div>
-//           </form>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }
-
 
 // components/modals/PurchaseModal.tsx
 'use client';
@@ -443,7 +166,7 @@ export default function PurchaseModal({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-xl shadow-lg w-full max-w-md max-h-[100vh] overflow-y-auto">
-        <div className="p-6">
+        <div className="p-4">
           <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
             {availableTimes.length === 1 ? (
               availableTimes[0] === 'morning' ? (
@@ -465,11 +188,11 @@ export default function PurchaseModal({
               {/* Supplier Details */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Supplier Details</label>
-                <div className="p-3 bg-gray-100 rounded-lg border border-gray-200">
+                <div className="p-1 bg-gray-100 rounded-lg border border-gray-200">
                   <p className="font-bold text-lg">{supplier.name}</p>
                   <p className="text-sm text-gray-700 font-medium">Code: {supplier.code}</p>
                   {isAdmin && (
-                    <p className="text-sm text-gray-600">Default Rate: ₹{supplier.rate}/L</p>
+                    <p className="text-sm text-gray-600">Default Rate: Rs{supplier.rate}/L</p>
                   )}
                 </div>
               </div>
@@ -497,7 +220,7 @@ export default function PurchaseModal({
                 <div className="grid grid-cols-2 gap-3">
                   {/* Morning Quantity */}
                   {availableTimes.includes('morning') && (
-                    <div className={`p-2 rounded-lg border ${getInputColorClasses('morning')}`}>
+                    <div className={`p-1 rounded-lg border ${getInputColorClasses('morning')}`}>
                       <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
                         <Sun className="w-3 h-3 text-yellow-500" />
                         Morning
@@ -521,7 +244,7 @@ export default function PurchaseModal({
                       {isAdmin && totals.morningAmount > 0 && (
                         <div className="mt-2 text-center">
                           <p className="text-xs text-blue-600 font-medium">
-                            ₹{totals.morningAmount.toFixed(2)}
+                            Rs{totals.morningAmount.toFixed(2)}
                           </p>
                         </div>
                       )}
@@ -530,7 +253,7 @@ export default function PurchaseModal({
 
                   {/* Evening Quantity */}
                   {availableTimes.includes('evening') && (
-                    <div className={`p-2 rounded-lg border ${getInputColorClasses('evening')}`}>
+                    <div className={`p-1 rounded-lg border ${getInputColorClasses('evening')}`}>
                       <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
                         <Moon className="w-3 h-3 text-purple-500" />
                         Evening
@@ -554,7 +277,7 @@ export default function PurchaseModal({
                       {isAdmin && totals.eveningAmount > 0 && (
                         <div className="mt-2 text-center">
                           <p className="text-xs text-purple-600 font-medium">
-                            ₹{totals.eveningAmount.toFixed(2)}
+                            Rs{totals.eveningAmount.toFixed(2)}
                           </p>
                         </div>
                       )}
@@ -563,7 +286,7 @@ export default function PurchaseModal({
 
                   {/* Placeholder for single time updates to maintain layout */}
                   {isUpdate && updateData && availableTimes.length === 1 && (
-                    <div className="p-3 rounded-lg border border-gray-200 bg-gray-50 opacity-50">
+                    <div className="p-1 rounded-lg border border-gray-200 bg-gray-50 opacity-50">
                       <label className="block text-xs font-medium text-gray-500 mb-2 flex items-center gap-1">
                         {updateData.time === 'morning' ? (
                           <>
@@ -593,9 +316,9 @@ export default function PurchaseModal({
 
               {/* Rate Input for Admin */}
               {isAdmin && (
-                <div className="p-3 rounded-lg border border-green-200 bg-green-50">
+                <div className="p-1 rounded-lg border border-green-200 bg-green-50">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Rate per Liter (₹)
+                    Rate per Liter (Rs)
                   </label>
                   <input
                     type="number"
@@ -604,13 +327,12 @@ export default function PurchaseModal({
                     className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
                     required
                     min="0"
-                    step="0.01"
                   />
                   {totals.totalAmount > 0 && (
                     <div className="mt-2 text-right">
                       <p className="text-sm text-gray-600">Total Amount:</p>
                       <p className="text-lg font-bold text-green-600">
-                        ₹{totals.totalAmount.toFixed(2)}
+                        Rs{totals.totalAmount.toFixed(2)}
                       </p>
                     </div>
                   )}

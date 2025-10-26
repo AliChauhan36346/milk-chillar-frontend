@@ -23,6 +23,7 @@ import {
   PackageOpen,
   DollarSign
 } from 'lucide-react';
+import { Label } from '../ui/Label';
 
 const adminNavigation = [
   {
@@ -57,7 +58,7 @@ const adminNavigation = [
         href: '/Accounts',
         subItems: [
           { label: 'Chart of Accounts', href: '/Accounts/chartOfAccounts', icon: <FileText size={18} /> },
-          { label: 'Account Ledgers', href: '/Accounts/accountledgers', icon: <BookOpen size={18} /> }
+          { label: 'Account Ledgers', href: '/Accounts/accountLedger', icon: <BookOpen size={18} /> }
         ]
       },
       { 
@@ -65,6 +66,7 @@ const adminNavigation = [
         icon: <IndianRupee size={18} />,
         href: '/Accounts/transactions',
         subItems: [
+          { label: 'Roznamcha', href: '/Accounts/transactions', icon: <BookOpen size={18} /> },
           { label: 'Cash Payments', href: '/Accounts/transactions/cashPayments', icon: <Banknote size={18} /> },
           { label: 'Bank Payments', href: '/Accounts/transactions/bank', icon: <Building size={18} /> },
           { label: 'Receipts', href: '/Accounts/transactions/receipts', icon: <Receipt size={18} /> }
@@ -83,7 +85,8 @@ const adminNavigation = [
         href: '/reports/financial',
         subItems: [
           { label: 'Trial Balance', href: '/reports/financial/trial-balance', icon: <Scale size={18} /> },
-          { label: 'Profit & Loss', href: '/reports/financial/profit-loss', icon: <DollarSign size={18} /> },
+          { label: 'Account Balances', href: '/reports/financialReports/accountBalances', icon: <Wallet size={18} /> },
+          { label: 'Profit & Loss', href: '/reports/financialReports/profitLoss', icon: <DollarSign size={18} /> },
           { label: 'Balance Sheet', href: '/reports/financial/balance-sheet', icon: <FileText size={18} /> }
         ]
       },

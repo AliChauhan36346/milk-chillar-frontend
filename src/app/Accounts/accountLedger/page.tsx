@@ -4,12 +4,19 @@
 // app/dashboard/admin/accounts/ledger/page.tsx
 'use client';
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { AdminLayout } from '@/components/layouts/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table } from '@/components/ui/Table/Table';
 import SummaryCard from '@/components/ui/SummaryCard';
 import { SearchableSelect, SearchableOption } from '@/components/ui/SearchableSelect';
 import ProtectedRoute from '@/components/ProtectedRoutes';
+import { SalesFormModal } from '@/components/modals/SalesFormModal';
+import PurchaseModal from '@/components/modals/PurchaseModal';
+import OpeningBalanceModal from '@/components/modals/OpeningBalanceModal';
+import { useToast } from '@/hooks/useToast';
+import { getSaleById } from '@/lib/api/sales';
+import { getPurchaseById } from '@/lib/api/purchases';
 import {
     Download,
     Calendar,
@@ -49,6 +56,12 @@ export default function AccountLedgerPage() {
     const [currentPage, setCurrentPage] = useState(1);
     const [totalCount, setTotalCount] = useState(0);
     const [pageSize] = useState(20);
+    const router = useRouter();
+    const { toast } = useToast();
+    const [selectedTransaction, setSelectedTransaction] = useState<AccountLedger | null>(null);
+    const [showSaleModal, setShowSaleModal] = useState(false);
+    const [showPurchaseModal, setShowPurchaseModal] = useState(false);
+    const [showOpeningBalanceModal, setShowOpeningBalanceModal] = useState(false);
     const [filters, setFilters] = useState({
         search: '',
         fromDate: '',
@@ -159,22 +172,131 @@ export default function AccountLedgerPage() {
         return new Date(dateString).toLocaleDateString('en-GB');
     };
 
-    const generateTransactionNo = (transaction: AccountLedger) => {
-        const sourceMap: { [key: string]: string } = {
-            'sales': 'SL',
-            'purchases': 'PV',
-            'payments': 'PY',
-            'receipts': 'RC',
-            'journal': 'JV'
+    const getSourceInfo = (transaction: AccountLedger) => {
+        if (!transaction.sourceTable) {
+            return {
+                prefix: 'JV',
+                sourceType: 'Journal Voucher',
+                id: transaction.journalEntryId
+            };
+        }
+
+        const sourceTable = transaction.sourceTable.toLowerCase();
+        const sourceMap: { [key: string]: { prefix: string; name: string; } } = {
+            'sales': { prefix: 'SL', name: 'Sale' },
+            'purchase': { prefix: 'PV', name: 'Purchase' },
+            'cash_payments': { prefix: 'CP', name: 'Cash Payment' },
+            'bank_payments': { prefix: 'BP', name: 'Bank Payment' },
+            'cash_receipts': { prefix: 'CR', name: 'Cash Receipt' },
+            'bank_receipts': { prefix: 'BR', name: 'Bank Receipt' },
+            'opening_balances': { prefix: 'OB', name: 'Opening Balance' },
+            'journal': { prefix: 'JV', name: 'Journal Voucher' }
         };
 
-        const prefix = sourceMap[transaction.sourceTable?.toLowerCase() || 'journal'] || 'JV';
-        return `${prefix}${transaction.journalEntryId.toString().padStart(4, '0')}`;
+        const source = sourceMap[sourceTable] || { prefix: 'JV', name: 'Journal Voucher' };
+        return {
+            prefix: source.prefix,
+            sourceType: source.name,
+            id: transaction.sourceId || transaction.journalEntryId
+        };
     };
 
-    const handleViewTransaction = (transaction: AccountLedger) => {
-        // TODO: Open transaction detail modal
-        console.log('View transaction:', transaction);
+    const generateTransactionNo = (transaction: AccountLedger) => {
+        const { prefix, id } = getSourceInfo(transaction);
+        return `${prefix}${id.toString().padStart(4, '0')}`;
+    };
+
+    const handleViewTransaction = async (transaction: AccountLedger) => {
+        if (!transaction.sourceTable || !transaction.sourceId) {
+            toast({
+                title: "Error",
+                description: "No source information available for this transaction",
+                variant: "error"
+            });
+            return;
+        }
+
+        const sourceTable = transaction.sourceTable.toLowerCase();
+        setSelectedTransaction(transaction);
+
+        try {
+            switch (sourceTable) {
+                case 'sales':
+                    const saleData = await getSaleById(transaction.sourceId!);
+                    if (saleData) {
+                        const saleInfo = {
+                            ...transaction,
+                            grossLiters: saleData.grossLiters,
+                            lr: saleData.lr,
+                            fat: saleData.fat,
+                            netLiters: saleData.netLiters,
+                            rate: saleData.rate,
+                            totalAmount: saleData.totalAmount,
+                            revenueAccount: {
+                                accountId: saleData.revenueAccountId,
+                                accountCode: saleData.revenueAccountCode,
+                                accountName: saleData.revenueAccountName,
+                            }
+                        };
+                        setSelectedTransaction(saleInfo as AccountLedger);
+                        setShowSaleModal(true);
+                    }
+                    break;
+
+                case 'purchase':
+                    const purchaseData = await getPurchaseById(transaction.sourceId!);
+                    if (purchaseData) {
+                        const purchaseInfo = {
+                            ...transaction,
+                            grossLiters: purchaseData.grossLiters,
+                            timeOfDay: purchaseData.timeOfDay,
+                            rate: purchaseData.rate,
+                            expenseAccount: {
+                                accountId: purchaseData.expenseAccountId,
+                                accountCode: purchaseData.expenseAccountCode,
+                                accountName: purchaseData.expenseAccountName,
+                            }
+                        };
+                        setSelectedTransaction(purchaseInfo as AccountLedger);
+                        setShowPurchaseModal(true);
+                    }
+                    break;
+
+                case 'cash_payments':
+                    router.push(`/Accounts/transactions/cashPayments/create?id=${transaction.sourceId}`);
+                    break;
+
+                case 'bank_payments':
+                    router.push(`/Accounts/transactions/bankPayments/create?id=${transaction.sourceId}`);
+                    break;
+                
+                case 'cash_receipts':
+                    router.push(`/Accounts/transactions/cashReceipts/create?id=${transaction.sourceId}`);
+                    break;
+
+                case 'bank_receipts':
+                    router.push(`/Accounts/transactions/bankReceipts/create?id=${transaction.sourceId}`);
+                    break;
+
+                case 'openingbalance':
+                    setShowOpeningBalanceModal(true);
+                    break;
+
+                default:
+                    toast({
+                        title: "Unsupported Transaction Type",
+                        description: `Cannot view transactions of type: ${sourceTable}`,
+                        variant: "error"
+                    });
+            }
+        } catch (error) {
+            console.error('Error loading transaction:', error);
+            toast({
+                title: "Error",
+                description: "Failed to load transaction details",
+                variant: "error"
+            });
+        }
     };
 
     const totalPages = Math.ceil(totalCount / pageSize);
@@ -323,8 +445,9 @@ export default function AccountLedgerPage() {
                                         <Table.Row>
                                             <Table.Head>Date</Table.Head>
                                             <Table.Head>Trans No.</Table.Head>
+                                            <Table.Head>Source Type</Table.Head>
+                                            <Table.Head>Source ID</Table.Head>
                                             <Table.Head>Description</Table.Head>
-                                            <Table.Head>Narration</Table.Head>
                                             <Table.Head className="text-right">Debit</Table.Head>
                                             <Table.Head className="text-right">Credit</Table.Head>
                                             <Table.Head className="text-right">Balance</Table.Head>
@@ -359,14 +482,19 @@ export default function AccountLedgerPage() {
                                                             {generateTransactionNo(transaction)}
                                                         </button>
                                                     </Table.Cell>
+                                                    <Table.Cell>
+                                                        <div className="font-medium">
+                                                            {getSourceInfo(transaction).sourceType}
+                                                        </div>
+                                                    </Table.Cell>
+                                                    <Table.Cell>
+                                                        <span className="text-gray-600">
+                                                            {transaction.sourceTable ? `#${transaction.sourceId}` : '-'}
+                                                        </span>
+                                                    </Table.Cell>
                                                     <Table.Cell className="max-w-xs">
                                                         <div className="truncate" title={transaction.description || ''}>
                                                             {transaction.description || '-'}
-                                                        </div>
-                                                    </Table.Cell>
-                                                    <Table.Cell className="max-w-xs">
-                                                        <div className="truncate" title={transaction.narration || ''}>
-                                                            {transaction.narration || '-'}
                                                         </div>
                                                     </Table.Cell>
                                                     <Table.Cell className="text-right">
@@ -433,6 +561,91 @@ export default function AccountLedgerPage() {
                                 )}
                             </CardContent>
                         </Card>
+                    )}
+
+                    {/* Sales Modal */}
+                    {showSaleModal && selectedTransaction && (
+                        <SalesFormModal
+                            isOpen={showSaleModal}
+                            onClose={() => setShowSaleModal(false)}
+                            onSubmit={() => {
+                                setShowSaleModal(false);
+                                loadAccountLedger();
+                            }}
+                            isAdmin={true}
+                            date={selectedTransaction.entryDate}
+                            buyerId={selectedTransaction.accountId.toString()}
+                            buyerName={selectedTransaction.accountName}
+                            isUpdate={true}
+                            formValues={{
+                                id: selectedTransaction.sourceId,
+                                grossLiters: selectedTransaction.grossLiters || 0,
+                                lr: selectedTransaction.lr || 0,
+                                fat: selectedTransaction.fat || 0,
+                                netLiters: selectedTransaction.netLiters || 0,
+                                rate: selectedTransaction.rate || 0,
+                                amount: selectedTransaction.totalAmount || 0,
+                                amountReceived: selectedTransaction.amount || 0,
+                                revenueAccountId: selectedTransaction.revenueAccount?.accountId || 0
+                            }}
+                            revenueAccounts={[{
+                                id: selectedTransaction.revenueAccount?.accountId || 0,
+                                name: selectedTransaction.revenueAccount?.accountName || '',
+                                code: selectedTransaction.revenueAccount?.accountCode || ''
+                            }]}
+                            selectedRevenueAccount={{
+                                id: selectedTransaction.revenueAccount?.accountId || 0,
+                                name: selectedTransaction.revenueAccount?.accountName || '',
+                                code: selectedTransaction.revenueAccount?.accountCode || ''
+                            }}
+                        />
+                    )}
+
+                    {/* Purchase Modal */}
+                    {showPurchaseModal && selectedTransaction && (
+                        <PurchaseModal
+                            isOpen={showPurchaseModal}
+                            onClose={() => setShowPurchaseModal(false)}
+                            onSubmit={() => {
+                                setShowPurchaseModal(false);
+                                loadAccountLedger();
+                            }}
+                            isAdmin={true}
+                            isUpdate={true}
+                            updateData={{
+                                time: selectedTransaction.timeOfDay || 'morning',
+                                purchaseId: selectedTransaction.sourceId!,
+                                currentQuantity: selectedTransaction.grossLiters || 0
+                            }}
+                            supplier={{
+                                id: selectedTransaction.accountId,
+                                name: selectedTransaction.accountName,
+                                code: selectedTransaction.accountCode || '',
+                                rate: selectedTransaction.rate || 0
+                            }}
+                            availableTimes={[selectedTransaction.timeOfDay || 'morning']}
+                            expenseAccounts={[{
+                                accountId: selectedTransaction.expenseAccount?.accountId || 0,
+                                accountName: selectedTransaction.expenseAccount?.accountName || '',
+                                accountCode: selectedTransaction.expenseAccount?.accountCode || ''
+                            }]}
+                            selectedExpenseAccount={{
+                                accountId: selectedTransaction.expenseAccount?.accountId || 0,
+                                accountName: selectedTransaction.expenseAccount?.accountName || '',
+                                accountCode: selectedTransaction.expenseAccount?.accountCode || ''
+                            }}
+                            initialDate={selectedTransaction.entryDate}
+                        />
+                    )}
+
+                    {/* Opening Balance Modal */}
+                    {showOpeningBalanceModal && selectedTransaction && (
+                        <OpeningBalanceModal
+                            isOpen={showOpeningBalanceModal}
+                            onClose={() => setShowOpeningBalanceModal(false)}
+                            date={selectedTransaction.entryDate}
+                            // TODO: Add other required props for OpeningBalanceModal
+                        />
                     )}
                 </div>
             </AdminLayout>

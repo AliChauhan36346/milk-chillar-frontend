@@ -71,3 +71,9 @@ export const updateSale = async (id: number, data: CreateSaleRequest) => {
   const resp = await api.put<SaleDto>(`/Sales/${id}`, data);
   return resp.data;
 };
+
+// Get sale by ID
+export const getSaleById = async (id: number) => {
+  const resp = await api.get<SaleDto>(`/Sales/${id}`);
+  return resp.data;
+};
