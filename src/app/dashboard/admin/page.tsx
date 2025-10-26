@@ -342,7 +342,7 @@ export default function AdminDashboard() {
       text: 'text-purple-600'
     },
     {
-      label: 'Pending Payments to Suppliers',
+      label: 'Pending Payments',
       value: stats?.pendingPayments || 0,
       change: formatChange(stats?.pendingPayments || 0, stats?.pendingPaymentsCount || 0),
       icon: <Clock className="w-6 h-6" />,
@@ -350,7 +350,7 @@ export default function AdminDashboard() {
       text: 'text-amber-600'
     },
     {
-      label: 'Due Receipts From Buyers',
+      label: 'Due Receipts',
       value: stats?.dueReceipts || 0  ,
       change: formatChange(stats?.dueReceipts || 0, stats?.dueReceiptsCount || 0),
       icon: <Receipt className="w-6 h-6" />,
