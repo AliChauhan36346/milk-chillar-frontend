@@ -139,6 +139,259 @@ export interface PagedAccountBalances {
   summary: AccountBalanceSummary;
 }
 
+// Add these interfaces (already provided, but including for completeness)
+export interface PurchaseReportQuery {
+  startDate: string;
+  endDate: string;
+  timeOfDay?: 'morning' | 'evening';
+  dodhiId?: number;
+  chillarId?: number;
+  supplierCode?: string;
+
+  pageNumber?: number;
+  pageSize?: number;
+}
+
+export interface PurchaseDetail {
+  purchaseId: number;
+  date: string;
+  timeOfDay: string;
+  accountCode: string;
+  accountName: string;
+  expenseAccountName: string;
+  dodhiName: string;
+  dodhiId: number;
+  chillarName: string;
+  grossLiters: number;
+  rate: number;
+  totalAmount: number;
+  balance: number;
+}
+
+export interface PagedPurchaseReport {
+  paginatedPurchases: {
+    items: PurchaseDetail[];
+    totalCount: number;
+    pageNumber: number;
+    pageSize: number;
+    totalPages: number;
+  };
+}
+
+
+
+export interface PurchaseReportSummary {
+  totalLiters: number;
+  totalAmount: number;
+  averageRate: number;
+  totalTransactions: number;
+  totalSuppliers: number;
+}
+
+export interface DetailedPurchaseReport {
+  purchases: PurchaseDetail[];
+  summary: PurchaseReportSummary;
+}
+
+export interface SupplierPurchaseSummary {
+  accountId: number;
+  accountCode: string;
+  accountName: string;
+  totalLiters: number;
+  totalAmount: number;
+  averageRate: number;
+  transactionCount: number;
+  balance: number;
+}
+
+export interface SupplierWisePurchaseReport {
+  supplierSummaries: SupplierPurchaseSummary[];
+  overallSummary: PurchaseReportSummary;
+}
+
+
+export interface BuyerWiseSalesReportQuery {
+  startDate: string;
+  endDate: string;
+  accountId?: number;
+  chillarId?: number;
+}
+
+export interface BuyerSalesSummary {
+  accountId: number;
+  accountCode: string;
+  accountName: string;
+  totalGrossLiters: number;
+  totalNetLiters: number;
+  totalAmount: number;
+  totalAmountReceived: number;
+  averageRate: number;
+  averageLR: number;
+  averageFat: number;
+  transactionCount: number;
+  balance: number;
+}
+
+export interface SalesReportSummary {
+  totalGrossLiters: number;
+  totalNetLiters: number;
+  totalAmount: number;
+  totalAmountReceived: number;
+  totalBalance: number;
+  averageRate: number;
+  averageLR: number;
+  averageFat: number;
+  totalTransactions: number;
+  totalBuyers: number;
+}
+
+export interface BuyerWiseSalesReport {
+  buyerSummaries: BuyerSalesSummary[];
+  overallSummary: SalesReportSummary;
+}
+
+
+// Add these API functions at the bottom of the file
+export const getDetailedPurchaseReport = async (
+  params: PurchaseReportQuery
+): Promise<PagedPurchaseReport> => {
+  try {
+    const queryParams = new URLSearchParams();
+    queryParams.append('StartDate', params.startDate);
+    queryParams.append('EndDate', params.endDate);
+    
+    if (params.timeOfDay) {
+      queryParams.append('TimeOfDay', params.timeOfDay);
+    }
+    if (params.dodhiId) {
+      queryParams.append('DodhiId', params.dodhiId.toString());
+    }
+    if (params.chillarId) {
+      queryParams.append('ChillarId', params.chillarId.toString());
+    }
+    if (params.supplierCode) {
+      queryParams.append('SupplierCode', params.supplierCode);
+    }
+    if (params.pageNumber) {
+      queryParams.append('PageNumber', params.pageNumber.toString());
+    }
+    if (params.pageSize) {
+      queryParams.append('PageSize', params.pageSize.toString());
+    }
+
+    const response = await api.get(`/Reports/GetDetailedPurchaseReport?${queryParams.toString()}`);
+    return response.data;
+  } catch (error) {
+    console.error('Failed to fetch detailed purchase report:', error);
+    throw new Error('Failed to fetch detailed purchase report');
+  }
+};
+
+export const getPurchaseReportSummary = async (
+  params: PurchaseReportQuery
+): Promise<PurchaseReportSummary> => {
+  try {
+    const queryParams = new URLSearchParams();
+    queryParams.append('StartDate', params.startDate);
+    queryParams.append('EndDate', params.endDate);
+    
+    if (params.timeOfDay) {
+      queryParams.append('TimeOfDay', params.timeOfDay);
+    }
+    if (params.dodhiId) {
+      queryParams.append('DodhiId', params.dodhiId.toString());
+    }
+    if (params.chillarId) {
+      queryParams.append('ChillarId', params.chillarId.toString());
+    }
+    if (params.supplierCode) {
+      queryParams.append('SupplierCode', params.supplierCode);
+    }
+
+    const response = await api.get(`/Reports/GetPurchaseReportSummary?${queryParams.toString()}`);
+    return response.data;
+  } catch (error) {
+    console.error('Failed to fetch purchase report summary:', error);
+    throw new Error('Failed to fetch purchase report summary');
+  }
+};
+
+export const getSupplierWisePurchaseReport = async (
+  params: PurchaseReportQuery
+): Promise<SupplierWisePurchaseReport> => {
+  try {
+    const queryParams = new URLSearchParams();
+    queryParams.append('StartDate', params.startDate);
+    queryParams.append('EndDate', params.endDate);
+    
+    if (params.timeOfDay) {
+      queryParams.append('TimeOfDay', params.timeOfDay);
+    }
+    if (params.dodhiId) {
+      queryParams.append('DodhiId', params.dodhiId.toString());
+    }
+    if (params.chillarId) {
+      queryParams.append('ChillarId', params.chillarId.toString());
+    }
+    if (params.supplierCode) {
+      queryParams.append('SupplierCode', params.supplierCode);
+    }
+
+    const response = await api.get(`/Reports/GetSupplierWisePurchaseReport?${queryParams.toString()}`);
+    return response.data;
+  } catch (error) {
+    console.error('Failed to fetch supplier-wise purchase report:', error);
+    throw new Error('Failed to fetch supplier-wise purchase report');
+  }
+};
+
+export const getBuyerWiseSalesReport = async (
+  params: BuyerWiseSalesReportQuery
+): Promise<BuyerWiseSalesReport> => {
+  try {
+    const queryParams = new URLSearchParams();
+    queryParams.append('StartDate', params.startDate);
+    queryParams.append('EndDate', params.endDate);
+    
+    if (params.accountId) {
+      queryParams.append('AccountId', params.accountId.toString());
+    }
+    if (params.chillarId) {
+      queryParams.append('ChillarId', params.chillarId.toString());
+    }
+
+    const response = await api.get(`/Reports/GetBuyerWiseSalesReport?${queryParams.toString()}`);
+    return response.data;
+  } catch (error) {
+    console.error('Failed to fetch buyer-wise sales report:', error);
+    throw new Error('Failed to fetch buyer-wise sales report');
+  }
+};
+
+// ADD new function - Get sales report summary
+export const getSalesReportSummary = async (
+  params: BuyerWiseSalesReportQuery
+): Promise<SalesReportSummary> => {
+  try {
+    const queryParams = new URLSearchParams();
+    queryParams.append('StartDate', params.startDate);
+    queryParams.append('EndDate', params.endDate);
+    
+    if (params.accountId) {
+      queryParams.append('AccountId', params.accountId.toString());
+    }
+    if (params.chillarId) {
+      queryParams.append('ChillarId', params.chillarId.toString());
+    }
+
+    const response = await api.get(`/Reports/GetSalesReportSummary?${queryParams.toString()}`);
+    return response.data;
+  } catch (error) {
+    console.error('Failed to fetch sales report summary:', error);
+    throw new Error('Failed to fetch sales report summary');
+  }
+};
+
 // lib/api/dodhiDashboard.ts
 export const fetchMyDodhiId = async (): Promise<number> => {
   try {

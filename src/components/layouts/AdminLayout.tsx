@@ -106,7 +106,7 @@ const adminNavigation = [
         href: '/reports/transactions',
         subItems: [
           { label: 'Sales Report', href: '/reports/sale', icon: <ShoppingBag size={18} /> },
-          { label: 'Purchase Report', href: '/reports/purchase/dodhiPurchaseReport', icon: <ShoppingCart size={18} /> },
+          { label: 'Purchase Report', href: '/reports/purchase/purchaseReport', icon: <ShoppingCart size={18} /> },
           { label: 'Chillar Receive Report', href: '/reports/chillarReceive', icon: <Scale size={18} /> }
         ]
       }
