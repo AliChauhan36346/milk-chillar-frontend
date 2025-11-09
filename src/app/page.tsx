@@ -1,303 +1,492 @@
-import React from 'react';
-import { Milk, Users, DollarSign, FileText, Clock, Shield, ArrowRight, CheckCircle, Smartphone, TrendingUp } from 'lucide-react';
 
-export default function Home() {
+
+'use client';
+import React, { useState } from 'react';
+import { ChevronDown, CheckCircle, Clock, Eye, BarChart3, Users, FileText, Database, Menu, X } from 'lucide-react';
+
+export default function MilkChillarLanding() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+  const features = [
+    {
+      icon: <Database className="w-8 h-8" />,
+      title: "Centralized Accounting",
+      description: "Manage ledgers, track payments, and generate financial reports automatically. Say goodbye to manual bookkeeping."
+    },
+    {
+      icon: <FileText className="w-8 h-8" />,
+      title: "Effortless Purchase & Sales",
+      description: "Track milk purchases from suppliers (Dodhis) and manage sales to buyers. Create and manage 'Parchis' (slips) digitally."
+    },
+    {
+      icon: <BarChart3 className="w-8 h-8" />,
+      title: "Real-Time Dashboards",
+      description: "Get a live view of your operations. Monitor stock, track cash flow, and make data-driven decisions with role-based dashboards."
+    },
+    {
+      icon: <Users className="w-8 h-8" />,
+      title: "Supplier & Buyer Management",
+      description: "Maintain a complete database of your suppliers and buyers, with detailed history and account balances."
+    }
+  ];
+
+  const steps = [
+    {
+      number: "01",
+      title: "Request a Demo",
+      description: "Schedule a personalized walkthrough with our team."
+    },
+    {
+      number: "02",
+      title: "Onboard Your Data",
+      description: "We help you easily import your existing suppliers, buyers, and account balances."
+    },
+    {
+      number: "03",
+      title: "Go Live & Grow",
+      description: "Start using Milk Chillar to manage your daily operations and watch your business grow."
+    }
+  ];
+
+  const benefits = [
+    {
+      icon: <Clock className="w-12 h-12" />,
+      title: "Increase Efficiency",
+      description: "Save hours every day by automating manual tasks like entry, calculations, and reporting."
+    },
+    {
+      icon: <CheckCircle className="w-12 h-12" />,
+      title: "Reduce Errors",
+      description: "Eliminate costly human errors in accounting and billing with a system that calculates everything for you."
+    },
+    {
+      icon: <Eye className="w-12 h-12" />,
+      title: "Full Transparency",
+      description: "Gain complete visibility into your business finances and operations, from anywhere, at any time."
+    }
+  ];
+
+  const testimonials = [
+    {
+      quote: "Milk Chillar has transformed our chilling center. What used to take 4 hours of paperwork now takes 15 minutes.",
+      name: "Ramesh Kumar",
+      title: "Manager, ABC Dairy"
+    },
+    {
+      quote: "The real-time dashboards give me complete control over my business. I can make decisions faster and with confidence.",
+      name: "Priya Sharma",
+      title: "Owner, Golden Milk Collection"
+    },
+    {
+      quote: "Our accounting is now accurate and transparent. The automated reports save us so much time every month.",
+      name: "Vijay Patel",
+      title: "Director, Fresh Dairy Cooperative"
+    }
+  ];
+
+  const faqs = [
+    {
+      question: "Is my data secure?",
+      answer: "Absolutely. We use bank-level encryption and secure cloud storage to protect your data. Your information is backed up regularly and accessible only to authorized users."
+    },
+    {
+      question: "Can I use this on my mobile phone?",
+      answer: "Yes! Milk Chillar is fully responsive and works seamlessly on smartphones, tablets, and desktop computers. Manage your business from anywhere."
+    },
+    {
+      question: "Do you offer training and support?",
+      answer: "Yes, we provide comprehensive onboarding training for you and your team. Our support team is available via phone and email to help you whenever you need assistance."
+    },
+    {
+      question: "Can this software handle multiple collection centers?",
+      answer: "Yes, Milk Chillar is designed to manage multiple collection centers from a single dashboard, making it perfect for growing dairy businesses."
+    },
+    {
+      question: "How long does implementation take?",
+      answer: "Most businesses are up and running within 1-2 weeks. We handle the data migration and provide hands-on training to ensure a smooth transition."
+    }
+  ];
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-white">
+    <div className="min-h-screen bg-white">
+      {/* Navigation */}
+      <nav className="fixed top-0 w-full bg-white/95 backdrop-blur-sm shadow-sm z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center">
+              <div className="flex items-center gap-3">
+                <img src="/images/dairify-logo.png" alt="Dairify Logo" className="h-14 w-auto" />
+                <div className="flex flex-col">
+                  <span className="text-2xl font-bold text-blue-900">Dairify</span>
+                  <span className="text-sm text-blue-600">Enterprise Dairy Management</span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center space-x-8">
+              <a href="#features" className="text-gray-700 hover:text-blue-900 transition">Features</a>
+              <a href="#how-it-works" className="text-gray-700 hover:text-blue-900 transition">How It Works</a>
+              <a href="#pricing" className="text-gray-700 hover:text-blue-900 transition">Pricing</a>
+              <a href="#faq" className="text-gray-700 hover:text-blue-900 transition">FAQ</a>
+              <div className="flex items-center gap-4">
+                <a href="/login" className="text-blue-900 hover:text-blue-700 font-semibold px-6 py-2 border-2 border-blue-900 rounded-lg transition-all hover:bg-blue-900 hover:text-white">
+                  Login
+                </a>
+                <button className="bg-amber-500 text-white px-6 py-2 rounded-lg hover:bg-amber-600 transition font-semibold">
+                  Request Demo
+                </button>
+              </div>
+            </div>
+
+            {/* Mobile menu button */}
+            <button 
+              className="md:hidden"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
+              {mobileMenuOpen ? <X /> : <Menu />}
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Navigation */}
+        {mobileMenuOpen && (
+          <div className="md:hidden bg-white border-t">
+            <div className="px-4 py-4 space-y-3">
+              <a href="#features" className="block text-gray-700 hover:text-blue-900">Features</a>
+              <a href="#how-it-works" className="block text-gray-700 hover:text-blue-900">How It Works</a>
+              <a href="#pricing" className="block text-gray-700 hover:text-blue-900">Pricing</a>
+              <a href="#faq" className="block text-gray-700 hover:text-blue-900">FAQ</a>
+              <div className="flex flex-col gap-2">
+                <a href="/login" className="w-full text-blue-900 text-center font-semibold px-6 py-2 border-2 border-blue-900 rounded-lg transition-all hover:bg-blue-900 hover:text-white">
+                  Login
+                </a>
+                <button className="w-full bg-amber-500 text-white px-6 py-2 rounded-lg hover:bg-amber-600 transition font-semibold">
+                  Request Demo
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </nav>
+
       {/* Hero Section */}
-      <header className="relative overflow-hidden">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-5">
-          <div className="absolute top-10 left-10 w-32 h-32 rounded-full bg-green-600"></div>
-          <div className="absolute top-40 right-20 w-20 h-20 rounded-full bg-blue-600"></div>
-          <div className="absolute bottom-20 left-1/4 w-16 h-16 rounded-full bg-green-400"></div>
-        </div>
-        
-        <div className="relative container mx-auto px-4 py-16">
-          <div className="max-w-6xl mx-auto">
-            {/* Logo and Brand */}
-            <div className="text-center mb-12">
-              <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-green-600 to-blue-600 rounded-3xl mb-6 shadow-2xl">
-                <Milk className="w-12 h-12 text-white" />
-              </div>
-              <h1 className="text-5xl md:text-7xl font-bold bg-gradient-to-r from-green-800 to-blue-700 bg-clip-text text-transparent mb-4">
-                چوہان ڈیری فارمنگ
+      <section className="pt-32 pb-20 px-4 bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div className="text-white">
+              <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
+                The All-in-One Software for Your Dairy Business
               </h1>
-              <p className="text-2xl md:text-3xl text-gray-700 mb-2 font-semibold">
-                کسانوں کا قابل اعتماد پارٹنر
+              <p className="text-xl mb-8 text-blue-100">
+                From milk collection and sales to automated accounting and real-time reports, Dairify helps you manage your entire dairy business with ease.
               </p>
-              <p className="text-lg text-gray-600 mb-8">
-                Your Trusted Milk Collection Partner
-              </p>
-            </div>
-
-            {/* CTA Button */}
-            <div className="text-center">
-              <a
-                href="/login"
-                className="inline-flex items-center gap-4 mb-5 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-bold text-xl px-12 py-6 rounded-2xl shadow-2xl hover:shadow-3xl transform hover:scale-105 transition-all duration-300 group"
-              >
-                <Users className="w-6 h-6" />
-                <span> لاگ ان / Login</span>
-                <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
-              </a>
-            </div>
-
-            {/* Main Value Proposition */}
-            <div className="bg-gradient-to-r from-green-600 to-blue-600 text-white rounded-3xl p-8 mb-5 shadow-2xl">
-              <div className="text-center mb-8">
-                <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                  آپ کے دودھ کی بہترین قیمت
-                </h2>
-                <p className="text-xl text-green-100">
-                  Best Price for Your Milk - Guaranteed!
-                </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <button className="bg-amber-500 text-white px-8 py-4 rounded-lg hover:bg-amber-600 transition font-semibold text-lg shadow-lg">
+                  Request a Free Demo
+                </button>
+                <button className="bg-white/10 backdrop-blur text-white px-8 py-4 rounded-lg hover:bg-white/20 transition font-semibold text-lg border border-white/20">
+                  Explore Features
+                </button>
               </div>
-              
-              <div className="grid md:grid-cols-3 gap-6">
-                <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-center">
-                  <DollarSign className="w-12 h-12 mx-auto mb-4 text-yellow-300" />
-                  <h3 className="text-xl font-bold mb-2">فوری پیمنٹ</h3>
-                  <p className="text-green-100">Instant Payment</p>
-                  <p className="text-sm mt-2">24 گھنٹے میں پیسے</p>
-                </div>
-                
-                <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-center">
-                  <FileText className="w-12 h-12 mx-auto mb-4 text-yellow-300" />
-                  <h3 className="text-xl font-bold mb-2">آن لائن لیجر</h3>
-                  <p className="text-green-100">Online Ledger</p>
-                  <p className="text-sm mt-2">ہر لین دین کا ریکارڈ</p>
-                </div>
-                
-                <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-center">
-                  <Shield className="w-12 h-12 mx-auto mb-4 text-yellow-300" />
-                  <h3 className="text-xl font-bold mb-2">مکمل اعتماد</h3>
-                  <p className="text-green-100">100% Reliable</p>
-                  <p className="text-sm mt-2">15 سال کا تجربہ</p>
+            </div>
+            <div className="relative">
+              <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 shadow-2xl">
+                <div className="bg-white rounded-lg p-6 shadow-lg">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-bold text-gray-800">Today's Overview</h3>
+                    <span className="text-green-600 text-sm font-semibold">● Live</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-blue-50 p-4 rounded-lg">
+                      <p className="text-sm text-gray-600">Milk Collected</p>
+                      <p className="text-2xl font-bold text-blue-900">2,450 L</p>
+                    </div>
+                    <div className="bg-amber-50 p-4 rounded-lg">
+                      <p className="text-sm text-gray-600">Revenue</p>
+                      <p className="text-2xl font-bold text-amber-600">₹1.2L</p>
+                    </div>
+                    <div className="bg-green-50 p-4 rounded-lg">
+                      <p className="text-sm text-gray-600">Suppliers</p>
+                      <p className="text-2xl font-bold text-green-600">48</p>
+                    </div>
+                    <div className="bg-purple-50 p-4 rounded-lg">
+                      <p className="text-sm text-gray-600">Pending</p>
+                      <p className="text-2xl font-bold text-purple-600">₹45K</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-
-            
           </div>
         </div>
-      </header>
+      </section>
 
-      {/* Benefits for Suppliers */}
-      <section className="py-20 bg-white/70">
-        <div className="container mx-auto px-4">
+      {/* Features Section */}
+      <section id="features" className="py-20 px-4 bg-gray-50">
+        <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-800 mb-4">
-              سپلائرز کے لیے خصوصی فوائد
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+              Everything You Need in One Platform
             </h2>
-            <p className="text-xl text-gray-600">Special Benefits for Our Milk Suppliers</p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
-            {/* Benefit 1 */}
-            <div className="group bg-gradient-to-br from-white to-green-50 p-6 rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-300 border border-green-100 text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl mb-4 flex items-center justify-center group-hover:scale-110 transition-transform mx-auto">
-                <DollarSign className="w-8 h-8 text-white" />
-              </div>
-              <h3 className="text-lg font-bold text-gray-800 mb-2">
-                وقت پر پیمنٹ
-              </h3>
-              <p className="text-sm text-gray-600 mb-3">On-Time Payment</p>
-              <div className="space-y-1 text-xs">
-                <div className="flex items-center justify-center gap-1">
-                  <CheckCircle className="w-3 h-3 text-green-500" />
-                  <span>روزانہ پیمنٹ</span>
-                </div>
-                <div className="flex items-center justify-center gap-1">
-                  <CheckCircle className="w-3 h-3 text-green-500" />
-                  <span>کوئی تاخیر نہیں</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Benefit 2 */}
-            <div className="group bg-gradient-to-br from-white to-blue-50 p-6 rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-300 border border-blue-100 text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl mb-4 flex items-center justify-center group-hover:scale-110 transition-transform mx-auto">
-                <FileText className="w-8 h-8 text-white" />
-              </div>
-              <h3 className="text-lg font-bold text-gray-800 mb-2">
-                آن لائن ریکارڈ
-              </h3>
-              <p className="text-sm text-gray-600 mb-3">Online Records</p>
-              <div className="space-y-1 text-xs">
-                <div className="flex items-center justify-center gap-1">
-                  <CheckCircle className="w-3 h-3 text-green-500" />
-                  <span>24/7 رسائی</span>
-                </div>
-                <div className="flex items-center justify-center gap-1">
-                  <CheckCircle className="w-3 h-3 text-green-500" />
-                  <span>شفاف حساب کتاب</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Benefit 3 */}
-            <div className="group bg-gradient-to-br from-white to-purple-50 p-6 rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-300 border border-purple-100 text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl mb-4 flex items-center justify-center group-hover:scale-110 transition-transform mx-auto">
-                <TrendingUp className="w-8 h-8 text-white" />
-              </div>
-              <h3 className="text-lg font-bold text-gray-800 mb-2">
-                بہترین ریٹ
-              </h3>
-              <p className="text-sm text-gray-600 mb-3">Best Rates</p>
-              <div className="space-y-1 text-xs">
-                <div className="flex items-center justify-center gap-1">
-                  <CheckCircle className="w-3 h-3 text-green-500" />
-                  <span>مارکیٹ کی بہترین قیمت</span>
-                </div>
-                <div className="flex items-center justify-center gap-1">
-                  <CheckCircle className="w-3 h-3 text-green-500" />
-                  <span>کوئی چھپی فیس نہیں</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Benefit 4 */}
-            <div className="group bg-gradient-to-br from-white to-orange-50 p-6 rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-300 border border-orange-100 text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl mb-4 flex items-center justify-center group-hover:scale-110 transition-transform mx-auto">
-                <Smartphone className="w-8 h-8 text-white" />
-              </div>
-              <h3 className="text-lg font-bold text-gray-800 mb-2">
-                موبائل ایپ
-              </h3>
-              <p className="text-sm text-gray-600 mb-3">Mobile App</p>
-              <div className="space-y-1 text-xs">
-                <div className="flex items-center justify-center gap-1">
-                  <CheckCircle className="w-3 h-3 text-green-500" />
-                  <span>آسان استعمال</span>
-                </div>
-                <div className="flex items-center justify-center gap-1">
-                  <CheckCircle className="w-3 h-3 text-green-500" />
-                  <span>فوری اطلاع</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials/Trust Section */}
-      <section className="py-20 bg-gradient-to-r from-green-900 to-blue-900 text-white">
-        <div className="container mx-auto px-4">
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-4xl font-bold mb-4">
-                کسان کیا کہتے ہیں؟
-              </h2>
-              <p className="text-xl text-green-100">What Our Farmers Say</p>
-            </div>
-            
-            <div className="grid md:grid-cols-2 gap-8">
-              <div className="bg-white/10 backdrop-blur-sm rounded-3xl p-8">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
-                    <Users className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-lg">محمد علی</h4>
-                    <p className="text-green-200 text-sm">کسان - گجرات</p>
-                  </div>
-                </div>
-                <p className="text-lg italic text-green-100">
-                  "15 سال سے چوہان ڈیری کے ساتھ کام کر رہا ہوں۔ ہمیشہ وقت پر پیسے ملتے ہیں۔"
-                </p>
-                <p className="text-white/80 mt-2">
-                  "Working with Chauhan Dairy for 15 years. Always get paid on time."
-                </p>
-              </div>
-
-              <div className="bg-white/10 backdrop-blur-sm rounded-3xl p-8">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
-                    <Users className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-lg">احمد حسن</h4>
-                    <p className="text-blue-200 text-sm">کسان - پنجاب</p>
-                  </div>
-                </div>
-                <p className="text-lg italic text-blue-100">
-                  "آن لائن لیجر بہت آسان ہے۔ گھر بیٹھے اپنا حساب دیکھ سکتے ہیں۔"
-                </p>
-                <p className="text-white/80 mt-2">
-                  "Online ledger is very easy. Can check accounts from home."
-                </p>
-              </div>
-            </div>
-
-            <div className="text-center mt-12">
-              <div className="inline-flex items-center gap-8">
-                <div className="text-center">
-                  <div className="text-4xl font-bold text-yellow-300">500+</div>
-                  <p className="text-green-200">خوش کسان</p>
-                  <p className="text-white/60 text-sm">Happy Farmers</p>
-                </div>
-                <div className="text-center">
-                  <div className="text-4xl font-bold text-yellow-300">15+</div>
-                  <p className="text-green-200">سال تجربہ</p>
-                  <p className="text-white/60 text-sm">Years Experience</p>
-                </div>
-                <div className="text-center">
-                  <div className="text-4xl font-bold text-yellow-300">1000+</div>
-                  <p className="text-green-200">لیٹر یومیہ</p>
-                  <p className="text-white/60 text-sm">Liters Daily</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Call to Action Section */}
-      <section className="py-16 bg-gradient-to-r from-green-600 to-blue-600">
-        <div className="container mx-auto px-4 text-center">
-          <div className="max-w-4xl mx-auto text-white">
-            <h2 className="text-4xl font-bold mb-4">
-              آج ہی شامل ہوں
-            </h2>
-            <p className="text-xl mb-8 text-green-100">
-              Join us today and experience the best milk collection service
+            <p className="text-xl text-gray-600">
+              Comprehensive tools designed specifically for dairy collection centers
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <a
-                href="/login"
-                className="bg-white text-green-600 hover:bg-green-50 font-bold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all"
-              >
-                اب رجسٹر کریں / Register Now
-              </a>
-              <a
-                href="tel:+923001234567"
-                className="bg-white/20 text-white hover:bg-white/30 font-bold px-8 py-4 rounded-xl border border-white/30 transition-all"
-              >
-                رابطہ: 03120000189
-              </a>
-            </div>
           </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {features.map((feature, index) => (
+              <div 
+                key={index}
+                className="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition-all hover:-translate-y-1"
+              >
+                <div className="text-amber-500 mb-4">
+                  {feature.icon}
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">
+                  {feature.title}
+                </h3>
+                <p className="text-gray-600">
+                  {feature.description}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works Section */}
+      <section id="how-it-works" className="py-20 px-4 bg-white">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+              Get Started in 3 Simple Steps
+            </h2>
+          </div>
+          <div className="grid md:grid-cols-3 gap-8">
+            {steps.map((step, index) => (
+              <div key={index} className="relative">
+                <div className="bg-blue-900 text-white rounded-xl p-8 hover:bg-blue-800 transition">
+                  <div className="text-5xl font-bold text-amber-500 mb-4">
+                    {step.number}
+                  </div>
+                  <h3 className="text-2xl font-bold mb-3">
+                    {step.title}
+                  </h3>
+                  <p className="text-blue-100">
+                    {step.description}
+                  </p>
+                </div>
+                {index < steps.length - 1 && (
+                  <div className="hidden md:block absolute top-1/2 -right-4 w-8 h-0.5 bg-amber-500"></div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Benefits Section */}
+      <section className="py-20 px-4 bg-gradient-to-br from-amber-50 to-blue-50">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+              Stop Managing, Start Growing
+            </h2>
+            <p className="text-xl text-gray-600">
+              Transform your dairy business with intelligent automation
+            </p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-8">
+            {benefits.map((benefit, index) => (
+              <div 
+                key={index}
+                className="bg-white p-8 rounded-xl shadow-lg text-center hover:shadow-xl transition"
+              >
+                <div className="text-blue-900 mb-4 flex justify-center">
+                  {benefit.icon}
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                  {benefit.title}
+                </h3>
+                <p className="text-gray-600">
+                  {benefit.description}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section className="py-20 px-4 bg-blue-900">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+              Trusted by Dairy Businesses Like Yours
+            </h2>
+          </div>
+          <div className="grid md:grid-cols-3 gap-8">
+            {testimonials.map((testimonial, index) => (
+              <div 
+                key={index}
+                className="bg-white/10 backdrop-blur-lg p-8 rounded-xl border border-white/20"
+              >
+                <p className="text-white text-lg mb-6 italic">
+                  "{testimonial.quote}"
+                </p>
+                <div className="border-t border-white/20 pt-4">
+                  <p className="text-amber-400 font-bold">
+                    {testimonial.name}
+                  </p>
+                  <p className="text-blue-200 text-sm">
+                    {testimonial.title}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing Section */}
+      <section id="pricing" className="py-20 px-4 bg-white">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+              Simple, Transparent Pricing
+            </h2>
+          </div>
+          <div className="bg-gradient-to-br from-blue-900 to-blue-800 rounded-2xl p-12 text-white text-center shadow-2xl">
+            <h3 className="text-3xl font-bold mb-4">Professional Plan</h3>
+            <p className="text-xl text-blue-100 mb-8">
+              Custom pricing based on your business needs
+            </p>
+            <ul className="text-left max-w-md mx-auto mb-8 space-y-3">
+              <li className="flex items-start">
+                <CheckCircle className="w-6 h-6 text-amber-500 mr-3 flex-shrink-0 mt-0.5" />
+                <span>Complete accounting & reporting system</span>
+              </li>
+              <li className="flex items-start">
+                <CheckCircle className="w-6 h-6 text-amber-500 mr-3 flex-shrink-0 mt-0.5" />
+                <span>Unlimited suppliers & buyers</span>
+              </li>
+              <li className="flex items-start">
+                <CheckCircle className="w-6 h-6 text-amber-500 mr-3 flex-shrink-0 mt-0.5" />
+                <span>Real-time dashboards & analytics</span>
+              </li>
+              <li className="flex items-start">
+                <CheckCircle className="w-6 h-6 text-amber-500 mr-3 flex-shrink-0 mt-0.5" />
+                <span>Multi-device access (mobile & desktop)</span>
+              </li>
+              <li className="flex items-start">
+                <CheckCircle className="w-6 h-6 text-amber-500 mr-3 flex-shrink-0 mt-0.5" />
+                <span>Dedicated training & support</span>
+              </li>
+            </ul>
+            <button className="bg-amber-500 text-white px-8 py-4 rounded-lg hover:bg-amber-600 transition font-semibold text-lg shadow-lg">
+              Get a Quote
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section id="faq" className="py-20 px-4 bg-gray-50">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+              Frequently Asked Questions
+            </h2>
+          </div>
+          <div className="space-y-4">
+            {faqs.map((faq, index) => (
+              <div 
+                key={index}
+                className="bg-white rounded-xl shadow-md overflow-hidden"
+              >
+                <button
+                  className="w-full px-8 py-6 text-left flex justify-between items-center hover:bg-gray-50 transition"
+                  onClick={() => setOpenFaq(openFaq === index ? null : index)}
+                >
+                  <span className="font-bold text-lg text-gray-900">
+                    {faq.question}
+                  </span>
+                  <ChevronDown 
+                    className={`w-6 h-6 text-blue-900 transition-transform ${
+                      openFaq === index ? 'transform rotate-180' : ''
+                    }`}
+                  />
+                </button>
+                {openFaq === index && (
+                  <div className="px-8 pb-6 text-gray-600">
+                    {faq.answer}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Final CTA Section */}
+      <section className="py-20 px-4 bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
+            Ready to Digitize Your Dairy?
+          </h2>
+          <p className="text-xl text-blue-100 mb-8">
+            Take the first step towards a more efficient and profitable business.
+          </p>
+          <button className="bg-amber-500 text-white px-12 py-5 rounded-lg hover:bg-amber-600 transition font-bold text-xl shadow-2xl">
+            Request Your Free Demo Today
+          </button>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-gradient-to-r from-gray-900 to-blue-900 text-white py-12">
-        <div className="container mx-auto px-4">
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-3 mb-6">
-              <Milk className="w-10 h-10 text-green-400" />
-              <span className="text-3xl font-bold">چوہان ڈیری فارمنگ</span>
+      <footer className="bg-gray-900 text-white py-12 px-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid md:grid-cols-4 gap-8 mb-8">
+            <div>
+              <div className="flex items-center gap-3 mb-4">
+                <img src="/images/dairify-logo.png" alt="Dairify Logo" className="h-12 w-auto" />
+                <span className="text-2xl font-bold">Dairify</span>
+              </div>
+              <p className="text-gray-400 text-sm">
+                Digitizing dairy businesses for a more efficient and profitable future.
+              </p>
             </div>
-            <p className="text-blue-200 mb-4 text-lg">
-              آپ کے دودھ کا قابل اعتماد خریدار
-            </p>
-            <p className="text-white/60">
-              © 2024 Chauhan Dairy Farming. تمام حقوق محفوظ ہیں۔
-            </p>
-            <div className="mt-4 flex justify-center gap-6 text-sm">
-              <span className="text-green-300">📞 رابطہ: 03120000189</span>
-              <span className="text-blue-300">📧 info@chauhandairy.com</span>
+            <div>
+              <h4 className="font-bold mb-4">Product</h4>
+              <ul className="space-y-2 text-gray-400 text-sm">
+                <li><a href="#features" className="hover:text-white transition">Features</a></li>
+                <li><a href="#pricing" className="hover:text-white transition">Pricing</a></li>
+                <li><a href="#" className="hover:text-white transition">About Us</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-bold mb-4">Support</h4>
+              <ul className="space-y-2 text-gray-400 text-sm">
+                <li><a href="#faq" className="hover:text-white transition">FAQ</a></li>
+                <li><a href="#" className="hover:text-white transition">Contact</a></li>
+                <li><a href="#" className="hover:text-white transition">Training</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-bold mb-4">Contact</h4>
+              <ul className="space-y-2 text-gray-400 text-sm">
+                <li>Email: info@dairify.com</li>
+                <li>Phone: +91 XXX XXX XXXX</li>
+                <li>Address: Your Address Here</li>
+              </ul>
+            </div>
+          </div>
+          <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-gray-400">
+            <p>© 2024 Dairify. All rights reserved.</p>
+            <div className="flex gap-6 mt-4 md:mt-0">
+              <a href="#" className="hover:text-white transition">Privacy Policy</a>
+              <a href="#" className="hover:text-white transition">Terms of Service</a>
             </div>
           </div>
         </div>

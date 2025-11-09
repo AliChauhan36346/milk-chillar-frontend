@@ -73,22 +73,11 @@ export default function LoginPage() {
         className="bg-white/95 backdrop-blur-sm border border-blue-100/50 p-6 sm:p-8 rounded-xl shadow-2xl shadow-blue-100/30 w-full max-w-md transition-all hover:shadow-blue-100/50"
       >
         <div className="mb-8 text-center">
-          <div className="mb-4 flex justify-center">
-            {/* Your SVG icon */}
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-12 w-12 text-blue-600"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-            >
-              <path d="M12 3c-3.87 0-7 3.13-7 7 0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-1.26c1.81-1.27 3-3.36 3-5.74 0-3.87-3.13-7-7-7zm2 11.7V16h-4v-1.3C8.48 13.4 7 11.32 7 9c0-2.76 2.24-5 5-5s5 2.24 5 5c0 2.32-1.48 4.4-3 5.7z" />
-              <path d="M10.5 17.5h3c.28 0 .5.22.5.5v3c0 .28-.22.5-.5.5h-3c-.28 0-.5-.22-.5-.5v-3c0-.28.22-.5.5-.5z" />
-            </svg>
+          <div className="mb-4 flex flex-col items-center">
+            <img src="/images/dairify-logo.png" alt="Dairify Logo" className="h-16 w-auto mb-3" />
+            <h2 className="text-2xl sm:text-3xl font-bold text-blue-900">Dairify</h2>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-800">
-            Chauhan Dairies
-          </h2>
-          <p className="mt-2 text-gray-600">Login to your account</p>
+          <p className="mt-4 text-gray-600">Login to your account</p>
         </div>
 
         {error && (

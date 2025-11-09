@@ -1,13 +1,12 @@
-
 'use client';
 import { useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { cashPaymentsApi, CashPaymentCreateUpdate } from '@/lib/api/cashPayments';
+import { cashReceiptsApi, CashReceiptCreateUpdate } from '@/lib/api/cashReceipts';
 import { 
-  createBankPayment, 
-  updateBankPayment, 
-  getBankPaymentById, 
-  getNextBankPaymentVoucherNumber,
+  createBankReceipt, 
+  updateBankReceipt, 
+  getBankReceiptById, 
+  getNextBankReceiptNumber,
   CreateBankTransactionRequest 
 } from '@/lib/api/bank-transactions';
 import { Card } from '@/components/ui/card';
@@ -21,7 +20,7 @@ import {
   type TransactionType
 } from '@/components/transactions';
 
-export default function PaymentForm() {
+export default function ReceiptForm() {
   const router = useRouter();
   const params = useParams();
   
@@ -30,7 +29,7 @@ export default function PaymentForm() {
     ? new URLSearchParams(window.location.search).get('id') 
     : null;
   const isEditing = (params?.id !== 'create' && params?.id) || id;
-  const paymentId = isEditing ? Number(params?.id || id) : null;
+  const receiptId = isEditing ? Number(params?.id || id) : null;
 
   // Use our custom hook
   const {
@@ -52,20 +51,20 @@ export default function PaymentForm() {
     handleTypeChange,
     toast
   } = useTransactionForm({
-    transactionId: paymentId,
+    transactionId: receiptId,
     isEditing: !!isEditing,
     onLoadTransaction: async (id: number, type: TransactionType) => {
       if (type === 'cash') {
-        return await cashPaymentsApi.getPayment(id);
+        return await cashReceiptsApi.getReceipt(id);
       } else {
-        return await getBankPaymentById(id);
+        return await getBankReceiptById(id);
       }
     },
     onGetNextVoucher: async (type: TransactionType) => {
       if (type === 'cash') {
-        return await cashPaymentsApi.getNextVoucherNumber();
+        return await cashReceiptsApi.getNextReceiptNumber();
       } else {
-        return await getNextBankPaymentVoucherNumber();
+        return await getNextBankReceiptNumber();
       }
     }
   });
@@ -94,32 +93,42 @@ export default function PaymentForm() {
 
     try {
       setSaving(true);
-      const paymentDateTime = new Date(formData.paymentDate + 'T00:00:00.000Z').toISOString();
+      const receiptDateTime = new Date(formData.paymentDate + 'T00:00:00.000Z').toISOString();
       
       if (transactionType === 'cash') {
-        const submitData: CashPaymentCreateUpdate = {
-          paymentDate: paymentDateTime,
+        const validLines = formData.paymentLines
+          .filter(line => line.accountId > 0 && line.amount > 0)
+          .map(line => ({
+            accountId: line.accountId,
+            description: line.description || '',
+            amount: Number(line.amount || 0)
+          }));
+
+        const submitData: CashReceiptCreateUpdate = {
+          paymentDate: receiptDateTime,
           jobDescription: formData.jobDescription || '',
           cashAccountId: formData.accountId,
           totalAmount: Number(totalAmount.toFixed(2)),
           remarks: formData.remarks || '',
-          paymentLines: formData.paymentLines.map(line => ({
-            accountId: line.accountId,
-            description: line.description || '',
-            amount: Number(line.amount.toFixed(2))
-          }))
+          paymentLines: validLines
         };
+
+        if (!submitData.paymentLines || submitData.paymentLines.length === 0) {
+          throw new Error('At least one valid receipt line with an account and amount is required');
+        }
         
-        if (isEditing && paymentId) {
-          await cashPaymentsApi.updatePayment(paymentId, submitData);
+        console.log('Submitting cash receipt data:', JSON.stringify(submitData, null, 2));
+        
+        if (isEditing && receiptId) {
+          await cashReceiptsApi.updateReceipt(receiptId, submitData);
           toast({
-            title: 'Cash payment updated successfully',
+            title: 'Cash receipt updated successfully',
             variant: 'success'
           });
         } else {
-          await cashPaymentsApi.createPayment(submitData);
+          await cashReceiptsApi.createReceipt(submitData);
           toast({
-            title: 'Cash payment created successfully',
+            title: 'Cash receipt created successfully',
             variant: 'success'
           });
         }
@@ -129,7 +138,7 @@ export default function PaymentForm() {
           : undefined;
 
         const submitData: CreateBankTransactionRequest = {
-          transactionDate: paymentDateTime,
+          transactionDate: receiptDateTime,
           jobDescription: formData.jobDescription || undefined,
           bankAccountId: formData.accountId,
           instrumentNo: formData.instrumentNo || undefined,
@@ -143,23 +152,27 @@ export default function PaymentForm() {
           }))
         };
         
-        if (isEditing && paymentId) {
-          await updateBankPayment(paymentId, submitData);
+        if (isEditing && receiptId) {
+          await updateBankReceipt(receiptId, submitData);
           toast({
-            title: 'Bank payment updated successfully',
+            title: 'Bank receipt updated successfully',
             variant: 'success'
           });
         } else {
-          await createBankPayment(submitData);
+          await createBankReceipt(submitData);
           toast({
-            title: 'Bank payment created successfully',
+            title: 'Bank receipt created successfully',
             variant: 'success'
           });
         }
       }
       
-      router.push('/Accounts/transactions/cashPayments');
+      router.push('/Accounts/transactions');
     } catch (error: any) {
+      console.error('Form submission error:', error);
+      console.error('Error response:', error?.response);
+      console.error('Error message:', error?.message);
+      
       let errorMessage = 'An unexpected error occurred';
       if (error?.response?.data?.message) {
         errorMessage = error.response.data.message;
@@ -170,8 +183,11 @@ export default function PaymentForm() {
         errorMessage = error.message;
       }
       
+      // Log the final error message for debugging
+      console.error('Final error message:', errorMessage);
+      
       toast({
-        title: 'Failed to save payment',
+        title: 'Failed to save receipt',
         description: errorMessage,
         variant: 'error'
       });
@@ -199,13 +215,13 @@ export default function PaymentForm() {
       <div className="p-1 sm:p-4 max-w-6xl mx-auto">
         {/* Header using component */}
         <TransactionFormHeader
-          title="Payment"
+          title="Receipt"
           voucherNo={nextVoucherNo}
           totalAmount={totalAmount}
           linesCount={formData.paymentLines.length}
           isEditing={!!isEditing}
           isSaving={saving}
-          backHref="/Accounts/transactions/cashPayments"
+          backHref="/Accounts/transactions"
           onSave={handleSubmit}
         />
 
@@ -218,8 +234,8 @@ export default function PaymentForm() {
                 <TransactionTypeToggle
                   value={transactionType}
                   onChange={handleTypeChange}
-                  cashLabel="Cash Payment"
-                  bankLabel="Bank Payment"
+                  cashLabel="Cash Receipt"
+                  bankLabel="Bank Receipt"
                   disabled={!!isEditing}
                 />
               </div>
@@ -243,7 +259,7 @@ export default function PaymentForm() {
               onAddLine={addPaymentLine}
               onUpdateLine={updatePaymentLine}
               onDeleteLine={removePaymentLine}
-              tableTitle="Payment Lines"
+              tableTitle="Receipt Lines"
             />
           </Card>
         </form>
@@ -251,5 +267,3 @@ export default function PaymentForm() {
     </DynamicLayout>
   );
 }
-
-//oh yes claude its working now we will refine the account ledger service the changes i want are no 1 is that i want the grouped purchase on the 15 days basis like now as we have two entries per day and when we try to see the account leger it is filled with the purchase and not easy to find other rare transactions like less trasactions which are payment etc so i want that it should show the purchase like 15 days interval like first half of month and second irespective of that there is only one trasaction in that time but if not any trassaction then we will not show that single transaction for that fifteen days and if the month is of 31 or 28 the first halve wiill remain constant of 15 days the second one will be chnaged on the bassis of month days and i also wanth the debit credit system not the negative or postive value here is the current service file for ledger "

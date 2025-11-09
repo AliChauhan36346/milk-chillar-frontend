@@ -19,7 +19,8 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { CenteredSpinner, Spinner } from '@/components/ui/spinner';
 import { useToast } from '@/hooks/useToast';
-import { PageLayout } from '@/components/layouts/PageLayout';
+import { AdminLayout } from '@/components/layouts/AdminLayout';
+import  ProtectedRoute from '@/components/ProtectedRoutes';
 import {
   TrendingUp,
   TrendingDown,
@@ -114,10 +115,8 @@ export default function ProfitLossPage() {
   };
 
   return (
-    <PageLayout
-      role="admin"
-      contentClassName="p-6"
-    >
+    <AdminLayout>
+      <div className="max-w-7xl mx-auto p-2 space-y-6">
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -279,7 +278,8 @@ export default function ProfitLossPage() {
           </>
         )}
       </div>
-    </PageLayout>
+      </div>
+    </AdminLayout>
   );
 }
 

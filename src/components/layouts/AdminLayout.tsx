@@ -67,9 +67,9 @@ const adminNavigation = [
         href: '/Accounts/transactions',
         subItems: [
           { label: 'Roznamcha', href: '/Accounts/transactions', icon: <BookOpen size={18} /> },
-          { label: 'Cash Payments', href: '/Accounts/transactions/cashPayments', icon: <Banknote size={18} /> },
-          { label: 'Bank Payments', href: '/Accounts/transactions/bank', icon: <Building size={18} /> },
-          { label: 'Receipts', href: '/Accounts/transactions/receipts', icon: <Receipt size={18} /> }
+          { label: 'Payments', href: '/Accounts/transactions/cashPayments', icon: <Banknote size={18} /> },
+          //{ label: 'Bank Payments', href: '/Accounts/transactions/bank', icon: <Building size={18} /> },
+          { label: 'Receipts', href: '/Accounts/transactions/receipts/create', icon: <Receipt size={18} /> }
         ]
       },
       { label: 'Opening Balances', href: '/Accounts/openingBalances', icon: <Scale size={18} /> },
