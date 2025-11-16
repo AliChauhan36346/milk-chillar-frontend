@@ -9,7 +9,7 @@ import { Table } from '@/components/ui/Table/Table';
 import SummaryCard from '@/components/ui/SummaryCard';
 import { SearchableSelect, SearchableOption } from '@/components/ui/SearchableSelect';
 import ProtectedRoute from '@/components/ProtectedRoutes';
-import { MilkCardModal } from '@/components/modals/MilkCardModal';
+import MilkCardModal from '@/components/modals/MilkCardModal';
 import { useToast } from '@/hooks/useToast';
 import {
     Download,
@@ -52,7 +52,7 @@ export default function AccountLedgerPage() {
     const [pageSize] = useState(20);
     const router = useRouter();
     const { toast } = useToast();
-    
+
     // Milk Card Modal State
     const [showMilkCard, setShowMilkCard] = useState(false);
     const [milkCardData, setMilkCardData] = useState<{
@@ -67,7 +67,7 @@ export default function AccountLedgerPage() {
         fromDate: '',
         toDate: '',
         sourceTable: '',
-        groupPurchasesByPeriod: false
+        groupPurchasesByPeriod: true
     });
 
     // Load all accounts on component mount
@@ -188,7 +188,7 @@ export default function AccountLedgerPage() {
             'sales_grouped': { prefix: 'SL', name: 'Sales (Grouped)' },
             'purchase': { prefix: 'PV', name: 'Purchase' },
             'purchases': { prefix: 'PV', name: 'Purchase' },
-            'purchases_grouped': { prefix: 'PV', name: 'Purchases (Grouped)' },
+            'purchase_grouped': { prefix: 'PV', name: 'Purchases (Grouped)' },
             'cash_payments': { prefix: 'CP', name: 'Cash Payment' },
             'bank_payments': { prefix: 'BP', name: 'Bank Payment' },
             'cash_receipts': { prefix: 'CR', name: 'Cash Receipt' },
@@ -208,12 +208,12 @@ export default function AccountLedgerPage() {
 
     const generateTransactionNo = (transaction: AccountLedger) => {
         const { prefix, id } = getSourceInfo(transaction);
-        
-        // For grouped entries, show period range
-        if (transaction.isGrouped) {
-            return transaction.referenceNo || `${prefix}-Grouped`;
-        }
-        
+
+        // // For grouped entries, show period range
+        // if (transaction.isGrouped) {
+        //     return transaction.referenceNo || `${prefix}-Grouped`;
+        // }
+
         return `${prefix}${id.toString().padStart(4, '0')}`;
     };
 
@@ -270,22 +270,22 @@ export default function AccountLedgerPage() {
             switch (sourceTable) {
                 case 'cash_payments':
                 case 'cashpayments':
-                    router.push(`/Accounts/transactions/payments/create?id=${transaction.sourceId}`);
+                    router.push(`/Accounts/transactions/cashPayments/create?id=${transaction.sourceId}&type=cash`);
                     break;
 
                 case 'bank_payments':
                 case 'bankpayments':
-                    router.push(`/Accounts/transactions/payments/create?id=${transaction.sourceId}`);
+                    router.push(`/Accounts/transactions/cashPayments/create?id=${transaction.sourceId}&type=bank`);
                     break;
 
                 case 'cash_receipts':
                 case 'cashreceipts':
-                    router.push(`/Accounts/transactions/receipts/create?id=${transaction.sourceId}`);
+                    router.push(`/Accounts/transactions/receipts/create?id=${transaction.sourceId}&type=cash`);
                     break;
 
                 case 'bank_receipts':
                 case 'bankreceipts':
-                    router.push(`/Accounts/transactions/receipts/create?id=${transaction.sourceId}`);
+                    router.push(`/Accounts/transactions/receipts/create?id=${transaction.sourceId}&type=bank`);
                     break;
 
                 case 'openingbalance':
@@ -462,6 +462,7 @@ export default function AccountLedgerPage() {
                     )}
 
                     {/* Ledger Table */}
+                    {/* Ledger Table - Make it responsive */}
                     {selectedAccount && (
                         <Card>
                             <CardHeader>
@@ -475,29 +476,29 @@ export default function AccountLedgerPage() {
                                             <Table.Head>Trans No.</Table.Head>
                                             <Table.Head>Source Type</Table.Head>
                                             <Table.Head>Description</Table.Head>
-                                            <Table.Head><div className="text-right">Debit</div></Table.Head>
-                                            <Table.Head><div className="text-right">Credit</div></Table.Head>
-                                            <Table.Head><div className="text-right">Balance</div></Table.Head>
-                                            <Table.Head><div className="text-center">Action</div></Table.Head>
+                                            <Table.Head className="text-right">Debit</Table.Head>
+                                            <Table.Head className="text-right">Credit</Table.Head>
+                                            <Table.Head className="text-right">Balance</Table.Head>
+                                            <Table.Head className="text-center">Action</Table.Head>
                                         </Table.Row>
                                     </Table.Header>
                                     <Table.Body>
                                         {loading ? (
                                             <Table.Row>
-                                                <td colSpan={8} className="text-center py-12">
+                                                <Table.Cell colSpan={8} className="text-center py-12">
                                                     <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-gray-400" />
                                                     <p className="text-gray-500">Loading transactions...</p>
-                                                </td>
+                                                </Table.Cell>
                                             </Table.Row>
                                         ) : ledgerData.length === 0 ? (
                                             <Table.Row>
-                                                <td colSpan={8} className="text-center py-12">
+                                                <Table.Cell colSpan={8} className="text-center py-12">
                                                     <p className="text-gray-500">No transactions found for the selected criteria.</p>
-                                                </td>
+                                                </Table.Cell>
                                             </Table.Row>
                                         ) : (
                                             ledgerData.map((transaction, index) => (
-                                                <tr 
+                                                <Table.Row
                                                     key={`${transaction.journalLineId}-${index}`}
                                                     className={transaction.isGrouped ? 'bg-blue-50 font-medium' : ''}
                                                 >
@@ -518,16 +519,16 @@ export default function AccountLedgerPage() {
                                                         </div>
                                                         {transaction.isGrouped && (
                                                             <div className="text-xs text-blue-600">
-                                                                {transaction.groupedTransactionCount} transactions
+                                                                {transaction.groupedTransactionCount} trans
                                                             </div>
                                                         )}
                                                     </Table.Cell>
-                                                    <Table.Cell className="max-w-xs">
-                                                        <div className="truncate" title={transaction.description || ''}>
+                                                    <Table.Cell>
+                                                        <div className="max-w-[150px] sm:max-w-xs truncate" title={transaction.description || ''}>
                                                             {transaction.description || '-'}
                                                         </div>
                                                         {transaction.narration && (
-                                                            <div className="text-xs text-gray-500 truncate">
+                                                            <div className="text-xs text-gray-500 truncate max-w-[150px] sm:max-w-xs">
                                                                 {transaction.narration}
                                                             </div>
                                                         )}
@@ -555,47 +556,48 @@ export default function AccountLedgerPage() {
                                                         <button
                                                             onClick={() => handleViewTransaction(transaction)}
                                                             className="text-blue-600 hover:text-blue-800 transition-colors p-1 hover:bg-blue-50 rounded"
-                                                            title={transaction.isGrouped ? "View Milk Card Details" : "View Transaction"}
+                                                            title={transaction.isGrouped ? "View Milk Card" : "View Transaction"}
                                                         >
                                                             <Eye className="w-4 h-4" />
                                                         </button>
                                                     </Table.Cell>
-                                                </tr>
+                                                </Table.Row>
                                             ))
                                         )}
                                     </Table.Body>
                                 </Table>
-
-                                {/* Pagination */}
-                                {totalCount > pageSize && (
-                                    <div className="px-6 py-4 border-t bg-gray-50 flex items-center justify-between">
-                                        <div className="text-sm text-gray-700">
-                                            Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, totalCount)} of {totalCount} transactions
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <button
-                                                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                                                disabled={currentPage === 1}
-                                                className="px-3 py-2 border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors flex items-center gap-1"
-                                            >
-                                                <ChevronLeft className="w-4 h-4" />
-                                                Previous
-                                            </button>
-                                            <span className="px-4 py-2 text-sm font-medium">
-                                                Page {currentPage} of {totalPages}
-                                            </span>
-                                            <button
-                                                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                                                disabled={currentPage === totalPages}
-                                                className="px-3 py-2 border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors flex items-center gap-1"
-                                            >
-                                                Next
-                                                <ChevronRight className="w-4 h-4" />
-                                            </button>
-                                        </div>
-                                    </div>
-                                )}
                             </CardContent>
+
+                            {/* Pagination - Mobile optimized */}
+                            {totalCount > pageSize && (
+                                <div className="px-3 sm:px-6 py-3 sm:py-4 border-t bg-gray-50 flex flex-col sm:flex-row items-center justify-between gap-3">
+                                    <div className="text-xs sm:text-sm text-gray-700 text-center sm:text-left">
+                                        Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, totalCount)} of {totalCount}
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                            disabled={currentPage === 1}
+                                            className="px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors flex items-center gap-1"
+                                        >
+                                            <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                            <span className="hidden sm:inline">Previous</span>
+                                        </button>
+                                        <span className="px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium whitespace-nowrap">
+                                            Page {currentPage} of {totalPages}
+                                        </span>
+                                        <button
+                                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                            disabled={currentPage === totalPages}
+                                            className="px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors flex items-center gap-1"
+                                        >
+                                            <span className="hidden sm:inline">Next</span>
+                                            <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
                         </Card>
                     )}
 

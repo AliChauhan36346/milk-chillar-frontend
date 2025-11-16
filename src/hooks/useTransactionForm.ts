@@ -42,14 +42,16 @@ interface UseTransactionFormOptions {
   isEditing: boolean;
   onLoadTransaction?: (id: number, type: TransactionType) => Promise<any>;
   onGetNextVoucher?: (type: TransactionType) => Promise<any>;
+  initialType?: TransactionType;
 }
 
 export function useTransactionForm(options: UseTransactionFormOptions) {
-  const { transactionId, isEditing, onLoadTransaction, onGetNextVoucher } = options;
+  const { transactionId, isEditing, onLoadTransaction, onGetNextVoucher, initialType } = options;
   const router = useRouter();
   const { toast } = useToast();
 
-  const [transactionType, setTransactionType] = useState<TransactionType>('cash');
+  // Initialize transactionType directly from initialType
+  const [transactionType, setTransactionType] = useState<TransactionType>(initialType || 'cash');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [nextVoucherNo, setNextVoucherNo] = useState<number | null>(null);
@@ -57,6 +59,19 @@ export function useTransactionForm(options: UseTransactionFormOptions) {
   const [bankAccounts, setBankAccounts] = useState<SearchAccountResult[]>([]);
   const [formData, setFormData] = useState<TransactionFormData>(INITIAL_FORM_DATA);
   const [errors, setErrors] = useState<any>({});
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  // Update transactionType when initialType changes
+  useEffect(() => {
+    if (initialType) {
+      console.log('Setting transaction type from initialType:', initialType);
+      setTransactionType(initialType);
+    }
+  }, [initialType]);
 
   // Load accounts
   useEffect(() => {
@@ -79,19 +94,25 @@ export function useTransactionForm(options: UseTransactionFormOptions) {
 
   // Load transaction or voucher number
   useEffect(() => {
-    if (isEditing && transactionId && onLoadTransaction) {
-      loadTransaction();
-    } else if (onGetNextVoucher) {
-      loadNextVoucherNumber();
-      setLoading(false);
-    } else {
-      setLoading(false);
-    }
-  }, [isEditing, transactionId, transactionType]);
+    if (!isClient) return; // Wait for client-side mount
+
+    const loadData = async () => {
+      if (isEditing && transactionId && onLoadTransaction) {
+        await loadTransaction();
+      } else if (onGetNextVoucher) {
+        await loadNextVoucherNumber();
+        setLoading(false);
+      } else {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [isClient, isEditing, transactionId, transactionType]); // Keep transactionType as dependency
 
   const loadNextVoucherNumber = async () => {
     if (!onGetNextVoucher) return;
-    
+
     try {
       const response = await onGetNextVoucher(transactionType);
       setNextVoucherNo(response.nextVoucherNumber || response.nextReceiptNumber);
@@ -105,8 +126,12 @@ export function useTransactionForm(options: UseTransactionFormOptions) {
 
     try {
       setLoading(true);
-      const data = await onLoadTransaction(transactionId, transactionType);
+      // Use initialType if available, otherwise fall back to transactionType state
+      const typeToUse = initialType || transactionType;
+      console.log('Loading transaction:', transactionId, 'with type:', typeToUse);
       
+      const data = await onLoadTransaction(transactionId, typeToUse);
+
       setFormData({
         paymentDate: (data.paymentDate || data.transactionDate || data.receiptDate).split('T')[0],
         jobDescription: data.jobDescription || '',
@@ -123,6 +148,7 @@ export function useTransactionForm(options: UseTransactionFormOptions) {
         }))
       });
     } catch (error) {
+      console.error('Error loading transaction:', error);
       toast({
         title: 'Failed to load transaction',
         variant: 'error'
@@ -146,8 +172,8 @@ export function useTransactionForm(options: UseTransactionFormOptions) {
     setFormData(prev => {
       const newLines = [...prev.paymentLines];
       if (field === 'account') {
-        newLines[index] = { 
-          ...newLines[index], 
+        newLines[index] = {
+          ...newLines[index],
           accountId: value?.accountId || 0,
           accountCode: value?.accountCode || '',
           accountName: value?.accountName || value?.name || ''
@@ -155,7 +181,7 @@ export function useTransactionForm(options: UseTransactionFormOptions) {
       } else {
         newLines[index] = { ...newLines[index], [field]: value };
       }
-      
+
       if (errors[`line_${index}_account`] || errors[`line_${index}_amount`]) {
         setErrors((prev: Record<string, string | undefined>) => ({
           ...prev,
@@ -163,7 +189,7 @@ export function useTransactionForm(options: UseTransactionFormOptions) {
           [`line_${index}_amount`]: undefined
         }));
       }
-      
+
       return { ...prev, paymentLines: newLines };
     });
   };
@@ -189,16 +215,16 @@ export function useTransactionForm(options: UseTransactionFormOptions) {
     const newErrors: any = {};
     if (!formData.paymentDate) newErrors.paymentDate = 'Required';
     if (!formData.accountId) newErrors.accountId = 'Required';
-    
+
     // Check if any line has valid data
-    const validLines = formData.paymentLines.filter(line => 
+    const validLines = formData.paymentLines.filter(line =>
       line.accountId > 0 && line.amount > 0
     );
-    
+
     if (validLines.length === 0) {
       newErrors.totalAmount = 'At least one valid line with account and amount is required';
     }
-    
+
     // Still show individual line errors
     formData.paymentLines.forEach((line, index) => {
       if (!line.accountId) {

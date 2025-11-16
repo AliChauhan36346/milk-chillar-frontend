@@ -2,12 +2,12 @@
 import { useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { cashReceiptsApi, CashReceiptCreateUpdate } from '@/lib/api/cashReceipts';
-import { 
-  createBankReceipt, 
-  updateBankReceipt, 
-  getBankReceiptById, 
+import {
+  createBankReceipt,
+  updateBankReceipt,
+  getBankReceiptById,
   getNextBankReceiptNumber,
-  CreateBankTransactionRequest 
+  CreateBankTransactionRequest
 } from '@/lib/api/bank-transactions';
 import { Card } from '@/components/ui/card';
 import { DynamicLayout } from '@/components/layouts/DynamicLayout';
@@ -23,13 +23,18 @@ import {
 export default function ReceiptForm() {
   const router = useRouter();
   const params = useParams();
-  
+
   // Check both route params and query params for the id
-  const id = typeof window !== 'undefined' 
-    ? new URLSearchParams(window.location.search).get('id') 
+  const id = typeof window !== 'undefined'
+    ? new URLSearchParams(window.location.search).get('id')
     : null;
   const isEditing = (params?.id !== 'create' && params?.id) || id;
   const receiptId = isEditing ? Number(params?.id || id) : null;
+
+  const typeParam = typeof window !== 'undefined'
+    ? new URLSearchParams(window.location.search).get('type')
+    : null;
+  const initialType = (typeParam === 'bank' ? 'bank' : 'cash') as TransactionType;
 
   // Use our custom hook
   const {
@@ -51,15 +56,17 @@ export default function ReceiptForm() {
     handleTypeChange,
     toast
   } = useTransactionForm({
-    transactionId: receiptId,
-    isEditing: !!isEditing,
-    onLoadTransaction: async (id: number, type: TransactionType) => {
-      if (type === 'cash') {
-        return await cashReceiptsApi.getReceipt(id);
-      } else {
-        return await getBankReceiptById(id);
-      }
-    },
+  transactionId: receiptId,
+  isEditing: !!isEditing,
+  initialType: initialType, // ← Make sure this is passed
+  onLoadTransaction: async (id: number, type: TransactionType) => {
+    console.log('Receipt - Loading transaction:', id, 'Type:', type);
+    if (type === 'cash') {
+      return await cashReceiptsApi.getReceipt(id);
+    } else {
+      return await getBankReceiptById(id);
+    }
+  },
     onGetNextVoucher: async (type: TransactionType) => {
       if (type === 'cash') {
         return await cashReceiptsApi.getNextReceiptNumber();
@@ -94,7 +101,7 @@ export default function ReceiptForm() {
     try {
       setSaving(true);
       const receiptDateTime = new Date(formData.paymentDate + 'T00:00:00.000Z').toISOString();
-      
+
       if (transactionType === 'cash') {
         const validLines = formData.paymentLines
           .filter(line => line.accountId > 0 && line.amount > 0)
@@ -116,9 +123,9 @@ export default function ReceiptForm() {
         if (!submitData.paymentLines || submitData.paymentLines.length === 0) {
           throw new Error('At least one valid receipt line with an account and amount is required');
         }
-        
+
         console.log('Submitting cash receipt data:', JSON.stringify(submitData, null, 2));
-        
+
         if (isEditing && receiptId) {
           await cashReceiptsApi.updateReceipt(receiptId, submitData);
           toast({
@@ -133,7 +140,7 @@ export default function ReceiptForm() {
           });
         }
       } else {
-        const instrumentDateTime = formData.instrumentDate 
+        const instrumentDateTime = formData.instrumentDate
           ? new Date(formData.instrumentDate + 'T00:00:00.000Z').toISOString()
           : undefined;
 
@@ -151,7 +158,7 @@ export default function ReceiptForm() {
             amount: Number(line.amount.toFixed(2))
           }))
         };
-        
+
         if (isEditing && receiptId) {
           await updateBankReceipt(receiptId, submitData);
           toast({
@@ -166,13 +173,13 @@ export default function ReceiptForm() {
           });
         }
       }
-      
+
       router.push('/Accounts/transactions');
     } catch (error: any) {
       console.error('Form submission error:', error);
       console.error('Error response:', error?.response);
       console.error('Error message:', error?.message);
-      
+
       let errorMessage = 'An unexpected error occurred';
       if (error?.response?.data?.message) {
         errorMessage = error.response.data.message;
@@ -182,10 +189,10 @@ export default function ReceiptForm() {
       } else if (error?.message) {
         errorMessage = error.message;
       }
-      
+
       // Log the final error message for debugging
       console.error('Final error message:', errorMessage);
-      
+
       toast({
         title: 'Failed to save receipt',
         description: errorMessage,

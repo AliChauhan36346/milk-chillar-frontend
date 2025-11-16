@@ -32,6 +32,14 @@ export default function PaymentForm() {
   const isEditing = (params?.id !== 'create' && params?.id) || id;
   const paymentId = isEditing ? Number(params?.id || id) : null;
 
+  // Get the type from URL and convert it properly
+  const typeParam = typeof window !== 'undefined'
+    ? new URLSearchParams(window.location.search).get('type')
+    : null;
+  
+  // Convert to TransactionType with proper default
+  const initialType = (typeParam === 'bank' ? 'bank' : 'cash') as TransactionType;
+
   // Use our custom hook
   const {
     transactionType,
@@ -48,16 +56,18 @@ export default function PaymentForm() {
     updatePaymentLine,
     addPaymentLine,
     removePaymentLine,
-    validateForm,
+    validateForm, 
     handleTypeChange,
     toast
   } = useTransactionForm({
     transactionId: paymentId,
     isEditing: !!isEditing,
+    initialType: initialType,   // ✅ Use the properly converted initialType
     onLoadTransaction: async (id: number, type: TransactionType) => {
+      console.log('Payment - Loading transaction:', id, 'Type:', type); // Debug log
       if (type === 'cash') {
         return await cashPaymentsApi.getPayment(id);
-      } else {
+      } else if (type === 'bank') {
         return await getBankPaymentById(id);
       }
     },
@@ -252,4 +262,3 @@ export default function PaymentForm() {
   );
 }
 
-//oh yes claude its working now we will refine the account ledger service the changes i want are no 1 is that i want the grouped purchase on the 15 days basis like now as we have two entries per day and when we try to see the account leger it is filled with the purchase and not easy to find other rare transactions like less trasactions which are payment etc so i want that it should show the purchase like 15 days interval like first half of month and second irespective of that there is only one trasaction in that time but if not any trassaction then we will not show that single transaction for that fifteen days and if the month is of 31 or 28 the first halve wiill remain constant of 15 days the second one will be chnaged on the bassis of month days and i also wanth the debit credit system not the negative or postive value here is the current service file for ledger "
