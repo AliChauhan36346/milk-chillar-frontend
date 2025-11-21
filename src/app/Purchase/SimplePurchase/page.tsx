@@ -1061,16 +1061,7 @@ export default function PurchasePage() {
                       required
                     />
                 </div>
-                <div className="col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Search by Code/Name</label>
-                    <input
-                      type="text"
-                      placeholder="Search supplier code or name..."
-                      value={searchCode}
-                      onChange={(e) => setSearchCode(e.target.value)}
-                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    />
-                </div>
+                
               </div>
 
               {/* Summary Cards */}
@@ -1150,7 +1141,7 @@ export default function PurchasePage() {
                   dodhiId={selectedDodhiId}
                   date={date}
                   timeFilter={timeFilter}
-                  searchCode={searchCode}
+                  
                   isAdmin={isAdmin}
                   onItemClick={handleItemClick}
                   icon={<CheckCircle className="w-5 h-5" />}
@@ -1171,7 +1162,7 @@ export default function PurchasePage() {
                         dodhiId={selectedDodhiId}
                         date={date}
                         timeFilter={timeFilter}
-                        searchCode={searchCode}
+                        
                         isAdmin={isAdmin}
                         onItemClick={handleItemClick}
                         icon={<CheckCircle className="w-5 h-5" />}
