@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { 
+import {
   LayoutDashboard,
   ShoppingCart,
   ShoppingBag,
@@ -40,8 +40,8 @@ type SidebarProps = {
   navigation: NavigationSection[];
 };
 
-export default function Sidebar({ 
-  isCollapsed, 
+export default function Sidebar({
+  isCollapsed,
   toggleSidebar,
   role,
   navigation
@@ -58,7 +58,7 @@ export default function Sidebar({
 
   return (
     <aside className={clsx(
-      'h-screen bg-white border-r border-gray-200 transition-all duration-300 flex flex-col',
+      'h-screen bg-white border-r border-gray-200 transition-all duration-300 flex flex-col sticky top-0 z-40',
       isCollapsed ? 'w-20' : 'w-64'
     )}>
       {/* Header with toggle button */}
@@ -70,8 +70,8 @@ export default function Sidebar({
         ) : (
           <h2 className="text-lg font-bold text-blue-600">MilkChillar</h2>
         )}
-        
-        <button 
+
+        <button
           onClick={toggleSidebar}
           className="p-1 rounded-lg hover:bg-gray-100 text-gray-500"
           aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
@@ -89,16 +89,16 @@ export default function Sidebar({
                 {section}
               </p>
             )}
-            
+
             <div className="space-y-1">
               {items.map((item) => {
-                const isActive = pathname === item.href || 
+                const isActive = pathname === item.href ||
                   (item.subItems && item.subItems.some(subItem => pathname === subItem.href));
-                
+
                 if (item.subItems) {
                   const sectionKey = item.label.toLowerCase().replace(/\s+/g, '-');
                   const isExpanded = expandedSections[sectionKey] ?? true;
-                  
+
                   return (
                     <div key={item.label}>
                       <button
@@ -122,7 +122,7 @@ export default function Sidebar({
                           </>
                         )}
                       </button>
-                      
+
                       {isExpanded && !isCollapsed && (
                         <div className="ml-8 mt-1 space-y-1">
                           {item.subItems.map((subItem) => (
@@ -144,7 +144,7 @@ export default function Sidebar({
                     </div>
                   );
                 }
-                
+
                 return (
                   <Link
                     key={item.href}

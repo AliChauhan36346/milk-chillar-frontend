@@ -65,7 +65,7 @@
 //   // Load employees (dodhis) for admin
 //   const loadEmployees = useCallback(async () => {
 //     if (!isAdmin) return;
-    
+
 //     try {
 //       const allEmployees = await getEmployees();
 //       // Filter for dodhis only
@@ -81,7 +81,7 @@
 //     if (isAdmin) {
 //       return selectedDodhiId;
 //     }
-    
+
 //     if (isDodhi) {
 //       try {
 //         setLoadingDodhi(true);
@@ -94,7 +94,7 @@
 //         setLoadingDodhi(false);
 //       }
 //     }
-    
+
 //     return null;
 //   }, [isAdmin, isDodhi, selectedDodhiId]);
 
@@ -102,7 +102,7 @@
 //   const loadMetadata = useCallback(async () => {
 //     try {
 //       setLoading(true);
-      
+
 //       const dodhiId = await getDodhiId();
 //       if (!dodhiId) {
 //         if (isAdmin) {
@@ -143,11 +143,11 @@
 //   // Helper function to get available times for a supplier
 //   const getAvailableTimesForSupplier = useCallback((supplierId: number) => {
 //     if (!metadata) return [];
-    
+
 //     const addedTimes = metadata.addedPurchases
 //       .filter(p => p.accountId === supplierId)
 //       .map(p => p.timeOfDay);
-    
+
 //     const remainingTimes = metadata.remainingSuppliers
 //       .filter(s => s.accountId === supplierId)
 //       .map(s => s.timeOfDay);
@@ -228,7 +228,7 @@
 
 //   const handleItemClick = useCallback((item: ListItem) => {
 //     const availableTimes = getAvailableTimesForSupplier(item.id);
-    
+
 //     if (item.added) {
 //       // For added items, always single update
 //       setModalData({
@@ -274,7 +274,7 @@
 //         });
 //       }
 //     }
-    
+
 //     setShowModal(true);
 //   }, [getAvailableTimesForSupplier, timeFilter]);
 
@@ -641,17 +641,17 @@ import { BackButton } from '@/components/ui/BackButton';
 import { InfiniteAddedList } from '@/components/ui/List/InfiniteAddedList';
 import { InfiniteRemainingList } from '@/components/ui/List/InfiniteRemainingList';
 import ProtectedRoute from '@/components/ProtectedRoutes';
-import { 
-  createPurchase, 
+import {
+  createPurchase,
   updatePurchase,
   getPurchaseSummary,
-  type Purchase, 
+  type Purchase,
   type RemainingSupplier,
   type PurchaseSummary
-} from '@/lib/api/purchases'; 
+} from '@/lib/api/purchases';
 import { getEmployees, type Employee } from '@/lib/api/employees';
 import { fetchMyDodhiId } from '@/lib/api/reports';
-import { getAccountsByComponent, type SearchAccountResult } from '@/lib/api/accounts'; 
+import { getAccountsByComponent, type SearchAccountResult } from '@/lib/api/accounts';
 
 type ExpenseAccount = SearchAccountResult;
 type ListDataItem = Purchase | RemainingSupplier;
@@ -668,10 +668,10 @@ export default function PurchasePage() {
   const [selectedExpenseAccount, setSelectedExpenseAccount] = useState<number | null>(null);
   const [loadingInitial, setLoadingInitial] = useState(true);
   const [loadingSummary, setLoadingSummary] = useState(false);
-  const [loadingAddedList, setLoadingAddedList] = useState(true); 
+  const [loadingAddedList, setLoadingAddedList] = useState(true);
   const [date, setDate] = useState(today);
   const [timeFilter, setTimeFilter] = useState<'morning' | 'evening' | 'both'>('both');
-  const [searchCode, setSearchCode] = useState(''); 
+  const [searchCode, setSearchCode] = useState('');
 
   // Dodhi-related state
   const [selectedDodhiId, setSelectedDodhiId] = useState<number | null>(null);
@@ -734,10 +734,10 @@ export default function PurchasePage() {
   const loadInitialMetadataAndSummary = useCallback(async () => {
     setLoadingInitial(true);
     setLoadingSummary(true);
-    setLoadingAddedList(true); 
+    setLoadingAddedList(true);
 
     const dodhiId = await getDodhiId();
-    
+
     if (!dodhiId) {
       setExpenseAccounts([]);
       setPurchaseSummary(null);
@@ -764,11 +764,11 @@ export default function PurchasePage() {
       const summaryData = await getPurchaseSummary(date, dodhiId);
       setPurchaseSummary(summaryData);
 
-      setLoadingSummary(false); 
-      
+      setLoadingSummary(false);
+
       // Staggered Load for Added List
       setTimeout(() => {
-        setLoadingAddedList(false); 
+        setLoadingAddedList(false);
       }, 2000);
 
     } catch (error) {
@@ -790,10 +790,10 @@ export default function PurchasePage() {
   useEffect(() => {
     // If we have a selectedDodhiId (set by Admin selection OR the Dodhi ID effect), load data
     if (selectedDodhiId) {
-        loadInitialMetadataAndSummary();
+      loadInitialMetadataAndSummary();
     } else if (isAdmin) {
-        // If Admin and no ID selected, stop loading to show dropdown
-        setLoadingInitial(false);
+      // If Admin and no ID selected, stop loading to show dropdown
+      setLoadingInitial(false);
     }
     // Note: If isDodhi is true but selectedDodhiId is null, we do nothing here.
     // We wait for the 'initDodhiId' effect to set the state, which will trigger this effect again.
@@ -801,7 +801,7 @@ export default function PurchasePage() {
 
 
   /* ------------------- MODAL & INTERACTION LOGIC ------------------- */
-  
+
   const getAvailableTimesForSupplier = useCallback(async (supplierId: number) => {
     if (timeFilter !== 'both') {
       return [timeFilter];
@@ -810,17 +810,17 @@ export default function PurchasePage() {
   }, [timeFilter]);
 
   const handleItemClick = useCallback(async (item: ListDataItem) => {
-    const isPurchase = 'purchaseId' in item; 
-    
+    const isPurchase = 'purchaseId' in item;
+
     const supplier = {
       id: item.accountId,
       name: item.accountName,
       code: item.accountCode,
       rate: isPurchase ? item.rate : (item as RemainingSupplier).rate
     };
-    
+
     const availableTimes = isPurchase ? [item.timeOfDay] : await getAvailableTimesForSupplier(item.accountId);
-    
+
     if (isPurchase) {
       const purchaseItem = item as Purchase;
       setModalData({
@@ -840,7 +840,7 @@ export default function PurchasePage() {
         isUpdate: false
       });
     }
-    
+
     setShowModal(true);
   }, [getAvailableTimesForSupplier]);
 
@@ -922,7 +922,7 @@ export default function PurchasePage() {
       setShowModal(false);
       setModalData(null);
       setDate(data.date);
-      await loadInitialMetadataAndSummary(); 
+      await loadInitialMetadataAndSummary();
     } catch (error) {
       console.error('Failed to save purchase:', error);
       alert('Failed to save purchase. Please try again.');
@@ -1034,7 +1034,7 @@ export default function PurchasePage() {
                     onChange={(e) => setSelectedExpenseAccount(Number(e.target.value))}
                     className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     required
-                    disabled={expenseAccounts.length === 0} 
+                    disabled={expenseAccounts.length === 0}
                   >
                     <option value="">Select Expense Account</option>
                     {expenseAccounts.map(account => (
@@ -1044,67 +1044,64 @@ export default function PurchasePage() {
                     ))}
                   </select>
                   {expenseAccounts.length === 0 && (
-                      <p className="text-sm text-red-500 mt-1">No expense accounts found (Code 500).</p>
+                    <p className="text-sm text-red-500 mt-1">No expense accounts found (Code 500).</p>
                   )}
                 </div>
               )}
 
               {/* Date Selection and Search */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-white p-4 rounded-lg shadow border">
-                <div className="col-span-1">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
-                    <input
-                      type="date"
-                      value={date}
-                      onChange={(e) => setDate(e.target.value)}
-                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      required
-                    />
-                </div>
-                
+                <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
+                <input
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  required
+                />
               </div>
 
               {/* Summary Cards */}
               <div className="bg-white rounded-xl shadow-sm p-4 mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
                 {loadingSummary ? (
-                    <div className="md:col-span-3 flex justify-center py-4">
-                        <Loader2 className="w-6 h-6 animate-spin text-gray-500" />
-                    </div>
+                  <div className="md:col-span-3 flex justify-center py-4">
+                    <Loader2 className="w-6 h-6 animate-spin text-gray-500" />
+                  </div>
                 ) : (
-                    <>
-                        <div className={`p-3 rounded-lg ${timeFilter === 'morning' || timeFilter === 'both' ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50'}`}>
-                            <div className="flex items-center gap-2 text-gray-700 mb-1">
-                                <Sun className="w-4 h-4 text-yellow-500" />
-                                <span className="font-medium">Morning Total</span>
-                            </div>
-                            <p className="text-2xl font-bold text-blue-600">{totals.morningTotal.toFixed(2)} Ltrs</p>
-                            {isAdmin && (
-                                <p className="text-sm text-gray-600">Rs-{totals.morningAmount.toFixed(2)}</p>
-                            )}
-                        </div>
+                  <>
+                    <div className={`p-3 rounded-lg ${timeFilter === 'morning' || timeFilter === 'both' ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50'}`}>
+                      <div className="flex items-center gap-2 text-gray-700 mb-1">
+                        <Sun className="w-4 h-4 text-yellow-500" />
+                        <span className="font-medium">Morning Total</span>
+                      </div>
+                      <p className="text-2xl font-bold text-blue-600">{totals.morningTotal.toFixed(2)} Ltrs</p>
+                      {isAdmin && (
+                        <p className="text-sm text-gray-600">Rs-{totals.morningAmount.toFixed(2)}</p>
+                      )}
+                    </div>
 
-                        <div className={`p-3 rounded-lg ${timeFilter === 'evening' || timeFilter === 'both' ? 'bg-purple-50 border border-purple-200' : 'bg-gray-50'}`}>
-                            <div className="flex items-center gap-2 text-gray-700 mb-1">
-                                <Moon className="w-4 h-4 text-purple-500" />
-                                <span className="font-medium">Evening Total</span>
-                            </div>
-                            <p className="text-2xl font-bold text-purple-600">{totals.eveningTotal.toFixed(2)} Ltrs</p>
-                            {isAdmin && (
-                                <p className="text-sm text-gray-600">Rs-{totals.eveningAmount.toFixed(2)}</p>
-                            )}
-                        </div>
+                    <div className={`p-3 rounded-lg ${timeFilter === 'evening' || timeFilter === 'both' ? 'bg-purple-50 border border-purple-200' : 'bg-gray-50'}`}>
+                      <div className="flex items-center gap-2 text-gray-700 mb-1">
+                        <Moon className="w-4 h-4 text-purple-500" />
+                        <span className="font-medium">Evening Total</span>
+                      </div>
+                      <p className="text-2xl font-bold text-purple-600">{totals.eveningTotal.toFixed(2)} Ltrs</p>
+                      {isAdmin && (
+                        <p className="text-sm text-gray-600">Rs-{totals.eveningAmount.toFixed(2)}</p>
+                      )}
+                    </div>
 
-                        <div className={`p-3 rounded-lg ${timeFilter === 'both' ? 'bg-green-50 border border-green-200' : 'bg-gray-50'}`}>
-                            <div className="flex items-center gap-2 text-gray-700 mb-1">
-                                <CheckCircle className="w-4 h-4 text-green-500" />
-                                <span className="font-medium">Combined Total</span>
-                            </div>
-                            <p className="text-2xl font-bold text-green-600">{totals.combinedTotal.toFixed(2)} Ltrs</p>
-                            {isAdmin && (
-                                <p className="text-sm text-gray-600">Rs-{totals.combinedAmount.toFixed(2)}</p>
-                            )}
-                        </div>
-                    </>
+                    <div className={`p-3 rounded-lg ${timeFilter === 'both' ? 'bg-green-50 border border-green-200' : 'bg-gray-50'}`}>
+                      <div className="flex items-center gap-2 text-gray-700 mb-1">
+                        <CheckCircle className="w-4 h-4 text-green-500" />
+                        <span className="font-medium">Combined Total</span>
+                      </div>
+                      <p className="text-2xl font-bold text-green-600">{totals.combinedTotal.toFixed(2)} Ltrs</p>
+                      {isAdmin && (
+                        <p className="text-sm text-gray-600">Rs-{totals.combinedAmount.toFixed(2)}</p>
+                      )}
+                    </div>
+                  </>
                 )}
               </div>
 
@@ -1141,7 +1138,7 @@ export default function PurchasePage() {
                   dodhiId={selectedDodhiId}
                   date={date}
                   timeFilter={timeFilter}
-                  
+
                   isAdmin={isAdmin}
                   onItemClick={handleItemClick}
                   icon={<CheckCircle className="w-5 h-5" />}
@@ -1150,24 +1147,24 @@ export default function PurchasePage() {
 
                 {/* Added Suppliers */}
                 {loadingAddedList ? (
-                    <div className="bg-gray-50 rounded-xl p-6 border border-gray-100 flex justify-center items-center" style={{ maxHeight: '70vh' }}>
-                        <div className="flex flex-col items-center">
-                            <Loader2 className="w-8 h-8 animate-spin text-green-500" />
-                            <p className="mt-2 text-gray-600">Loading added purchases...</p>
-                        </div>
+                  <div className="bg-gray-50 rounded-xl p-6 border border-gray-100 flex justify-center items-center" style={{ maxHeight: '70vh' }}>
+                    <div className="flex flex-col items-center">
+                      <Loader2 className="w-8 h-8 animate-spin text-green-500" />
+                      <p className="mt-2 text-gray-600">Loading added purchases...</p>
                     </div>
+                  </div>
                 ) : (
-                    <InfiniteAddedList
-                        title="Added Suppliers"
-                        dodhiId={selectedDodhiId}
-                        date={date}
-                        timeFilter={timeFilter}
-                        
-                        isAdmin={isAdmin}
-                        onItemClick={handleItemClick}
-                        icon={<CheckCircle className="w-5 h-5" />}
-                        colorClass="green"
-                    />
+                  <InfiniteAddedList
+                    title="Added Suppliers"
+                    dodhiId={selectedDodhiId}
+                    date={date}
+                    timeFilter={timeFilter}
+
+                    isAdmin={isAdmin}
+                    onItemClick={handleItemClick}
+                    icon={<CheckCircle className="w-5 h-5" />}
+                    colorClass="green"
+                  />
                 )}
               </div>
             </>
