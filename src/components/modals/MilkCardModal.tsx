@@ -5,7 +5,9 @@ import { X, Calendar, Printer, Download } from 'lucide-react';
 import { getMilkCard, MilkCard } from '@/lib/api/accountLedger';
 import { useToast } from '@/hooks/useToast';
 import PurchaseModal from '@/components/modals/PurchaseModal';
+import { SalesFormModal } from '@/components/modals/SalesFormModal';
 import { getPurchaseById, updatePurchase, Purchase } from '@/lib/api/purchases';
+import { getSaleById, updateSale, SaleDto } from '@/lib/api/sales';
 import { getAccountsByComponent, SearchAccountResult } from '@/lib/api/accounts';
 
 interface MilkCardModalProps {
@@ -32,6 +34,7 @@ export default function MilkCardModal({
   // Purchase Modal State
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const [expenseAccounts, setExpenseAccounts] = useState<SearchAccountResult[]>([]);
+  const [currentPurchase, setCurrentPurchase] = useState<Purchase | null>(null);
   const [modalData, setModalData] = useState<{
     supplier: { id: number; name: string; code: string; rate: number };
     availableTimes: ('morning' | 'evening')[];
@@ -42,6 +45,18 @@ export default function MilkCardModal({
       currentQuantity: number;
     };
     initialDate: string;
+    selectedExpenseAccount: number | null;
+  } | null>(null);
+
+  // Sales Modal State
+  const [showSalesModal, setShowSalesModal] = useState(false);
+  const [revenueAccounts, setRevenueAccounts] = useState<SearchAccountResult[]>([]);
+  const [currentSale, setCurrentSale] = useState<SaleDto | null>(null);
+  const [salesModalData, setSalesModalData] = useState<{
+    buyer: { id: number; name: string; code: string };
+    initialDate: string;
+    selectedRevenueAccount: number | null;
+    saleId: number;
   } | null>(null);
 
   useEffect(() => {
@@ -82,41 +97,88 @@ export default function MilkCardModal({
     }
   };
 
-  const handleEntryClick = async (purchaseId: number | undefined, time: 'morning' | 'evening', quantity: number, dateStr: string) => {
-    if (!purchaseId) {
-      console.warn('Purchase ID missing for entry:', { time, dateStr, quantity });
+  const handleEntryClick = async (transactionId: number | undefined, time: 'morning' | 'evening', quantity: number, dateStr: string) => {
+    if (!transactionId) {
+      console.warn('Transaction ID missing for entry:', { time, dateStr, quantity });
       toast({
         title: 'Cannot Edit',
-        description: 'Purchase ID not found for this entry. Backend update required.',
+        description: 'Transaction ID not found for this entry. Backend update required.',
         variant: 'error'
       });
       return;
     }
 
     try {
-      const purchase = await getPurchaseById(purchaseId);
+      if (transactionType === 'Purchase') {
+        // Handle Purchase
+        const purchase = await getPurchaseById(transactionId);
+        setCurrentPurchase(purchase);
 
-      setModalData({
-        supplier: {
-          id: accountId,
-          name: accountName,
-          code: milkCard?.accountCode || '',
-          rate: purchase.rate
-        },
-        availableTimes: [time],
-        isUpdate: true,
-        updateData: {
-          time: time,
-          purchaseId: purchaseId,
-          currentQuantity: quantity
-        },
-        initialDate: dateStr.split('T')[0]
-      });
-      setShowPurchaseModal(true);
+        setModalData({
+          supplier: {
+            id: accountId,
+            name: accountName,
+            code: milkCard?.accountCode || '',
+            rate: purchase.rate
+          },
+          availableTimes: [time],
+          isUpdate: true,
+          updateData: {
+            time: time,
+            purchaseId: transactionId,
+            currentQuantity: quantity
+          },
+          initialDate: dateStr.split('T')[0],
+          selectedExpenseAccount: purchase.expenseAccountId || null
+        });
+        setShowPurchaseModal(true);
+      } else {
+        // Handle Sale
+        const sale = await getSaleById(transactionId);
+
+        // Ensure revenue accounts are loaded
+        let accounts = revenueAccounts;
+        if (accounts.length === 0) {
+          const loadedAccounts = await getAccountsByComponent('revenue');
+          accounts = loadedAccounts;
+          setRevenueAccounts(loadedAccounts);
+        }
+
+        // Ensure the sale's revenue account is in the list
+        if (sale.revenueAccountId && sale.revenueAccountName) {
+          const accountExists = accounts.some(acc => acc.accountId === sale.revenueAccountId);
+          if (!accountExists) {
+            // Add the sale's revenue account to the list if it's not there
+            const newAccount: SearchAccountResult = {
+              accountId: sale.revenueAccountId,
+              accountCode: '', // We don't have the code from sale DTO
+              name: sale.revenueAccountName,
+              balance: 0
+            };
+            accounts = [...accounts, newAccount];
+            setRevenueAccounts(accounts);
+          }
+        }
+
+        // Set the sale which will update form values
+        setCurrentSale(sale);
+
+        setSalesModalData({
+          buyer: {
+            id: accountId,
+            name: accountName,
+            code: milkCard?.accountCode || ''
+          },
+          initialDate: dateStr.split('T')[0],
+          selectedRevenueAccount: sale.revenueAccountId || null,
+          saleId: transactionId
+        });
+        setShowSalesModal(true);
+      }
     } catch (error) {
       toast({
         title: 'Error',
-        description: 'Failed to load purchase details',
+        description: `Failed to load ${transactionType.toLowerCase()} details`,
         variant: 'error'
       });
     }
@@ -129,19 +191,48 @@ export default function MilkCardModal({
     date: string;
     expenseAccountId?: number;
   }) => {
-    if (!modalData?.updateData) return;
+    if (!modalData?.updateData || !currentPurchase) return;
 
     try {
       const quantity = modalData.updateData.time === 'morning' ? data.morningQuantity : data.eveningQuantity;
 
-      if (!quantity) return;
+      if (!quantity || quantity <= 0) {
+        toast({
+          title: 'Error',
+          description: 'Please enter a valid quantity',
+          variant: 'error'
+        });
+        return;
+      }
+
+      // Get dodhiId from the purchase object, or throw error if not available
+      const dodhiId = currentPurchase.dodhiId;
+      if (!dodhiId || dodhiId <= 0) {
+        toast({
+          title: 'Error',
+          description: 'Dodhi ID is missing from purchase record. Cannot update.',
+          variant: 'error'
+        });
+        return;
+      }
+
+      // Get expenseAccountId - use from data, or fallback to purchase's expenseAccountId
+      const expenseAccountId = data.expenseAccountId || currentPurchase.expenseAccountId;
+      if (!expenseAccountId || expenseAccountId <= 0) {
+        toast({
+          title: 'Error',
+          description: 'Please select an expense account',
+          variant: 'error'
+        });
+        return;
+      }
 
       await updatePurchase(modalData.updateData.purchaseId, {
         date: data.date,
         timeOfDay: modalData.updateData.time,
         accountId: accountId,
-        expenseAccountId: data.expenseAccountId || 0, // Should handle this better if needed
-        dodhiId: 0, // Backend should handle this or we need to fetch it
+        expenseAccountId: expenseAccountId,
+        dodhiId: dodhiId,
         grossLiters: quantity,
         rate: data.rate || modalData.supplier.rate,
         balance: 0
@@ -149,6 +240,7 @@ export default function MilkCardModal({
 
       setShowPurchaseModal(false);
       setModalData(null);
+      setCurrentPurchase(null);
       loadMilkCard(); // Reload to show updates
 
       toast({
@@ -156,13 +248,154 @@ export default function MilkCardModal({
         description: 'Purchase updated successfully',
         variant: 'default'
       });
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Failed to update purchase:', error);
       toast({
         title: 'Error',
-        description: 'Failed to update purchase',
+        description: error?.response?.data?.message || error?.message || 'Failed to update purchase',
         variant: 'error'
       });
+      throw error; // Re-throw to let modal handle loading state
     }
+  };
+
+  const handleSalesSubmit = async (data: {
+    grossLiters: number;
+    lr: number;
+    fat: number;
+    netLiters: number;
+    rate: number;
+    amount: number;
+    amountReceived: number;
+    revenueAccountId: number;
+    date: string;
+  }) => {
+    if (!salesModalData || !currentSale) return;
+
+    try {
+      // Get chillarId from the sale object
+      const chillarId = currentSale.chillarId;
+      if (!chillarId || chillarId <= 0) {
+        toast({
+          title: 'Error',
+          description: 'Chillar ID is missing from sale record. Cannot update.',
+          variant: 'error'
+        });
+        return;
+      }
+
+      // Get revenueAccountId - use from data, or fallback to sale's revenueAccountId
+      const revenueAccountId = data.revenueAccountId || currentSale.revenueAccountId;
+      if (!revenueAccountId || revenueAccountId <= 0) {
+        toast({
+          title: 'Error',
+          description: 'Please select a revenue account',
+          variant: 'error'
+        });
+        return;
+      }
+
+      await updateSale(salesModalData.saleId, {
+        date: data.date,
+        accountId: accountId,
+        revenueAccountId: revenueAccountId,
+        chillarId: chillarId,
+        grossLiters: data.grossLiters,
+        lr: data.lr,
+        fat: data.fat,
+        netLiters: data.netLiters,
+        rate: data.rate,
+        amountReceived: data.amountReceived
+      });
+
+      setShowSalesModal(false);
+      setSalesModalData(null);
+      setCurrentSale(null);
+      loadMilkCard(); // Reload to show updates
+
+      toast({
+        title: 'Success',
+        description: 'Sale updated successfully',
+        variant: 'default'
+      });
+    } catch (error: any) {
+      console.error('Failed to update sale:', error);
+      toast({
+        title: 'Error',
+        description: error?.response?.data?.message || error?.message || 'Failed to update sale',
+        variant: 'error'
+      });
+      throw error; // Re-throw to let modal handle the loading state
+    }
+  };
+
+  // Sales form values state
+  const [salesFormValues, setSalesFormValues] = useState({
+    grossLiters: 0,
+    lr: 0,
+    fat: 0,
+    netLiters: 0,
+    rate: 0,
+    amount: 0,
+    amountReceived: 0,
+    revenueAccountId: 0
+  });
+
+  // Update sales form values when sale is loaded
+  useEffect(() => {
+    if (currentSale) {
+      setSalesFormValues({
+        grossLiters: currentSale.grossLiters,
+        lr: currentSale.lr,
+        fat: currentSale.fat,
+        netLiters: currentSale.netLiters,
+        rate: currentSale.rate,
+        amount: currentSale.totalAmount,
+        amountReceived: currentSale.amountReceived,
+        revenueAccountId: currentSale.revenueAccountId
+      });
+
+      // Ensure the sale's revenue account is in the revenueAccounts list
+      if (currentSale.revenueAccountId && currentSale.revenueAccountName) {
+        setRevenueAccounts(prev => {
+          const exists = prev.some(acc => acc.accountId === currentSale.revenueAccountId);
+          if (!exists) {
+            return [...prev, {
+              accountId: currentSale.revenueAccountId,
+              accountCode: '', // We don't have the code from sale DTO
+              name: currentSale.revenueAccountName,
+              balance: 0
+            }];
+          }
+          return prev;
+        });
+      }
+    }
+  }, [currentSale]);
+
+  const handleSalesInputChange = (field: string, value: number) => {
+    setSalesFormValues(prev => {
+      const updated = { ...prev, [field]: value };
+
+      // Auto-calculate netLiters and amount if needed
+      if (field === 'grossLiters' || field === 'lr' || field === 'fat') {
+        const gross = field === 'grossLiters' ? value : updated.grossLiters;
+        const lr = field === 'lr' ? value : updated.lr;
+        const fat = field === 'fat' ? value : updated.fat;
+
+        // Calculate net liters: gross - (gross * lr / 100) - (gross * fat / 100)
+        const netLiters = gross - (gross * lr / 100) - (gross * fat / 100);
+        updated.netLiters = Math.max(0, netLiters);
+      }
+
+      if (field === 'netLiters' || field === 'rate') {
+        const net = field === 'netLiters' ? value : updated.netLiters;
+        const rate = field === 'rate' ? value : updated.rate;
+        updated.amount = net * rate;
+      }
+
+      return updated;
+    });
   };
 
   const handlePrint = () => {
@@ -614,16 +847,55 @@ export default function MilkCardModal({
       {showPurchaseModal && modalData && (
         <PurchaseModal
           isOpen={showPurchaseModal}
-          onClose={() => setShowPurchaseModal(false)}
+          onClose={() => {
+            setShowPurchaseModal(false);
+            setModalData(null);
+            setCurrentPurchase(null);
+          }}
           onSubmit={handlePurchaseSubmit}
           supplier={modalData.supplier}
           availableTimes={modalData.availableTimes}
           isAdmin={true} // Assuming admin for now as we are editing
           expenseAccounts={expenseAccounts}
-          selectedExpenseAccount={null} // We might want to set this if we have it
+          selectedExpenseAccount={modalData.selectedExpenseAccount}
           isUpdate={modalData.isUpdate}
           updateData={modalData.updateData}
           initialDate={modalData.initialDate}
+        />
+      )}
+
+      {/* Sales Modal */}
+      {showSalesModal && salesModalData && currentSale && (
+        <SalesFormModal
+          isOpen={showSalesModal}
+          onClose={() => {
+            setShowSalesModal(false);
+            setSalesModalData(null);
+            setCurrentSale(null);
+          }}
+          onSubmit={handleSalesSubmit}
+          initialData={{
+            grossLiters: currentSale.grossLiters,
+            lr: currentSale.lr,
+            fat: currentSale.fat,
+            netLiters: currentSale.netLiters,
+            rate: currentSale.rate,
+            amountReceived: currentSale.amountReceived,
+            revenueAccountId: currentSale.revenueAccountId,
+            date: salesModalData.initialDate
+          }}
+          buyerName={salesModalData.buyer.name}
+          buyerId={salesModalData.buyer.id.toString()}
+          date={salesModalData.initialDate}
+          isAdmin={true}
+          isFromAddedList={true}
+          revenueAccounts={revenueAccounts.map(acc => ({
+            accountId: acc.accountId,
+            accountName: acc.name,
+            accountCode: acc.accountCode
+          }))}
+          formValues={salesFormValues}
+          onInputChange={handleSalesInputChange}
         />
       )}
     </div>

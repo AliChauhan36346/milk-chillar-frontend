@@ -1,5 +1,3 @@
-
-
 'use client';
 import { useState, useEffect, useMemo } from 'react';
 import {
@@ -25,8 +23,8 @@ import { BackButton } from '@/components/ui/BackButton';
 import { Table } from '@/components/ui/Table/Table';
 import { Select } from '@/components/ui/Select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { 
-  getSalesReport, 
+import {
+  getSalesReport,
   getBuyerWiseSalesReport,
   getSalesReportSummary,
   SalesRecord,
@@ -35,6 +33,11 @@ import {
 } from '@/lib/api/reports';
 import { getMyChillar } from '@/lib/api/chillarReceive';
 import { getChillars, Chillar } from '@/lib/api/chillar';
+import { SalesFormModal } from '@/components/modals/SalesFormModal';
+import MilkCardModal from '@/components/modals/MilkCardModal';
+import { getSaleById, SaleDto, updateSale } from '@/lib/api/sales';
+import { getAccountsByComponent, SearchAccountResult } from '@/lib/api/accounts';
+import { getDefaultDateRange } from '@/lib/utils/dateRange';
 
 type ReportView = 'detailed' | 'summary';
 
@@ -43,9 +46,10 @@ export default function SalesReport() {
   const isAdmin = user?.role === 'admin';
 
   const [view, setView] = useState<ReportView>('detailed');
+  const defaultDateRange = getDefaultDateRange();
   const [dateRange, setDateRange] = useState({
-    startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    endDate: new Date().toISOString().split('T')[0]
+    startDate: defaultDateRange.startDate,
+    endDate: defaultDateRange.endDate
   });
   const [loading, setLoading] = useState(true);
   const [summaryLoading, setSummaryLoading] = useState(false);
@@ -59,6 +63,34 @@ export default function SalesReport() {
   const [chillars, setChillars] = useState<Chillar[]>([]);
   const [selectedChillarId, setSelectedChillarId] = useState<number | undefined>(undefined);
   const [showFilters, setShowFilters] = useState(false);
+
+  // Missing state definitions
+  const [currentSale, setCurrentSale] = useState<SaleDto | null>(null);
+  const [salesModalData, setSalesModalData] = useState<{
+    buyer: { id: number; name: string; code: string };
+    initialDate: string;
+    selectedRevenueAccount: number | null;
+    saleId: number;
+  } | null>(null);
+  const [revenueAccounts, setRevenueAccounts] = useState<SearchAccountResult[]>([]);
+  const [salesFormValues, setSalesFormValues] = useState({
+    grossLiters: 0,
+    lr: 0,
+    fat: 0,
+    netLiters: 0,
+    rate: 0,
+    amount: 0,
+    amountReceived: 0,
+    revenueAccountId: 0
+  });
+  const [showSalesModal, setShowSalesModal] = useState(false);
+  const [showMilkCardModal, setShowMilkCardModal] = useState(false);
+  const [milkCardData, setMilkCardData] = useState<{
+    accountId: number;
+    accountName: string;
+    date: string;
+    transactionType: 'Sale';
+  } | null>(null);
 
   // Load chillars for admin
   useEffect(() => {
@@ -91,6 +123,198 @@ export default function SalesReport() {
 
     fetchUserChillar();
   }, [isAdmin]);
+
+  // Load revenue accounts for sales modal
+  useEffect(() => {
+    const loadRevenueAccounts = async () => {
+      try {
+        const accounts = await getAccountsByComponent('revenue');
+        setRevenueAccounts(accounts);
+      } catch (error) {
+        console.error('Failed to load revenue accounts:', error);
+      }
+    };
+    loadRevenueAccounts();
+  }, []);
+
+  // Update sales form values when sale is loaded
+  useEffect(() => {
+    if (currentSale) {
+      setSalesFormValues({
+        grossLiters: currentSale.grossLiters,
+        lr: currentSale.lr,
+        fat: currentSale.fat,
+        netLiters: currentSale.netLiters,
+        rate: currentSale.rate,
+        amount: currentSale.totalAmount,
+        amountReceived: currentSale.amountReceived,
+        revenueAccountId: currentSale.revenueAccountId
+      });
+
+      // Ensure the sale's revenue account is in the list
+      if (currentSale.revenueAccountId && currentSale.revenueAccountName) {
+        setRevenueAccounts(prev => {
+          const exists = prev.some(acc => acc.accountId === currentSale.revenueAccountId);
+          if (!exists) {
+            return [...prev, {
+              accountId: currentSale.revenueAccountId,
+              accountCode: '',
+              name: currentSale.revenueAccountName,
+              balance: 0
+            }];
+          }
+          return prev;
+        });
+      }
+    }
+  }, [currentSale]);
+
+  // Sales input change handler
+  const handleSalesInputChange = (field: string, value: number) => {
+    setSalesFormValues(prev => {
+      const updated = { ...prev, [field]: value };
+
+      // Auto-calculate netLiters and amount if needed
+      if (field === 'grossLiters' || field === 'lr' || field === 'fat') {
+        const gross = field === 'grossLiters' ? value : updated.grossLiters;
+        const lr = field === 'lr' ? value : updated.lr;
+        const fat = field === 'fat' ? value : updated.fat;
+
+        const netLiters = gross - (gross * lr / 100) - (gross * fat / 100);
+        updated.netLiters = Math.max(0, netLiters);
+      }
+
+      if (field === 'netLiters' || field === 'rate') {
+        const net = field === 'netLiters' ? value : updated.netLiters;
+        const rate = field === 'rate' ? value : updated.rate;
+        updated.amount = net * rate;
+      }
+
+      return updated;
+    });
+  };
+
+  // Handle sale click in detailed view
+  const handleSaleClick = async (saleId: number, accountId: number, accountName: string, accountCode: string, date: string) => {
+    try {
+      const sale = await getSaleById(saleId);
+
+      // Ensure revenue accounts are loaded
+      let accounts = revenueAccounts;
+      if (accounts.length === 0) {
+        accounts = await getAccountsByComponent('revenue');
+        setRevenueAccounts(accounts);
+      }
+
+      // Ensure the sale's revenue account is in the list
+      if (sale.revenueAccountId && sale.revenueAccountName) {
+        const accountExists = accounts.some(acc => acc.accountId === sale.revenueAccountId);
+        if (!accountExists) {
+          const newAccount: SearchAccountResult = {
+            accountId: sale.revenueAccountId,
+            accountCode: '',
+            name: sale.revenueAccountName,
+            balance: 0
+          };
+          accounts = [...accounts, newAccount];
+          setRevenueAccounts(accounts);
+        }
+      }
+
+      setCurrentSale(sale);
+      setSalesModalData({
+        buyer: {
+          id: accountId,
+          name: accountName,
+          code: accountCode
+        },
+        initialDate: date,
+        selectedRevenueAccount: sale.revenueAccountId || null,
+        saleId: saleId
+      });
+      setShowSalesModal(true);
+    } catch (error) {
+      console.error('Failed to load sale:', error);
+    }
+  };
+
+  // Handle sales submit
+  const handleSalesSubmit = async (data: {
+    grossLiters: number;
+    lr: number;
+    fat: number;
+    netLiters: number;
+    rate: number;
+    amount: number;
+    amountReceived: number;
+    revenueAccountId: number;
+    date: string;
+  }) => {
+    if (!salesModalData || !currentSale) return;
+
+    try {
+      const chillarId = currentSale.chillarId;
+      if (!chillarId || chillarId <= 0) {
+        alert('Chillar ID is missing from sale record. Cannot update.');
+        return;
+      }
+
+      const revenueAccountId = data.revenueAccountId || currentSale.revenueAccountId;
+      if (!revenueAccountId || revenueAccountId <= 0) {
+        alert('Please select a revenue account');
+        return;
+      }
+
+      await updateSale(salesModalData.saleId, {
+        date: data.date,
+        accountId: salesModalData.buyer.id,
+        revenueAccountId: revenueAccountId,
+        chillarId: chillarId,
+        grossLiters: data.grossLiters,
+        lr: data.lr,
+        fat: data.fat,
+        netLiters: data.netLiters,
+        rate: data.rate,
+        amountReceived: data.amountReceived
+      });
+
+      setShowSalesModal(false);
+      setSalesModalData(null);
+      setCurrentSale(null);
+
+      // Refresh data
+      const params = {
+        startDate: dateRange.startDate,
+        endDate: dateRange.endDate,
+        ...(isAdmin && selectedChillarId && { chillarId: selectedChillarId }),
+        ...(!isAdmin && userChillarId && { chillarId: userChillarId })
+      };
+
+      if (view === 'detailed') {
+        const salesReportData = await getSalesReport(params);
+        setSalesData(salesReportData);
+        loadSummary();
+      } else {
+        const buyerData = await getBuyerWiseSalesReport(params);
+        setBuyerSummaryData(buyerData);
+      }
+    } catch (error: any) {
+      console.error('Failed to update sale:', error);
+      alert(error?.response?.data?.message || error?.message || 'Failed to update sale');
+      throw error;
+    }
+  };
+
+  // Handle buyer click in summary view (open milk card)
+  const handleBuyerClick = (accountId: number, accountName: string) => {
+    setMilkCardData({
+      accountId,
+      accountName,
+      date: dateRange.endDate || new Date().toISOString().split('T')[0],
+      transactionType: 'Sale'
+    });
+    setShowMilkCardModal(true);
+  };
 
   // Load summary separately
   const loadSummary = async () => {
@@ -174,7 +398,7 @@ export default function SalesReport() {
     (view === 'detailed' ? filteredTransactions.length : filteredBuyerSummaries.length) / itemsPerPage
   );
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedData = view === 'detailed' 
+  const paginatedData = view === 'detailed'
     ? filteredTransactions.slice(startIndex, startIndex + itemsPerPage)
     : filteredBuyerSummaries.slice(startIndex, startIndex + itemsPerPage);
 
@@ -190,7 +414,7 @@ export default function SalesReport() {
 
   const handleExportData = () => {
     let csvContent = '';
-    
+
     if (view === 'detailed') {
       const headers = [
         'Sale ID',
@@ -312,11 +536,10 @@ export default function SalesReport() {
                 setView('detailed');
                 setCurrentPage(1);
               }}
-              className={`px-6 py-3 font-medium transition-colors ${
-                view === 'detailed'
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
+              className={`px-6 py-3 font-medium transition-colors ${view === 'detailed'
+                ? 'text-blue-600 border-b-2 border-blue-600'
+                : 'text-gray-600 hover:text-gray-900'
+                }`}
             >
               Detailed Report
             </button>
@@ -325,11 +548,10 @@ export default function SalesReport() {
                 setView('summary');
                 setCurrentPage(1);
               }}
-              className={`px-6 py-3 font-medium transition-colors ${
-                view === 'summary'
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
+              className={`px-6 py-3 font-medium transition-colors ${view === 'summary'
+                ? 'text-blue-600 border-b-2 border-blue-600'
+                : 'text-gray-600 hover:text-gray-900'
+                }`}
             >
               Buyer Summary
             </button>
@@ -532,7 +754,19 @@ export default function SalesReport() {
                               </div>
                             </Table.Cell>
                             <Table.Cell>
-                              <span className="font-medium text-green-600 text-sm">{transaction.grossLiters.toFixed(2)}L</span>
+                              <span
+                                className="font-medium text-green-600 text-sm cursor-pointer hover:underline"
+                                onClick={() => handleSaleClick(
+                                  transaction.saleId,
+                                  transaction.accountId,
+                                  transaction.accountName,
+                                  transaction.accountCode,
+                                  transaction.date
+                                )}
+                                title="Click to edit sale"
+                              >
+                                {transaction.grossLiters.toFixed(2)}L
+                              </span>
                             </Table.Cell>
                             <Table.Cell>
                               <div className="space-y-0.5 text-xs">
@@ -561,13 +795,13 @@ export default function SalesReport() {
                             )}
                             <Table.Cell>
                               <div className="flex gap-2">
-                                <button 
+                                <button
                                   className="p-1 text-blue-600 hover:bg-blue-50 rounded"
                                   title="View Details"
                                 >
                                   <Eye className="w-4 h-4" />
                                 </button>
-                                <button 
+                                <button
                                   className="p-1 text-purple-600 hover:bg-purple-50 rounded"
                                   title="Print Receipt"
                                 >
@@ -631,7 +865,11 @@ export default function SalesReport() {
                               {buyer.accountCode}
                             </td>
                             <td className="p-3 text-sm text-gray-700">{buyer.accountName}</td>
-                            <td className="p-3 text-sm text-right font-medium text-green-600">
+                            <td
+                              className="p-3 text-sm text-right font-medium text-green-600 cursor-pointer hover:underline"
+                              onClick={() => handleBuyerClick(buyer.accountId, buyer.accountName)}
+                              title="Click to view milk card"
+                            >
                               {buyer.totalGrossLiters.toFixed(2)}L
                             </td>
                             <td className="p-3 text-sm text-right font-medium text-blue-600">
@@ -696,11 +934,10 @@ export default function SalesReport() {
                     <button
                       key={page}
                       onClick={() => setCurrentPage(page)}
-                      className={`px-3 py-2 text-sm border rounded-lg ${
-                        isActive
-                          ? 'bg-blue-600 text-white border-blue-600'
-                          : 'border-gray-300 hover:bg-gray-50'
-                      }`}
+                      className={`px-3 py-2 text-sm border rounded-lg ${isActive
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : 'border-gray-300 hover:bg-gray-50'
+                        }`}
                     >
                       {page}
                     </button>
@@ -716,6 +953,56 @@ export default function SalesReport() {
                 </button>
               </div>
             </div>
+          )}
+
+          {/* Sales Modal */}
+          {showSalesModal && salesModalData && currentSale && (
+            <SalesFormModal
+              isOpen={showSalesModal}
+              onClose={() => {
+                setShowSalesModal(false);
+                setSalesModalData(null);
+                setCurrentSale(null);
+              }}
+              onSubmit={handleSalesSubmit}
+              initialData={{
+                grossLiters: currentSale.grossLiters,
+                lr: currentSale.lr,
+                fat: currentSale.fat,
+                netLiters: currentSale.netLiters,
+                rate: currentSale.rate,
+                amountReceived: currentSale.amountReceived,
+                revenueAccountId: currentSale.revenueAccountId,
+                date: salesModalData.initialDate
+              }}
+              buyerName={salesModalData.buyer.name}
+              buyerId={salesModalData.buyer.id.toString()}
+              date={salesModalData.initialDate}
+              isAdmin={true}
+              isFromAddedList={true}
+              revenueAccounts={revenueAccounts.map(acc => ({
+                accountId: acc.accountId,
+                accountName: acc.name,
+                accountCode: acc.accountCode
+              }))}
+              formValues={salesFormValues}
+              onInputChange={handleSalesInputChange}
+            />
+          )}
+
+          {/* Milk Card Modal */}
+          {showMilkCardModal && milkCardData && (
+            <MilkCardModal
+              isOpen={showMilkCardModal}
+              onClose={() => {
+                setShowMilkCardModal(false);
+                setMilkCardData(null);
+              }}
+              accountId={milkCardData.accountId}
+              accountName={milkCardData.accountName}
+              date={milkCardData.date}
+              transactionType={milkCardData.transactionType}
+            />
           )}
         </div>
       </DynamicLayout>

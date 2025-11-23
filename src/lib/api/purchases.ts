@@ -82,7 +82,9 @@ export interface Purchase {
   accountId: number;
   accountName: string;
   accountCode: string;
+  expenseAccountId: number;
   expenseAccountName: string;
+  dodhiId: number;
   dodhiName: string;
   grossLiters: number;
   rate: number;
@@ -183,4 +185,8 @@ export const updatePurchase = async (id: number, data: CreatePurchaseRequest): P
 export const getPurchaseById = async (id: number): Promise<Purchase> => {
   const response = await api.get(`/Purchase/${id}`);
   return response.data;
+};
+
+export const deletePurchase = async (id: number): Promise<void> => {
+  await api.delete(`/Purchase/${id}`);
 };

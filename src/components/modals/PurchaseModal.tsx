@@ -14,7 +14,7 @@ type PurchaseModalProps = {
     rate?: number;
     date: string;
     expenseAccountId?: number;
-  }) => void;
+  }) => Promise<void> | void;
   supplier: {
     id: number;
     name: string;
@@ -52,6 +52,7 @@ export default function PurchaseModal({
   const [rate, setRate] = useState<number | ''>('');
   const [expenseAccountId, setExpenseAccountId] = useState<number | null>(selectedExpenseAccount);
   const [selectedDate, setSelectedDate] = useState(initialDate);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Initialize form values
   useEffect(() => {
@@ -116,8 +117,13 @@ export default function PurchaseModal({
     };
   }, [isUpdate, updateData, availableTimes]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Prevent double submission
+    if (isSubmitting) {
+      return;
+    }
     
     // Validation
     const morningQty = Number(morningQuantity) || 0;
@@ -146,7 +152,17 @@ export default function PurchaseModal({
       expenseAccountId: expenseAccountId || undefined
     };
 
-    onSubmit(submitData);
+    try {
+      setIsSubmitting(true);
+      await onSubmit(submitData);
+      // If successful, the parent will close the modal
+    } catch (error: any) {
+      console.error('Error submitting purchase:', error);
+      // Error message is already shown in parent component via alert
+      // Keep modal open so user can fix the issue
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const getInputColorClasses = (time: 'morning' | 'evening') => {
@@ -354,7 +370,7 @@ export default function PurchaseModal({
                     <option value="">Select Expense Account</option>
                     {expenseAccounts.map(account => (
                       <option key={account.accountId} value={account.accountId}>
-                        {account.accountCode} - {account.accountName}
+                        {account.accountCode} - {account.name}
                       </option>
                     ))}
                   </select>
@@ -378,9 +394,15 @@ export default function PurchaseModal({
             <div className="mt-6 flex gap-3">
               <button
                 type="submit"
-                className={`flex-1 py-2 px-4 rounded-lg font-medium flex items-center justify-center gap-2 text-white ${getButtonColorClasses()}`}
+                disabled={isSubmitting}
+                className={`flex-1 py-2 px-4 rounded-lg font-medium flex items-center justify-center gap-2 text-white ${getButtonColorClasses()} ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
-                {isUpdate ? (
+                {isSubmitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    {isUpdate ? 'Updating...' : 'Adding...'}
+                  </>
+                ) : isUpdate ? (
                   <>
                     <Save className="w-5 h-5" />
                     Update
@@ -396,7 +418,8 @@ export default function PurchaseModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 py-2 px-4 bg-gray-200 text-gray-800 rounded-lg font-medium hover:bg-gray-300"
+                disabled={isSubmitting}
+                className={`flex-1 py-2 px-4 bg-gray-200 text-gray-800 rounded-lg font-medium hover:bg-gray-300 ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 Cancel
               </button>

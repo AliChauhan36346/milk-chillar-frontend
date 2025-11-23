@@ -469,7 +469,8 @@ export default function AccountLedgerPage() {
                                 <CardTitle>Transaction History</CardTitle>
                             </CardHeader>
                             <CardContent className="p-0">
-                                <Table>
+                                <div className="overflow-x-auto">
+                                    <Table className="min-w-full">
                                     <Table.Header>
                                         <Table.Row>
                                             <Table.Head>Date</Table.Head>
@@ -566,6 +567,7 @@ export default function AccountLedgerPage() {
                                         )}
                                     </Table.Body>
                                 </Table>
+                                </div>
                             </CardContent>
 
                             {/* Pagination - Mobile optimized */}

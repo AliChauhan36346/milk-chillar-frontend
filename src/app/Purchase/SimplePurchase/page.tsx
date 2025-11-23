@@ -645,6 +645,7 @@ import {
   createPurchase,
   updatePurchase,
   getPurchaseSummary,
+  getRemainingSuppliers,
   type Purchase,
   type RemainingSupplier,
   type PurchaseSummary
@@ -802,24 +803,66 @@ export default function PurchasePage() {
 
   /* ------------------- MODAL & INTERACTION LOGIC ------------------- */
 
-  const getAvailableTimesForSupplier = useCallback(async (supplierId: number) => {
+  const getAvailableTimesForSupplier = useCallback(async (supplierId: number, supplierCode: string, clickedTimeOfDay?: 'morning' | 'evening') => {
     if (timeFilter !== 'both') {
       return [timeFilter];
     }
-    return ['morning', 'evening'];
-  }, [timeFilter]);
+    
+    // When filter is "both", check which times are actually available for this supplier
+    if (!selectedDodhiId) {
+      // Fallback to clicked time if no dodhi selected
+      return clickedTimeOfDay ? [clickedTimeOfDay] : ['morning', 'evening'];
+    }
+
+    try {
+      // Fetch remaining suppliers using the supplier code for more accurate search
+      const result = await getRemainingSuppliers(
+        date,
+        'both',
+        selectedDodhiId,
+        supplierCode, // Use supplier code to find this specific supplier
+        1,
+        100 // Get enough items to find this supplier
+      );
+
+      // Find all entries for this supplier (by accountId to be sure)
+      const supplierEntries = result.items.filter(item => item.accountId === supplierId);
+      const availableTimesSet = new Set<'morning' | 'evening'>();
+      
+      supplierEntries.forEach(entry => {
+        availableTimesSet.add(entry.timeOfDay);
+      });
+
+      // If we found entries, return them; otherwise use the clicked time or default to both
+      if (availableTimesSet.size > 0) {
+        return Array.from(availableTimesSet);
+      }
+      
+      // Fallback: if clicked item had a timeOfDay, use that; otherwise both
+      return clickedTimeOfDay ? [clickedTimeOfDay] : ['morning', 'evening'];
+    } catch (error) {
+      console.error('Failed to fetch available times for supplier:', error);
+      // Fallback to clicked time or both
+      return clickedTimeOfDay ? [clickedTimeOfDay] : ['morning', 'evening'];
+    }
+  }, [timeFilter, selectedDodhiId, date]);
 
   const handleItemClick = useCallback(async (item: ListDataItem) => {
     const isPurchase = 'purchaseId' in item;
+    const remainingSupplier = item as RemainingSupplier;
 
     const supplier = {
       id: item.accountId,
       name: item.accountName,
       code: item.accountCode,
-      rate: isPurchase ? item.rate : (item as RemainingSupplier).rate
+      rate: isPurchase ? item.rate : remainingSupplier.rate
     };
 
-    const availableTimes = isPurchase ? [item.timeOfDay] : await getAvailableTimesForSupplier(item.accountId);
+    // For remaining suppliers, pass the timeOfDay to check available times
+    const clickedTimeOfDay = isPurchase ? undefined : remainingSupplier.timeOfDay;
+    const availableTimes = isPurchase 
+      ? [item.timeOfDay] 
+      : await getAvailableTimesForSupplier(item.accountId, item.accountCode, clickedTimeOfDay);
 
     if (isPurchase) {
       const purchaseItem = item as Purchase;
@@ -926,6 +969,7 @@ export default function PurchasePage() {
     } catch (error) {
       console.error('Failed to save purchase:', error);
       alert('Failed to save purchase. Please try again.');
+      throw error; // Re-throw to let modal handle the loading state
     }
   }, [modalData, selectedExpenseAccount, isAdmin, getDodhiId, loadInitialMetadataAndSummary]);
 

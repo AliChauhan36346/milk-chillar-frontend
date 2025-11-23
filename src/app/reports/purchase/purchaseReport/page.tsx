@@ -1,4 +1,3 @@
-
 'use client';
 import { AdminLayout } from '@/components/layouts/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,6 +16,11 @@ import { getEmployees } from '@/lib/api/employees';
 import { PurchaseReportFilters } from '@/components/reports/PurchaseReportFilters';
 import { FileText, TrendingUp, DollarSign, Droplet, Users, ChevronLeft, ChevronRight } from 'lucide-react';
 import SummaryCard from '@/components/ui/SummaryCard';
+import PurchaseModal from '@/components/modals/PurchaseModal';
+import MilkCardModal from '@/components/modals/MilkCardModal';
+import { getPurchaseById, Purchase, updatePurchase } from '@/lib/api/purchases';
+import { getAccountsByComponent, SearchAccountResult } from '@/lib/api/accounts';
+import { getDefaultDateRange } from '@/lib/utils/dateRange';
 
 type ReportView = 'detailed' | 'summary';
 
@@ -31,15 +35,42 @@ export default function PurchaseReportPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 50;
 
+  // Get default date range based on current date
+  const defaultDateRange = getDefaultDateRange();
+
   // Filter states
   const [filters, setFilters] = useState<PurchaseReportQuery>({
-    startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    endDate: new Date().toISOString().split('T')[0],
+    startDate: defaultDateRange.startDate,
+    endDate: defaultDateRange.endDate,
     timeOfDay: undefined,
     dodhiId: undefined,
     chillarId: undefined,
     supplierCode: undefined,
   });
+
+  // Modal states
+  const [showPurchaseModal, setShowPurchaseModal] = useState(false);
+  const [showMilkCardModal, setShowMilkCardModal] = useState(false);
+  const [expenseAccounts, setExpenseAccounts] = useState<SearchAccountResult[]>([]);
+  const [currentPurchase, setCurrentPurchase] = useState<Purchase | null>(null);
+  const [purchaseModalData, setPurchaseModalData] = useState<{
+    supplier: { id: number; name: string; code: string; rate: number };
+    availableTimes: ('morning' | 'evening')[];
+    isUpdate: boolean;
+    updateData?: {
+      time: 'morning' | 'evening';
+      purchaseId: number;
+      currentQuantity: number;
+    };
+    initialDate: string;
+    selectedExpenseAccount: number | null;
+  } | null>(null);
+  const [milkCardData, setMilkCardData] = useState<{
+    accountId: number;
+    accountName: string;
+    date: string;
+    transactionType: 'Purchase' | 'Sale';
+  } | null>(null);
 
   const [dodhiOptions, setDodhiOptions] = useState<{ value: string; label: string }[]>([]);
 
@@ -75,7 +106,7 @@ export default function PurchaseReportPage() {
           pageSize: pageSize,
         });
         setDetailedReport(data);
-        
+
         // Load summary separately
         loadSummary();
       } else {
@@ -137,6 +168,99 @@ export default function PurchaseReportPage() {
     }
   }, [currentPage]);
 
+  const handlePurchaseClick = async (
+    purchaseId: number,
+    accountId: number,
+    accountName: string,
+    accountCode: string,
+    date: string,
+    timeOfDay: string
+  ) => {
+    try {
+      const purchase = await getPurchaseById(purchaseId);
+      setCurrentPurchase(purchase);
+
+      // Ensure expense accounts are loaded
+      if (expenseAccounts.length === 0) {
+        const accounts = await getAccountsByComponent('expenses');
+        setExpenseAccounts(accounts);
+      }
+
+      setPurchaseModalData({
+        supplier: { id: accountId, name: accountName, code: accountCode, rate: purchase.rate },
+        availableTimes: ['morning', 'evening'],
+        isUpdate: true,
+        updateData: {
+          time: timeOfDay as 'morning' | 'evening',
+          purchaseId: purchaseId,
+          currentQuantity: purchase.grossLiters
+        },
+        initialDate: date.split('T')[0],
+        selectedExpenseAccount: purchase.expenseAccountId || null
+      });
+      setShowPurchaseModal(true);
+    } catch (err) {
+      console.error('Error loading purchase:', err);
+      setError('Failed to load purchase details');
+    }
+  };
+
+  const handleSupplierClick = (accountId: number, accountName: string) => {
+    setMilkCardData({
+      accountId,
+      accountName,
+      date: filters.endDate || new Date().toISOString().split('T')[0],
+      transactionType: 'Purchase'
+    });
+    setShowMilkCardModal(true);
+  };
+
+  const handlePurchaseSubmit = async (data: {
+    date: string;
+    morningQuantity?: number;
+    eveningQuantity?: number;
+    rate?: number;
+    expenseAccountId?: number;
+  }) => {
+    if (!purchaseModalData?.updateData?.purchaseId || !currentPurchase) return;
+
+    try {
+      const time = purchaseModalData.updateData.time;
+      const quantity = time === 'morning' ? data.morningQuantity : data.eveningQuantity;
+
+      if (!quantity) {
+        console.error("No quantity provided for update");
+        return;
+      }
+
+      const rate = data.rate !== undefined ? data.rate : currentPurchase.rate;
+      const balance = quantity * rate; // Calculate balance based on new quantity and rate
+
+      const updatePayload = {
+        date: data.date,
+        timeOfDay: time,
+        accountId: currentPurchase.accountId,
+        expenseAccountId: data.expenseAccountId || currentPurchase.expenseAccountId,
+        dodhiId: currentPurchase.dodhiId,
+        grossLiters: quantity,
+        rate: rate,
+        balance: balance
+      };
+
+      await updatePurchase(purchaseModalData.updateData.purchaseId, updatePayload);
+
+      setShowPurchaseModal(false);
+      setPurchaseModalData(null);
+      setCurrentPurchase(null);
+
+      // Refresh data
+      handleSearch();
+
+    } catch (err) {
+      console.error('Error updating purchase:', err);
+    }
+  };
+
   const formatCurrency = (amount: number): string => {
     return new Intl.NumberFormat('en-PK', {
       style: 'currency',
@@ -172,21 +296,19 @@ export default function PurchaseReportPage() {
           <div className="flex gap-2 border-b border-gray-200">
             <button
               onClick={() => setView('detailed')}
-              className={`px-6 py-3 font-medium transition-colors ${
-                view === 'detailed'
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
+              className={`px-6 py-3 font-medium transition-colors ${view === 'detailed'
+                ? 'text-blue-600 border-b-2 border-blue-600'
+                : 'text-gray-600 hover:text-gray-900'
+                }`}
             >
               Detailed Report
             </button>
             <button
               onClick={() => setView('summary')}
-              className={`px-6 py-3 font-medium transition-colors ${
-                view === 'summary'
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
+              className={`px-6 py-3 font-medium transition-colors ${view === 'summary'
+                ? 'text-blue-600 border-b-2 border-blue-600'
+                : 'text-gray-600 hover:text-gray-900'
+                }`}
             >
               Supplier Summary
             </button>
@@ -306,7 +428,18 @@ export default function PurchaseReportPage() {
                             </td>
                             <td className="p-3 text-sm text-gray-700">{purchase.dodhiName}</td>
                             <td className="p-3 text-sm text-gray-700">{purchase.chillarName}</td>
-                            <td className="p-3 text-sm text-right font-medium text-blue-600">
+                            <td
+                              className="p-3 text-sm text-right font-medium text-blue-600 cursor-pointer hover:underline"
+                              onClick={() => handlePurchaseClick(
+                                purchase.purchaseId,
+                                purchase.accountId,
+                                purchase.accountName,
+                                purchase.accountCode,
+                                purchase.date,
+                                purchase.timeOfDay
+                              )}
+                              title="Click to edit purchase"
+                            >
                               {purchase.grossLiters.toFixed(2)}
                             </td>
                             <td className="p-3 text-sm text-right text-gray-700">
@@ -338,11 +471,10 @@ export default function PurchaseReportPage() {
                       <button
                         onClick={() => handlePageChange(currentPage - 1)}
                         disabled={currentPage === 1}
-                        className={`p-2 rounded-lg border transition-colors ${
-                          currentPage === 1
-                            ? 'border-gray-200 text-gray-400 cursor-not-allowed'
-                            : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                        }`}
+                        className={`p-2 rounded-lg border transition-colors ${currentPage === 1
+                          ? 'border-gray-200 text-gray-400 cursor-not-allowed'
+                          : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                          }`}
                       >
                         <ChevronLeft className="w-5 h-5" />
                       </button>
@@ -352,7 +484,7 @@ export default function PurchaseReportPage() {
                         {Array.from({ length: Math.min(5, detailedReport.paginatedPurchases.totalPages) }, (_, i) => {
                           let pageNum;
                           const totalPages = detailedReport.paginatedPurchases.totalPages;
-                          
+
                           if (totalPages <= 5) {
                             pageNum = i + 1;
                           } else if (currentPage <= 3) {
@@ -367,11 +499,10 @@ export default function PurchaseReportPage() {
                             <button
                               key={pageNum}
                               onClick={() => handlePageChange(pageNum)}
-                              className={`px-3 py-1 rounded-lg border transition-colors ${
-                                currentPage === pageNum
-                                  ? 'bg-blue-600 text-white border-blue-600'
-                                  : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                              }`}
+                              className={`px-3 py-1 rounded-lg border transition-colors ${currentPage === pageNum
+                                ? 'bg-blue-600 text-white border-blue-600'
+                                : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                                }`}
                             >
                               {pageNum}
                             </button>
@@ -382,11 +513,10 @@ export default function PurchaseReportPage() {
                       <button
                         onClick={() => handlePageChange(currentPage + 1)}
                         disabled={currentPage === detailedReport.paginatedPurchases.totalPages}
-                        className={`p-2 rounded-lg border transition-colors ${
-                          currentPage === detailedReport.paginatedPurchases.totalPages
-                            ? 'border-gray-200 text-gray-400 cursor-not-allowed'
-                            : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                        }`}
+                        className={`p-2 rounded-lg border transition-colors ${currentPage === detailedReport.paginatedPurchases.totalPages
+                          ? 'border-gray-200 text-gray-400 cursor-not-allowed'
+                          : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                          }`}
                       >
                         <ChevronRight className="w-5 h-5" />
                       </button>
@@ -434,7 +564,11 @@ export default function PurchaseReportPage() {
                               {supplier.accountCode}
                             </td>
                             <td className="p-3 text-sm text-gray-700">{supplier.accountName}</td>
-                            <td className="p-3 text-sm text-right font-medium text-blue-600">
+                            <td
+                              className="p-3 text-sm text-right font-medium text-blue-600 cursor-pointer hover:underline"
+                              onClick={() => handleSupplierClick(supplier.accountId, supplier.accountName)}
+                              title="Click to view milk card"
+                            >
                               {supplier.totalLiters.toFixed(2)}
                             </td>
                             <td className="p-3 text-sm text-right font-medium text-green-600">
@@ -457,6 +591,42 @@ export default function PurchaseReportPage() {
                 </div>
               </CardContent>
             </Card>
+          )}
+
+          {/* Purchase Modal */}
+          {showPurchaseModal && purchaseModalData && expenseAccounts.length > 0 && (
+            <PurchaseModal
+              isOpen={showPurchaseModal}
+              onClose={() => {
+                setShowPurchaseModal(false);
+                setPurchaseModalData(null);
+                setCurrentPurchase(null);
+              }}
+              onSubmit={handlePurchaseSubmit}
+              supplier={purchaseModalData.supplier}
+              availableTimes={purchaseModalData.availableTimes}
+              isAdmin={true}
+              expenseAccounts={expenseAccounts}
+              selectedExpenseAccount={purchaseModalData.selectedExpenseAccount}
+              isUpdate={purchaseModalData.isUpdate}
+              updateData={purchaseModalData.updateData}
+              initialDate={purchaseModalData.initialDate}
+            />
+          )}
+
+          {/* Milk Card Modal */}
+          {showMilkCardModal && milkCardData && (
+            <MilkCardModal
+              isOpen={showMilkCardModal}
+              onClose={() => {
+                setShowMilkCardModal(false);
+                setMilkCardData(null);
+              }}
+              accountId={milkCardData.accountId}
+              accountName={milkCardData.accountName}
+              date={milkCardData.date}
+              transactionType={milkCardData.transactionType}
+            />
           )}
         </div>
       </AdminLayout>
