@@ -41,8 +41,8 @@ import axios from 'axios';
 
 // Create axios instance with base URL
 export const api = axios.create({
-  //baseURL: process.env.NEXT_PUBLIC_API_URL || 'https://milkchillarapi-production.up.railway.app/api',
-  baseURL: 'https://localhost:7013/api',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'https://milkchillarapi-production.up.railway.app/api',
+  //baseURL: 'https://localhost:7013/api',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -75,7 +75,7 @@ api.interceptors.response.use(
         window.location.href = '/login';
       }
     }
-    
+
     // Log error for debugging
     console.error('API Error:', {
       url: error.config?.url,
@@ -83,7 +83,7 @@ api.interceptors.response.use(
       status: error.response?.status,
       message: error.response?.data?.message || error.message
     });
-    
+
     return Promise.reject(error);
   }
 );
