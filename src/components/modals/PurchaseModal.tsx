@@ -8,8 +8,8 @@ import { ExpenseAccount } from '@/lib/api/purchases';
 type PurchaseModalProps = {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: { 
-    morningQuantity?: number; 
+  onSubmit: (data: {
+    morningQuantity?: number;
     eveningQuantity?: number;
     rate?: number;
     date: string;
@@ -72,7 +72,7 @@ export default function PurchaseModal({
       setEveningQuantity('');
       setRate(supplier.rate);
     }
-    
+
     setSelectedDate(initialDate);
     setExpenseAccountId(selectedExpenseAccount);
   }, [isUpdate, updateData, supplier.rate, selectedExpenseAccount, initialDate]);
@@ -82,7 +82,7 @@ export default function PurchaseModal({
     const currentRate = Number(rate) || 0;
     const morningQty = Number(morningQuantity) || 0;
     const eveningQty = Number(eveningQuantity) || 0;
-    
+
     return {
       morningAmount: morningQty * currentRate,
       eveningAmount: eveningQty * currentRate,
@@ -100,7 +100,7 @@ export default function PurchaseModal({
         bgColor: updateData.time === 'morning' ? 'bg-blue-50' : 'bg-purple-50'
       };
     }
-    
+
     if (availableTimes.length === 1) {
       const timeTitle = availableTimes[0] === 'morning' ? 'Morning' : 'Evening';
       return {
@@ -109,7 +109,7 @@ export default function PurchaseModal({
         bgColor: availableTimes[0] === 'morning' ? 'bg-blue-50' : 'bg-purple-50'
       };
     }
-    
+
     return {
       title: 'New Purchase Entry',
       primaryColor: 'green',
@@ -119,16 +119,16 @@ export default function PurchaseModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Prevent double submission
     if (isSubmitting) {
       return;
     }
-    
+
     // Validation
     const morningQty = Number(morningQuantity) || 0;
     const eveningQty = Number(eveningQuantity) || 0;
-    
+
     if (isUpdate) {
       // For updates, check only the specific time being updated
       const quantityToCheck = updateData?.time === 'morning' ? morningQty : eveningQty;
@@ -166,8 +166,8 @@ export default function PurchaseModal({
   };
 
   const getInputColorClasses = (time: 'morning' | 'evening') => {
-    return time === 'morning' 
-      ? 'border-blue-300 bg-blue-50 focus:ring-blue-500' 
+    return time === 'morning'
+      ? 'border-blue-300 bg-blue-50 focus:ring-blue-500'
       : 'border-purple-300 bg-purple-50 focus:ring-purple-500';
   };
 

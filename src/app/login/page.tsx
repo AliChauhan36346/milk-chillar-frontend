@@ -30,8 +30,8 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-        //const response = await fetch('https://localhost:7013/api/Auth/login', {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Auth/login`, {
+      //const response = await fetch('https://localhost:7013/api/Auth/login', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
@@ -53,8 +53,8 @@ export default function LoginPage() {
         dodhi: '/dashboard/dodhi',
         chillarincharge: '/dashboard/ChillarIncharge'
       };
-      const redirectPath = role && redirectPaths[role as keyof typeof redirectPaths] 
-        ? redirectPaths[role as keyof typeof redirectPaths] 
+      const redirectPath = role && redirectPaths[role as keyof typeof redirectPaths]
+        ? redirectPaths[role as keyof typeof redirectPaths]
         : '/dashboard';
 
       router.push(redirectPath);
@@ -65,7 +65,7 @@ export default function LoginPage() {
     }
   };
   // Render the login form
-  
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-cyan-50 p-4 sm:p-6 lg:p-8">
       <form
@@ -91,7 +91,7 @@ export default function LoginPage() {
             <label className="block text-sm font-medium text-gray-700 mb-2">Username</label>
             <input
               type="text"
-              value={username}
+              value={username.trimEnd()}
               onChange={(e) => setUsername(e.target.value)}
               className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder-gray-300 text-gray-800 font-medium"
               placeholder="Enter your username"
@@ -118,27 +118,27 @@ export default function LoginPage() {
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">
-              <svg
-                className="animate-spin h-5 w-5 text-white"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-                />
-                <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                />
-              </svg>
-              Signing in...
+                <svg
+                  className="animate-spin h-5 w-5 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                  />
+                </svg>
+                Signing in...
               </span>
             ) : (
               'Sign in to System'

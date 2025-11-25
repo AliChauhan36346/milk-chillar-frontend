@@ -92,7 +92,7 @@ export interface MilkCard {
   accountId: number;
   accountCode: string;
   accountName: string;
-  transactionType: 'Purchase' | 'Sale';
+  transactionType: 'Purchase' | 'Sale' | 'Sales';
   periodStart: string;
   periodEnd: string;
   periodLabel: string;

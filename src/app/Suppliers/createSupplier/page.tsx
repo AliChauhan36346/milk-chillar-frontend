@@ -174,6 +174,16 @@ function CreateSupplierPage() {
   // On submit: create account, then supplier
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!formData.dodhiId) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please select a Dodhi',
+        variant: 'error',
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const tenantId = user?.tenantId || 3;
