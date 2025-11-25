@@ -29,6 +29,7 @@ function CreateBuyerPageInner() {
   const searchParams = useSearchParams();
   const { user } = useAuth?.() || {};
   const buyerId = searchParams.get('id');
+  console.log('CreateBuyerPageInner rendered, buyerId:', buyerId);
   const { toast } = useToast();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -145,17 +146,31 @@ function CreateBuyerPageInner() {
         });
         accountId = accountRes.accountId;
       }
-      if (!accountId) throw new Error('Account creation failed');
-      await createBuyer({
-        accountId,
-        rate: formData.rate,
-        khataNumber: formData.khataNumber,
-        creditLimit: formData.creditLimit,
-        address: formData.address,
-        isActive: formData.isActive,
-        tenantId,
-      });
-      toast({ title: 'Buyer created successfully!', variant: 'success' });
+      if (buyerId) {
+        if (!accountId) throw new Error('Account ID is missing for update');
+        await updateBuyer(Number(buyerId), {
+          accountId,
+          rate: formData.rate,
+          khataNumber: formData.khataNumber,
+          creditLimit: formData.creditLimit,
+          address: formData.address,
+          isActive: formData.isActive,
+          tenantId,
+        });
+        toast({ title: 'Buyer updated successfully!', variant: 'success' });
+      } else {
+        if (!accountId) throw new Error('Account creation failed');
+        await createBuyer({
+          accountId,
+          rate: formData.rate,
+          khataNumber: formData.khataNumber,
+          creditLimit: formData.creditLimit,
+          address: formData.address,
+          isActive: formData.isActive,
+          tenantId,
+        });
+        toast({ title: 'Buyer created successfully!', variant: 'success' });
+      }
       router.push('/Buyers/buyerList');
     } catch (error) {
       toast({ title: 'Error saving buyer', description: (error as Error)?.message || 'An error occurred', variant: 'error' });
