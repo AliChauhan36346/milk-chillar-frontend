@@ -34,11 +34,11 @@ Chart.register(
 // Helper function to format change with sign
 const formatChange = (amount: number, count?: number): string => {
   const sign = amount >= 0 ? '+' : '';
-  const formattedAmount = Math.abs(amount) >= 1000 
+  const formattedAmount = Math.abs(amount) >= 1000
     ? `${sign}${(amount / 1000).toFixed(0)}K`
     : `${sign}${amount.toFixed(0)}`;
-  
-  
+
+
   if (count !== undefined) {
     return `${formattedAmount} (${count} ${count === 1 ? 'account' : 'accounts'})`;
   }
@@ -114,7 +114,7 @@ export default function AdminDashboard() {
   const dashboardCards = [
     {
       label: 'Cash Balance',
-      value: stats?.cashBalance || 0,
+      value: (stats?.cashBalance || 0).toLocaleString(),
       change: formatChange(stats?.todayCashChange || 0),
       icon: <Banknote className="w-6 h-6" />,
       bg: 'bg-blue-50',
@@ -122,7 +122,7 @@ export default function AdminDashboard() {
     },
     {
       label: 'Bank Balance',
-      value: stats?.bankBalance || 0,
+      value: (stats?.bankBalance || 0).toLocaleString(),
       change: formatChange(stats?.todayBankChange || 0),
       icon: <Building className="w-6 h-6" />,
       bg: 'bg-purple-50',
@@ -130,16 +130,16 @@ export default function AdminDashboard() {
     },
     {
       label: 'Pending Payments',
-      value: stats?.pendingPayments || 0,
-      change: `(${( stats?.pendingPaymentsCount || 0)} Accounts) `,
+      value: (stats?.pendingPayments || 0).toLocaleString(),
+      change: `(${(stats?.pendingPaymentsCount || 0)} Accounts) `,
       icon: <Clock className="w-6 h-6" />,
       bg: 'bg-amber-50',
       text: 'text-amber-600'
     },
     {
       label: 'Due Receipts',
-      value: stats?.dueReceipts || 0  ,
-      change: `(${( stats?.dueReceiptsCount || 0)} Accounts) `,
+      value: (stats?.dueReceipts || 0).toLocaleString(),
+      change: `(${(stats?.dueReceiptsCount || 0)} Accounts) `,
       icon: <Receipt className="w-6 h-6" />,
       bg: 'bg-green-50',
       text: 'text-green-600'
