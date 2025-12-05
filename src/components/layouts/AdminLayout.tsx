@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { PageLayout } from './PageLayout';
-import { 
+import {
   LayoutDashboard,
   Users,
   Settings,
@@ -52,8 +52,8 @@ const adminNavigation = [
   {
     section: 'Finance',
     items: [
-      { 
-        label: 'Accounts', 
+      {
+        label: 'Accounts',
         icon: <Wallet size={18} />,
         href: '/Accounts',
         subItems: [
@@ -61,8 +61,8 @@ const adminNavigation = [
           { label: 'Account Ledgers', href: '/Accounts/accountLedger', icon: <BookOpen size={18} /> }
         ]
       },
-      { 
-        label: 'Payments & Receipts', 
+      {
+        label: 'Payments & Receipts',
         icon: <IndianRupee size={18} />,
         href: '/Accounts/transactions',
         subItems: [
@@ -79,8 +79,8 @@ const adminNavigation = [
   {
     section: 'Reports',
     items: [
-      { 
-        label: 'Financial Reports', 
+      {
+        label: 'Financial Reports',
         icon: <BarChart2 size={18} />,
         href: '/reports/financial',
         subItems: [
@@ -90,8 +90,8 @@ const adminNavigation = [
           { label: 'Balance Sheet', href: '/reports/financial/balance-sheet', icon: <FileText size={18} /> }
         ]
       },
-      { 
-        label: 'Inventory Reports', 
+      {
+        label: 'Inventory Reports',
         icon: <Package size={18} />,
         href: '/reports/inventory',
         subItems: [
@@ -100,14 +100,15 @@ const adminNavigation = [
         ]
       },
       // ✅ NEW REPORTS SECTION
-      { 
-        label: 'Transaction Reports', 
+      {
+        label: 'Transaction Reports',
         icon: <ClipboardList size={18} />,
         href: '/reports/transactions',
         subItems: [
           { label: 'Sales Report', href: '/reports/sale', icon: <ShoppingBag size={18} /> },
           { label: 'Purchase Report', href: '/reports/purchase/purchaseReport', icon: <ShoppingCart size={18} /> },
-          { label: 'Chillar Receive Report', href: '/reports/chillarReceive', icon: <Scale size={18} /> }
+          { label: 'Chillar Receive Report', href: '/reports/chillarReceive', icon: <Scale size={18} /> },
+          { label: 'Daily Totals', href: '/reports/daily-totals', icon: <BarChart2 size={18} /> }
         ]
       }
     ]

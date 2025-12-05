@@ -24,18 +24,60 @@ export default function LoginPage() {
     );
   }
 
+  // const handleLogin = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   setError('');
+  //   setLoading(true);
+
+  //   try {
+  //     const response = await fetch('https://localhost:7013/api/Auth/login', {
+  //       //const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Auth/login`, {
+  //       method: 'POST',
+  //       headers: { 'Content-Type': 'application/json' },
+  //       body: JSON.stringify({ username, password }),
+  //       //credentials: 'include'
+  //     });
+
+  //     const data = await response.json();
+
+  //     if (!response.ok) {
+  //       throw new Error(data?.message || 'Invalid username or password');
+  //     }
+
+  //     login(data.token, data.user);
+
+  //     const role = data.user?.role?.toLowerCase();
+  //     const redirectPaths = {
+  //       admin: '/dashboard/admin',
+  //       manager: '/dashboard/manager',
+  //       dodhi: '/dashboard/dodhi',
+  //       chillarincharge: '/dashboard/ChillarIncharge'
+  //     };
+  //     const redirectPath = role && redirectPaths[role as keyof typeof redirectPaths]
+  //       ? redirectPaths[role as keyof typeof redirectPaths]
+  //       : '/dashboard';
+
+  //     router.push(redirectPath);
+  //   } catch (err: any) {
+  //     setError(err.message || 'Something went wrong. Please try again.');
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
+
+    const sanitizedUsername = username.trim(); // 🔥 Remove unwanted spaces
 
     try {
       //const response = await fetch('https://localhost:7013/api/Auth/login', {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
-        //credentials: 'include'
+        body: JSON.stringify({ username: sanitizedUsername, password }),
       });
 
       const data = await response.json();
@@ -64,6 +106,8 @@ export default function LoginPage() {
       setLoading(false);
     }
   };
+
+
   // Render the login form
 
   return (
@@ -91,7 +135,7 @@ export default function LoginPage() {
             <label className="block text-sm font-medium text-gray-700 mb-2">Username</label>
             <input
               type="text"
-              value={username.trimEnd()}
+              value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder-gray-300 text-gray-800 font-medium"
               placeholder="Enter your username"

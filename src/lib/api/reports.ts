@@ -245,10 +245,45 @@ export interface SalesReportSummary {
   totalBuyers: number;
 }
 
+export interface DailyTotalsDto {
+  date: string;
+  totalPurchaseLiters: number;
+  totalPurchaseAmount: number;
+  totalChillarReceiveLiters: number;
+  dodhiLoss: number;
+  totalSalesLiters: number;
+  chillarLoss: number;
+  tsSalesLiters: number;
+  tsDifference: number;
+  salesAmount: number;
+  grossProfit: number;
+}
+
+
 export interface BuyerWiseSalesReport {
   buyerSummaries: BuyerSalesSummary[];
   overallSummary: SalesReportSummary;
 }
+
+export const getDailyTotalsReport = async (
+  startDate: string,
+  endDate: string,
+  chillarId: number = 0
+): Promise<DailyTotalsDto[]> => {
+  try {
+    const queryParams = new URLSearchParams();
+    queryParams.append("startDate", startDate);
+    queryParams.append("endDate", endDate);
+    queryParams.append("chillarId", chillarId.toString());
+
+    const response = await api.get(`/Reports/DailyTotals?${queryParams.toString()}`);
+    return response.data;
+  } catch (error) {
+    console.error("Failed to fetch daily totals report:", error);
+    throw new Error("Failed to fetch daily totals report");
+  }
+};
+
 
 
 // Add these API functions at the bottom of the file
@@ -259,7 +294,7 @@ export const getDetailedPurchaseReport = async (
     const queryParams = new URLSearchParams();
     queryParams.append('StartDate', params.startDate);
     queryParams.append('EndDate', params.endDate);
-    
+
     if (params.timeOfDay) {
       queryParams.append('TimeOfDay', params.timeOfDay);
     }
@@ -294,7 +329,7 @@ export const getPurchaseReportSummary = async (
     const queryParams = new URLSearchParams();
     queryParams.append('StartDate', params.startDate);
     queryParams.append('EndDate', params.endDate);
-    
+
     if (params.timeOfDay) {
       queryParams.append('TimeOfDay', params.timeOfDay);
     }
@@ -323,7 +358,7 @@ export const getSupplierWisePurchaseReport = async (
     const queryParams = new URLSearchParams();
     queryParams.append('StartDate', params.startDate);
     queryParams.append('EndDate', params.endDate);
-    
+
     if (params.timeOfDay) {
       queryParams.append('TimeOfDay', params.timeOfDay);
     }
@@ -352,7 +387,7 @@ export const getBuyerWiseSalesReport = async (
     const queryParams = new URLSearchParams();
     queryParams.append('StartDate', params.startDate);
     queryParams.append('EndDate', params.endDate);
-    
+
     if (params.accountId) {
       queryParams.append('AccountId', params.accountId.toString());
     }
@@ -376,7 +411,7 @@ export const getSalesReportSummary = async (
     const queryParams = new URLSearchParams();
     queryParams.append('StartDate', params.startDate);
     queryParams.append('EndDate', params.endDate);
-    
+
     if (params.accountId) {
       queryParams.append('AccountId', params.accountId.toString());
     }
@@ -463,11 +498,11 @@ export const fetchDodhiDashboardRecords = async (params: DashboardRecordsParams)
 export const getChillarReceiveRecords = async (params: ChillarReportsParams): Promise<ReceiveRecord[]> => {
   try {
     const queryParams = new URLSearchParams();
-    
+
     // Add required parameters
     queryParams.append('StartDate', params.startDate);
     queryParams.append('EndDate', params.endDate);
-    
+
     // Add optional parameters if provided
     if (params.startTimeOfDay) {
       queryParams.append('StartTimeOfDay', params.startTimeOfDay);
@@ -497,11 +532,11 @@ export const getChillarReceiveRecords = async (params: ChillarReportsParams): Pr
 export const getSalesReport = async (params: SalesReportParams): Promise<SalesRecord[]> => {
   try {
     const queryParams = new URLSearchParams();
-    
+
     // Add required parameters
     queryParams.append('StartDate', params.startDate);
     queryParams.append('EndDate', params.endDate);
-    
+
     // Add optional buyer code parameter if provided
     if (params.buyerCode) {
       queryParams.append('BuyerCode', params.buyerCode);
