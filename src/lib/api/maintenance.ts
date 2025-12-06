@@ -39,6 +39,14 @@ export const getSupplierRateSummaryForPeriod = async (accountId: number, startDa
     return response.data;
 };
 
+// Get buyer rate summary for a period
+export const getBuyerRateSummaryForPeriod = async (accountId: number, startDate: string, endDate: string) => {
+    const response = await api.get<SupplierRateSummary>(
+        `/Maintenance/buyer-rate-summary?accountId=${accountId}&startDate=${startDate}&endDate=${endDate}`
+    );
+    return response.data;
+};
+
 // Update supplier rate for a period
 export const updateSupplierRateForPeriod = async (
     accountId: number,

@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -15,11 +15,13 @@ import {
   Users,
   BarChart2,
   Package,
-  Settings
+  Settings, // Added Settings icon
+  Menu
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
+import { SettingsModal } from '@/components/features/settings/SettingsModal';
 
 type NavigationItem = {
   label: string;
@@ -48,6 +50,7 @@ export default function Sidebar({
 }: SidebarProps) {
   const pathname = usePathname();
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const toggleSection = (section: string) => {
     setExpandedSections(prev => ({
@@ -170,22 +173,29 @@ export default function Sidebar({
         ))}
       </nav>
 
-      {/* User Info
-      <div className="p-4 border-t border-gray-200">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-            <span className="text-blue-600 text-sm font-medium">
-              {role?.charAt(0).toUpperCase()}
-            </span>
-          </div>
-          {!isCollapsed && (
-            <div>
-              <p className="text-sm font-medium capitalize">{role}</p>
-              <p className="text-xs text-gray-500">{role}@milkchillar.com</p>
-            </div>
+      {/* User Info & Settings */}
+      <div className="p-2 border-t border-gray-200 bg-gray-50 flex flex-col gap-2">
+        {/* Settings Button */}
+        <button
+          onClick={() => setIsSettingsOpen(true)}
+          className={clsx(
+            'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors',
+            'hover:bg-white hover:text-blue-600 hover:shadow-sm text-gray-600'
           )}
-        </div>
-      </div> */}
+        >
+          <span className="flex items-center justify-center min-w-[24px]">
+            <Settings size={20} />
+          </span>
+          {!isCollapsed && <span className="font-medium">Settings</span>}
+        </button>
+
+      </div>
+
+      {/* Settings Modal */}
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+      />
     </aside>
   );
 }

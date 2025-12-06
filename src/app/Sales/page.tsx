@@ -180,7 +180,14 @@ export default function SalesPage() {
     amountReceived: number;
     revenueAccountId: number;
   }) => {
-    if (!modalBuyer || !chillarId) return;
+    if (!modalBuyer) {
+      alert("Error: No buyer selected.");
+      return;
+    }
+    if (!chillarId) {
+      alert("Error: Chillar ID missing. Please refresh the page.");
+      return;
+    }
 
     const payload = {
       date,
@@ -240,6 +247,7 @@ export default function SalesPage() {
     } catch (error) {
       console.error('Error submitting sale:', error);
       // Handle error (show toast, etc.)
+      throw error;
     }
   };
 
@@ -249,7 +257,7 @@ export default function SalesPage() {
     const totalSales = addedBuyers.reduce((sum, b) => sum + b.grossLiters, 0);
     const totalNetLiters = addedBuyers.reduce((sum, b) => sum + b.netLiters, 0);
     const difference = totalSales - totalNetLiters; // Difference between gross and net liters
-    
+
     return {
       salesTotal: totalSales,
       netLitersTotal: totalNetLiters,
@@ -288,7 +296,7 @@ export default function SalesPage() {
               </div>
             </div>
           </div>
-          
+
           {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <SummaryCard

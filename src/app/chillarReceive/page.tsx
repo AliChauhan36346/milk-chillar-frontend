@@ -46,7 +46,7 @@ export default function ChillarReceivePage() {
     lr: 0,
     fat: 0,
     netLiters: 0,
-  }); 
+  });
 
   const calculateNetLiters = (lr: number, fat: number, volume: number, tsStandard: number = 13): number => {
     const fatOperations = 0.22 * fat + 0.72;
@@ -143,7 +143,14 @@ export default function ChillarReceivePage() {
     lr: number;
     fat: number;
   }) => {
-    if (!modalDodhi || !chillarId || !chillarInchargeId) return;
+    if (!modalDodhi) {
+      alert("Error: No dodhi selected.");
+      return;
+    }
+    if (!chillarId || !chillarInchargeId) {
+      alert("Error: Chillar ID missing. Please refresh the page.");
+      return;
+    }
 
     const netLiters = calculateNetLiters(
       formData.lr,

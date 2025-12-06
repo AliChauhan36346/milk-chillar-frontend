@@ -1,7 +1,8 @@
 // components/modals/ChillarReceiveModal.tsx
 'use client';
 import { useState, useEffect } from 'react';
-import { CheckCircle, Plus, X, User, Calendar, Clock, Droplet, Weight, Percent, Scale } from 'lucide-react';
+import { CheckCircle, Plus, X, User, Calendar, Droplet, Weight, Percent, Scale, Edit } from 'lucide-react';
+import clsx from 'clsx';
 
 type DodhiFormData = {
   grossLiters: number;
@@ -13,7 +14,7 @@ type DodhiFormData = {
 type DodhiFormModalProps = {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: DodhiFormData) => void;
+  onSubmit: (data: DodhiFormData) => Promise<void> | void;
   initialData?: DodhiFormData;
   dodhiName: string;
   dodhiId: string;
@@ -38,177 +39,176 @@ export function DodhiFormModal({
   onInputChange
 }: DodhiFormModalProps) {
   const isUpdateMode = isFromAddedList;
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (isOpen) {
+      setIsSubmitting(false);
+    }
+  }, [isOpen]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formValues);
+    if (isSubmitting) return;
+
+    try {
+      setIsSubmitting(true);
+      await onSubmit(formValues);
+      // Parent usually closes the modal, so we rely on that.
+    } catch (error) {
+      console.error("Submission error", error);
+      alert("Failed to save record. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0  bg-opacity-30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+      <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100/50">
 
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
         {/* Header */}
-        <div className={`p-4 ${isUpdateMode ? 'bg-green-50 border-b' : 'bg-blue-600 text-white'}`}>
-          <div className="flex justify-between items-center">
-            <h3 className={`text-xl font-bold flex items-center gap-2 ${isUpdateMode ? 'text-green-700' : 'text-white'}`}>
-              {isUpdateMode ? (
-                <>
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                  Update Record
-                </>
-              ) : (
-                <>
-                  <Plus className="w-5 h-5" />
-                  Add New Record
-                </>
-              )}
-            </h3>
-            <button onClick={onClose} className={isUpdateMode ? "text-gray-500 hover:text-gray-700" : "text-white hover:text-blue-200"}>
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-
-        {/* Dodhi Info */}
-        <div className="bg-white p-4 border-b">
+        <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between bg-white">
           <div className="flex items-center gap-3">
-            <div className="bg-blue-100 p-2 rounded-full">
-              <User className="w-5 h-5 text-blue-600" />
+            <div className={clsx("p-2 rounded-xl", isUpdateMode ? "bg-green-50 text-green-600" : "bg-blue-50 text-blue-600")}>
+              {isUpdateMode ? <CheckCircle size={20} /> : <Plus size={20} />}
             </div>
             <div>
-              <h4 className="font-semibold text-gray-800">{dodhiName}</h4>
-              <p className="text-sm text-blue-600 font-medium">ID: {dodhiId}</p>
+              <h3 className="font-bold text-gray-900 text-lg leading-tight">
+                {isUpdateMode ? 'Update Record' : 'Add New Record'}
+              </h3>
+              <p className="text-xs text-gray-500">Enter daily collection details</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-full text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Info Bar */}
+        <div className="bg-gray-50/50 px-3 py-2 border-b border-gray-100 flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs">
+              {dodhiName.charAt(0)}
+            </div>
+            <div>
+              <h4 className="font-bold text-sm text-gray-900">{dodhiName}</h4>
+              <span className="text-xs text-blue-600 font-medium bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">ID: {dodhiId}</span>
             </div>
           </div>
 
-          {/* Date/Time Fields */}
-          <div className="grid grid-cols-2 gap-2 mt-4">
-            <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">Date</label>
-              <div className="relative">
-                <input
-                  type="date"
-                  value={date}
-                  readOnly
-                  className="w-full p-1 pl-10 border border-gray-300 rounded-lg bg-gray-100"
-                />
-                <Calendar className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-              </div>
+          <div className="text-xs text-gray-500 flex flex-col items-end font-medium">
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <Calendar size={12} className="text-gray-400" />
+              {new Date(date).toLocaleDateString()}
             </div>
-            <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">Time</label>
-              <div className="relative">
-                <select
-                  value={time}
-                  disabled
-                  className="w-full p-1 pl-10 border border-gray-300 rounded-lg appearance-none bg-gray-100"
-                >
-                  <option value="morning">Morning</option>
-                  <option value="evening">Evening</option>
-                </select>
-                <Clock className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-              </div>
-            </div>
+            <span className={clsx("capitalize px-1.5 py-0.5 rounded text-[10px] border", time === 'morning' ? "bg-yellow-50 text-yellow-700 border-yellow-100" : "bg-purple-50 text-purple-700 border-purple-100")}>
+              {time}
+            </span>
           </div>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-4 space-y-4">
+        <form onSubmit={handleSubmit} className="p-4 space-y-3">
+
           {/* Gross Liters */}
-          <div className="space-y-1">
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-              <Droplet className="w-4 h-4 text-blue-500" />
-              Gross Liters (L)
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide flex items-center gap-1">
+              Gross Liters
             </label>
-            <input
-              type="number"
-              value={formValues.grossLiters}
-              onChange={(e) => onInputChange('grossLiters', parseFloat(e.target.value) || 0)}
-              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              required
-              step="0.01"
-              placeholder="Enter quantity"
-            />
+            <div className="relative">
+              <input
+                type="number"
+                value={formValues.grossLiters || ''}
+                onChange={(e) => onInputChange('grossLiters', parseFloat(e.target.value) || 0)}
+                onWheel={(e) => e.currentTarget.blur()}
+                placeholder="0.00"
+                className="w-full pl-3 pr-8 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-semibold text-gray-900 focus:border-blue-500 focus:ring-4 focus:ring-blue-50/50 outline-none transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-medium">L</span>
+            </div>
           </div>
 
           {/* LR and Fat */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                <Weight className="w-4 h-4 text-green-500" />
-                LR (%)
-              </label>
-              <input
-                type="number"
-                value={formValues.lr}
-                onChange={(e) => onInputChange('lr', parseFloat(e.target.value) || 0)}
-                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                required
-                step="0.01"
-                placeholder="Enter LR"
-              />
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">LR</label>
+              <div className="relative">
+                <input
+                  type="number"
+                  value={formValues.lr || ''}
+                  onChange={(e) => onInputChange('lr', parseFloat(e.target.value) || 0)}
+                  onWheel={(e) => e.currentTarget.blur()}
+                  placeholder="0.00"
+                  className="w-full pl-3 pr-8 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-semibold text-gray-900 focus:border-blue-500 focus:ring-4 focus:ring-blue-50/50 outline-none transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-medium">LR</span>
+              </div>
             </div>
-            <div className="space-y-1">
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                <Percent className="w-4 h-4 text-purple-500" />
-                Fat (%)
-              </label>
-              <input
-                type="number"
-                value={formValues.fat}
-                onChange={(e) => onInputChange('fat', parseFloat(e.target.value) || 0)}
-                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                required
-                step="0.01"
-                placeholder="Enter fat"
-              />
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Fat %</label>
+              <div className="relative">
+                <input
+                  type="number"
+                  value={formValues.fat || ''}
+                  onChange={(e) => onInputChange('fat', parseFloat(e.target.value) || 0)}
+                  onWheel={(e) => e.currentTarget.blur()}
+                  placeholder="0.00"
+                  className="w-full pl-3 pr-8 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-semibold text-gray-900 focus:border-blue-500 focus:ring-4 focus:ring-blue-50/50 outline-none transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-medium">%</span>
+              </div>
             </div>
           </div>
 
           {/* Net Liters */}
-          <div className="space-y-1">
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-              <Scale className="w-4 h-4 text-orange-500" />
-              Net Liters (Calculated)
-            </label>
-            <input
-              type="number"
-              value={formValues.netLiters.toFixed(2)}
-              readOnly
-              className="w-full p-2 border border-gray-300 rounded-lg bg-gray-50 font-medium text-gray-800"
-            />
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Net Liters</label>
+            <div className="relative">
+              <input
+                type="number"
+                value={formValues.netLiters.toFixed(2)}
+                readOnly
+                className="w-full pl-3 pr-8 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-900 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-medium">Net</span>
+            </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-2 pt-2">
+          {/* Actions */}
+          <div className="grid grid-cols-2 gap-3 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2 px-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg font-medium transition-colors flex items-center justify-center gap-1"
+              className="py-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl font-semibold text-sm transition-all"
+              disabled={isSubmitting}
             >
-              <X className="w-5 h-5" />
               Cancel
             </button>
             <button
               type="submit"
-              className={`flex-1 py-2 px-2 rounded-lg font-medium flex items-center justify-center gap-0 transition-colors
-                ${isUpdateMode 
-                  ? 'bg-green-600 hover:bg-green-700 text-white' 
-                  : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
+              disabled={isSubmitting}
+              className={clsx(
+                "py-2.5 rounded-xl font-semibold text-sm text-white shadow-lg transition-all flex items-center justify-center gap-2",
+                isUpdateMode
+                  ? "bg-green-600 hover:bg-green-700 shadow-green-200 hover:shadow-green-300"
+                  : "bg-blue-600 hover:bg-blue-700 shadow-blue-200 hover:shadow-blue-300",
+                isSubmitting && "opacity-70 cursor-wait"
+              )}
             >
-              {isUpdateMode ? (
+              {isSubmitting ? (
                 <>
-                  <CheckCircle className="w-5 h-5" />
-                  Update
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  {isUpdateMode ? 'Updating...' : 'Saving...'}
                 </>
               ) : (
-                <>
-                  <Plus className="w-5 h-5" />
-                  Add Record
-                </>
+                isUpdateMode ? 'Update Record' : 'Save Record'
               )}
             </button>
           </div>

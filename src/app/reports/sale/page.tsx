@@ -239,6 +239,72 @@ export default function SalesReport() {
   };
 
   // Handle sales submit
+  // const handleSalesSubmit = async (data: {
+  //   grossLiters: number;
+  //   lr: number;
+  //   fat: number;
+  //   netLiters: number;
+  //   rate: number;
+  //   amount: number;
+  //   amountReceived: number;
+  //   revenueAccountId: number;
+  //   date: string;
+  // }) => {
+  //   if (!salesModalData || !currentSale) return;
+
+  //   try {
+  //     const chillarId = currentSale.chillarId;
+  //     if (!chillarId || chillarId <= 0) {
+  //       alert('Chillar ID is missing from sale record. Cannot update.');
+  //       return;
+  //     }
+
+  //     const revenueAccountId = data.revenueAccountId || currentSale.revenueAccountId;
+  //     if (!revenueAccountId || revenueAccountId <= 0) {
+  //       alert('Please select a revenue account');
+  //       return;
+  //     }
+
+  //     await updateSale(salesModalData.saleId, {
+  //       date: data.date,
+  //       accountId: salesModalData.buyer.id,
+  //       revenueAccountId: revenueAccountId,
+  //       chillarId: chillarId,
+  //       grossLiters: data.grossLiters,
+  //       lr: data.lr,
+  //       fat: data.fat,
+  //       netLiters: data.netLiters,
+  //       rate: data.rate,
+  //       amountReceived: data.amountReceived
+  //     });
+
+  //     setShowSalesModal(false);
+  //     setSalesModalData(null);
+  //     setCurrentSale(null);
+
+  //     // Refresh data
+  //     const params = {
+  //       startDate: dateRange.startDate,
+  //       endDate: dateRange.endDate,
+  //       ...(isAdmin && selectedChillarId && { chillarId: selectedChillarId }),
+  //       ...(!isAdmin && userChillarId && { chillarId: userChillarId })
+  //     };
+
+  //     if (view === 'detailed') {
+  //       const salesReportData = await getSalesReport(params);
+  //       setSalesData(salesReportData);
+  //       loadSummary();
+  //     } else {
+  //       const buyerData = await getBuyerWiseSalesReport(params);
+  //       setBuyerSummaryData(buyerData);
+  //     }
+  //   } catch (error: any) {
+  //     console.error('Failed to update sale:', error);
+  //     alert(error?.response?.data?.message || error?.message || 'Failed to update sale');
+  //     throw error;
+  //   }
+  // };
+
   const handleSalesSubmit = async (data: {
     grossLiters: number;
     lr: number;
@@ -249,22 +315,24 @@ export default function SalesReport() {
     amountReceived: number;
     revenueAccountId: number;
     date: string;
-  }) => {
-    if (!salesModalData || !currentSale) return;
+  }): Promise<void> => {
+    if (!salesModalData || !currentSale) {
+      throw new Error('Missing sale data');
+    }
+
+    const chillarId = currentSale.chillarId;
+    if (!chillarId || chillarId <= 0) {
+      alert('Chillar ID is missing from sale record. Cannot update.');
+      throw new Error('Invalid chillar ID');
+    }
+
+    const revenueAccountId = data.revenueAccountId || currentSale.revenueAccountId;
+    if (!revenueAccountId || revenueAccountId <= 0) {
+      alert('Please select a revenue account');
+      throw new Error('Invalid revenue account');
+    }
 
     try {
-      const chillarId = currentSale.chillarId;
-      if (!chillarId || chillarId <= 0) {
-        alert('Chillar ID is missing from sale record. Cannot update.');
-        return;
-      }
-
-      const revenueAccountId = data.revenueAccountId || currentSale.revenueAccountId;
-      if (!revenueAccountId || revenueAccountId <= 0) {
-        alert('Please select a revenue account');
-        return;
-      }
-
       await updateSale(salesModalData.saleId, {
         date: data.date,
         accountId: salesModalData.buyer.id,
@@ -278,6 +346,7 @@ export default function SalesReport() {
         amountReceived: data.amountReceived
       });
 
+      // Close modal on success
       setShowSalesModal(false);
       setSalesModalData(null);
       setCurrentSale(null);
@@ -300,7 +369,9 @@ export default function SalesReport() {
       }
     } catch (error: any) {
       console.error('Failed to update sale:', error);
-      alert(error?.response?.data?.message || error?.message || 'Failed to update sale');
+      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to update sale';
+      alert(errorMessage);
+      // Re-throw the error so the modal knows it failed
       throw error;
     }
   };
