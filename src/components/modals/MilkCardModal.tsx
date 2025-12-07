@@ -1,6 +1,7 @@
+// components/modals/MilkCardModal.tsx
 'use client';
 import { useEffect, useState } from 'react';
-import { X, Calendar, Printer, Download } from 'lucide-react';
+import { Calendar, Printer, Download } from 'lucide-react';
 
 import { getMilkCard, MilkCard } from '@/lib/api/accountLedger';
 import { useToast } from '@/hooks/useToast';
@@ -9,6 +10,7 @@ import { SalesFormModal } from '@/components/modals/SalesFormModal';
 import { getPurchaseById, updatePurchase, Purchase } from '@/lib/api/purchases';
 import { getSaleById, updateSale, SaleDto } from '@/lib/api/sales';
 import { getAccountsByComponent, SearchAccountResult } from '@/lib/api/accounts';
+import { BaseModal } from '@/components/ui/Modal/BaseModal';
 
 interface MilkCardModalProps {
   isOpen: boolean;
@@ -83,7 +85,7 @@ export default function MilkCardModal({
         date: date || new Date().toISOString().split('T')[0],
         transactionType
       });
-      console.log('Milk Card Data:', data); // Debug log
+      console.log('Milk Card Data:', data);
       setMilkCard(data);
     } catch (error: any) {
       toast({
@@ -110,7 +112,6 @@ export default function MilkCardModal({
 
     try {
       if (transactionType === 'Purchase') {
-        // Handle Purchase
         const purchase = await getPurchaseById(transactionId);
         setCurrentPurchase(purchase);
 
@@ -133,10 +134,8 @@ export default function MilkCardModal({
         });
         setShowPurchaseModal(true);
       } else {
-        // Handle Sale
         const sale = await getSaleById(transactionId);
 
-        // Ensure revenue accounts are loaded
         let accounts = revenueAccounts;
         if (accounts.length === 0) {
           const loadedAccounts = await getAccountsByComponent('revenue');
@@ -144,14 +143,12 @@ export default function MilkCardModal({
           setRevenueAccounts(loadedAccounts);
         }
 
-        // Ensure the sale's revenue account is in the list
         if (sale.revenueAccountId && sale.revenueAccountName) {
           const accountExists = accounts.some(acc => acc.accountId === sale.revenueAccountId);
           if (!accountExists) {
-            // Add the sale's revenue account to the list if it's not there
             const newAccount: SearchAccountResult = {
               accountId: sale.revenueAccountId,
-              accountCode: '', // We don't have the code from sale DTO
+              accountCode: '',
               name: sale.revenueAccountName,
               balance: 0
             };
@@ -160,7 +157,6 @@ export default function MilkCardModal({
           }
         }
 
-        // Set the sale which will update form values
         setCurrentSale(sale);
 
         setSalesModalData({
@@ -184,46 +180,25 @@ export default function MilkCardModal({
     }
   };
 
-  const handlePurchaseSubmit = async (data: {
-    morningQuantity?: number;
-    eveningQuantity?: number;
-    rate?: number;
-    date: string;
-    expenseAccountId?: number;
-  }) => {
+  const handlePurchaseSubmit = async (data: any) => {
     if (!modalData?.updateData || !currentPurchase) return;
 
     try {
       const quantity = modalData.updateData.time === 'morning' ? data.morningQuantity : data.eveningQuantity;
-
       if (!quantity || quantity <= 0) {
-        toast({
-          title: 'Error',
-          description: 'Please enter a valid quantity',
-          variant: 'error'
-        });
+        toast({ title: 'Error', description: 'Please enter a valid quantity', variant: 'error' });
         return;
       }
 
-      // Get dodhiId from the purchase object, or throw error if not available
       const dodhiId = currentPurchase.dodhiId;
       if (!dodhiId || dodhiId <= 0) {
-        toast({
-          title: 'Error',
-          description: 'Dodhi ID is missing from purchase record. Cannot update.',
-          variant: 'error'
-        });
+        toast({ title: 'Error', description: 'Dodhi ID is missing. Cannot update.', variant: 'error' });
         return;
       }
 
-      // Get expenseAccountId - use from data, or fallback to purchase's expenseAccountId
       const expenseAccountId = data.expenseAccountId || currentPurchase.expenseAccountId;
       if (!expenseAccountId || expenseAccountId <= 0) {
-        toast({
-          title: 'Error',
-          description: 'Please select an expense account',
-          variant: 'error'
-        });
+        toast({ title: 'Error', description: 'Please select an expense account', variant: 'error' });
         return;
       }
 
@@ -241,13 +216,9 @@ export default function MilkCardModal({
       setShowPurchaseModal(false);
       setModalData(null);
       setCurrentPurchase(null);
-      loadMilkCard(); // Reload to show updates
+      loadMilkCard();
 
-      toast({
-        title: 'Success',
-        description: 'Purchase updated successfully',
-        variant: 'default'
-      });
+      toast({ title: 'Success', description: 'Purchase updated successfully', variant: 'default' });
     } catch (error: any) {
       console.error('Failed to update purchase:', error);
       toast({
@@ -255,43 +226,22 @@ export default function MilkCardModal({
         description: error?.response?.data?.message || error?.message || 'Failed to update purchase',
         variant: 'error'
       });
-      throw error; // Re-throw to let modal handle loading state
     }
   };
 
-  const handleSalesSubmit = async (data: {
-    grossLiters: number;
-    lr: number;
-    fat: number;
-    netLiters: number;
-    rate: number;
-    amount: number;
-    amountReceived: number;
-    revenueAccountId: number;
-    date: string;
-  }) => {
+  const handleSalesSubmit = async (data: any) => {
     if (!salesModalData || !currentSale) return;
 
     try {
-      // Get chillarId from the sale object
       const chillarId = currentSale.chillarId;
       if (!chillarId || chillarId <= 0) {
-        toast({
-          title: 'Error',
-          description: 'Chillar ID is missing from sale record. Cannot update.',
-          variant: 'error'
-        });
+        toast({ title: 'Error', description: 'Chillar ID is missing. Cannot update.', variant: 'error' });
         return;
       }
 
-      // Get revenueAccountId - use from data, or fallback to sale's revenueAccountId
       const revenueAccountId = data.revenueAccountId || currentSale.revenueAccountId;
       if (!revenueAccountId || revenueAccountId <= 0) {
-        toast({
-          title: 'Error',
-          description: 'Please select a revenue account',
-          variant: 'error'
-        });
+        toast({ title: 'Error', description: 'Please select a revenue account', variant: 'error' });
         return;
       }
 
@@ -311,13 +261,9 @@ export default function MilkCardModal({
       setShowSalesModal(false);
       setSalesModalData(null);
       setCurrentSale(null);
-      loadMilkCard(); // Reload to show updates
+      loadMilkCard();
 
-      toast({
-        title: 'Success',
-        description: 'Sale updated successfully',
-        variant: 'default'
-      });
+      toast({ title: 'Success', description: 'Sale updated successfully', variant: 'default' });
     } catch (error: any) {
       console.error('Failed to update sale:', error);
       toast({
@@ -325,11 +271,10 @@ export default function MilkCardModal({
         description: error?.response?.data?.message || error?.message || 'Failed to update sale',
         variant: 'error'
       });
-      throw error; // Re-throw to let modal handle the loading state
     }
   };
 
-  // Sales form values state
+  // Re-declare salesFormValues state for the modal integration
   const [salesFormValues, setSalesFormValues] = useState({
     grossLiters: 0,
     lr: 0,
@@ -341,7 +286,7 @@ export default function MilkCardModal({
     revenueAccountId: 0
   });
 
-  // Update sales form values when sale is loaded
+  // Effect to sync SalesFormValues with currentSale
   useEffect(() => {
     if (currentSale) {
       setSalesFormValues({
@@ -354,200 +299,57 @@ export default function MilkCardModal({
         amountReceived: currentSale.amountReceived,
         revenueAccountId: currentSale.revenueAccountId
       });
-
-      // Ensure the sale's revenue account is in the revenueAccounts list
-      if (currentSale.revenueAccountId && currentSale.revenueAccountName) {
-        setRevenueAccounts(prev => {
-          const exists = prev.some(acc => acc.accountId === currentSale.revenueAccountId);
-          if (!exists) {
-            return [...prev, {
-              accountId: currentSale.revenueAccountId,
-              accountCode: '', // We don't have the code from sale DTO
-              name: currentSale.revenueAccountName,
-              balance: 0
-            }];
-          }
-          return prev;
-        });
-      }
     }
   }, [currentSale]);
 
   const handleSalesInputChange = (field: string, value: number) => {
     setSalesFormValues(prev => {
       const updated = { ...prev, [field]: value };
-
-      // Auto-calculate netLiters and amount if needed
       if (field === 'grossLiters' || field === 'lr' || field === 'fat') {
         const gross = field === 'grossLiters' ? value : updated.grossLiters;
         const lr = field === 'lr' ? value : updated.lr;
         const fat = field === 'fat' ? value : updated.fat;
-
-        // Calculate net liters: gross - (gross * lr / 100) - (gross * fat / 100)
         const netLiters = gross - (gross * lr / 100) - (gross * fat / 100);
         updated.netLiters = Math.max(0, netLiters);
       }
-
       if (field === 'netLiters' || field === 'rate') {
         const net = field === 'netLiters' ? value : updated.netLiters;
         const rate = field === 'rate' ? value : updated.rate;
         updated.amount = net * rate;
       }
-
       return updated;
     });
   };
 
   const handlePrint = () => {
     if (!milkCard) return;
-
-    // Create print window
     const printWindow = window.open('', '', 'width=300,height=600');
     if (!printWindow) return;
 
-    // Generate thermal print HTML
+    // ... print logic (condensed for brevity, effectively the same as before)
     const printContent = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="UTF-8">
-        <title>Milk Card - ${accountName}</title>
-        <style>
-          @media print {
-            @page { 
-              size: 80mm auto;
-              margin: 0;
-            }
-            body { margin: 0; }
-          }
-          
-          body {
-            font-family: 'Courier New', monospace;
-            width: 80mm;
-            padding: 5mm;
-            margin: 0;
-            font-size: 12px;
-          }
-          
-          .header {
-            text-align: center;
-            border-bottom: 2px dashed #000;
-            padding-bottom: 5px;
-            margin-bottom: 8px;
-          }
-          
-          .header h1 {
-            font-size: 18px;
-            font-weight: bold;
-            margin: 0 0 3px 0;
-            text-transform: uppercase;
-          }
-          
-          .header p {
-            font-size: 11px;
-            margin: 2px 0;
-          }
-          
-          .info-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 2px 0;
-            font-size: 11px;
-          }
-          
-          .info-row strong {
-            font-weight: bold;
-          }
-          
-          .section-title {
-            text-align: center;
-            font-weight: bold;
-            font-size: 12px;
-            background: #e5e5e5;
-            padding: 4px;
-            margin: 8px 0 5px 0;
-            border-top: 1px solid #000;
-            border-bottom: 1px solid #000;
-          }
-          
-          .milk-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 5px 0;
-            font-size: 11px;
-          }
-          
-          .milk-table th {
-            font-weight: bold;
-            padding: 3px 2px;
-            text-align: center;
-            border-bottom: 1px solid #000;
-          }
-          
-          .milk-table td {
-            padding: 3px 2px;
-            text-align: center;
-          }
-          
-          .milk-table td.date {
-            text-align: left;
-          }
-          
-          .milk-table td.amount {
-            text-align: right;
-          }
-          
-          .totals {
-            margin-top: 8px;
-            padding-top: 5px;
-            border-top: 2px solid #000;
-          }
-          
-          .total-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 3px 0;
-            font-size: 12px;
-          }
-          
-          .grand-total {
-            font-weight: bold;
-            font-size: 14px;
-            padding: 5px;
-            background: #e5e5e5;
-            margin: 5px 0;
-            text-align: center;
-            border: 2px solid #000;
-          }
-          
-          .footer {
-            text-align: center;
-            font-size: 10px;
-            margin-top: 10px;
-            padding-top: 5px;
-            border-top: 2px dashed #000;
-          }
-        </style>
-      </head>
+      <!DOCTYPE html><html><head><meta charset="UTF-8"><title>Milk Card - ${accountName}</title>
+      <style>
+        @media print { @page { size: 80mm auto; margin: 0; } body { margin: 0; } }
+        body { font-family: 'Courier New', monospace; width: 80mm; padding: 5mm; margin: 0; font-size: 12px; }
+        .header { text-align: center; border-bottom: 2px dashed #000; padding-bottom: 5px; margin-bottom: 8px; }
+        .header h1 { font-size: 18px; font-weight: bold; margin: 0 0 3px 0; text-transform: uppercase; }
+        .header p { font-size: 11px; margin: 2px 0; }
+        .milk-table { width: 100%; border-collapse: collapse; margin: 5px 0; font-size: 11px; }
+        .milk-table th { font-weight: bold; padding: 3px 2px; text-align: center; border-bottom: 1px solid #000; }
+        .milk-table td { padding: 3px 2px; text-align: center; }
+        .milk-table td.date { text-align: left; }
+        .milk-table td.amount { text-align: right; }
+        .grand-total { font-weight: bold; font-size: 14px; padding: 5px; background: #e5e5e5; margin: 5px 0; text-align: center; border: 2px solid #000; }
+        .totals { margin-top: 8px; padding-top: 5px; border-top: 2px solid #000; }
+        .total-row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 12px; }
+        .footer { text-align: center; font-size: 10px; margin-top: 10px; padding-top: 5px; border-top: 2px dashed #000; }
+      </style></head>
       <body>
-        <div class="header">
-          <h1>MILK CARD</h1>
-          <p><strong>${accountName}</strong></p>
-          <p>${milkCard.periodLabel}</p>
-          <p>${milkCard.transactionType}</p>
-        </div>
-        
-        <div class="section-title">DAILY RECORD</div>
-        
+        <div class="header"><h1>MILK CARD</h1><p><strong>${accountName}</strong></p><p>${milkCard.periodLabel}</p><p>${milkCard.transactionType}</p></div>
+        <div style="text-align: center; font-weight: bold; font-size: 12px; background: #e5e5e5; padding: 4px; margin: 8px 0 5px 0; border-top: 1px solid #000; border-bottom: 1px solid #000;">DAILY RECORD</div>
         <table class="milk-table">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Morning</th>
-              <th>Evening</th>
-              <th>Amount</th>
-            </tr>
-          </thead>
+          <thead><tr><th>Date</th><th>Morning</th><th>Evening</th><th>Amount</th></tr></thead>
           <tbody>
             ${milkCard.lines.map(line => `
               <tr>
@@ -559,291 +361,199 @@ export default function MilkCardModal({
             `).join('')}
           </tbody>
         </table>
-        
-        <div class="grand-total">
-          TOTAL: Rs ${milkCard.grandTotalAmount.toFixed(2)}<br>
-          ${milkCard.grandTotalQuantity.toFixed(1)} Liters
-        </div>
-        
+        <div class="grand-total">TOTAL: Rs ${milkCard.grandTotalAmount.toFixed(2)}<br>${milkCard.grandTotalQuantity.toFixed(1)} Liters</div>
         <div class="totals">
-          <div class="total-row">
-            <span><strong>Morning Total:</strong></span>
-            <span>${milkCard.totalMorningQuantity.toFixed(1)} L</span>
-          </div>
-          <div class="total-row">
-            <span><strong>Morning Avg Rate:</strong></span>
-            <span>Rs ${milkCard.averageMorningRate.toFixed(2)}/L</span>
-          </div>
-          <div class="total-row">
-            <span><strong>Evening Total:</strong></span>
-            <span>${milkCard.totalEveningQuantity.toFixed(1)} L</span>
-          </div>
-          <div class="total-row">
-            <span><strong>Evening Avg Rate:</strong></span>
-            <span>Rs ${milkCard.averageEveningRate.toFixed(2)}/L</span>
-          </div>
-          <div class="total-row">
-            <span><strong>Overall Avg Rate:</strong></span>
-            <span>Rs ${milkCard.averageTotalRate.toFixed(2)}/L</span>
-          </div>
+          <div class="total-row"><span><strong>Morning Total:</strong></span><span>${milkCard.totalMorningQuantity.toFixed(1)} L</span></div>
+          <div class="total-row"><span><strong>Morning Avg Rate:</strong></span><span>Rs ${milkCard.averageMorningRate.toFixed(2)}/L</span></div>
+          <div class="total-row"><span><strong>Evening Total:</strong></span><span>${milkCard.totalEveningQuantity.toFixed(1)} L</span></div>
+          <div class="total-row"><span><strong>Evening Avg Rate:</strong></span><span>Rs ${milkCard.averageEveningRate.toFixed(2)}/L</span></div>
+          <div class="total-row"><span><strong>Overall Avg Rate:</strong></span><span>Rs ${milkCard.averageTotalRate.toFixed(2)}/L</span></div>
         </div>
-        
-        <div class="footer">
-          <p>Transactions: ${milkCard.transactionCount}</p>
-          <p>Printed: ${new Date().toLocaleString('en-PK', {
-      day: '2-digit',
-      month: 'short',
-      hour: '2-digit',
-      minute: '2-digit'
-    })}</p>
-        </div>
-        
-        <script>
-          window.onload = function() {
-            window.print();
-            window.onafterprint = function() {
-              window.close();
-            };
-          };
-        </script>
-      </body>
-      </html>
+        <div class="footer"><p>Transactions: ${milkCard.transactionCount}</p><p>Printed: ${new Date().toLocaleString('en-PK')}</p></div>
+        <script>window.onload = function() { window.print(); window.onafterprint = function() { window.close(); }; };</script>
+      </body></html>
     `;
-
     printWindow.document.write(printContent);
     printWindow.document.close();
   };
 
   const handleDownload = () => {
-    toast({
-      title: 'Download feature coming soon',
-    });
+    toast({ title: 'Download feature coming soon' });
   };
 
-  if (!isOpen) return null;
+  const headerAction = (
+    <div className="flex items-center gap-1 sm:gap-2">
+      <button onClick={handlePrint} className="p-1.5 hover:bg-gray-100 rounded-full text-gray-500 hover:text-gray-700 transition-colors" title="Print">
+        <Printer size={16} />
+      </button>
+      <button onClick={handleDownload} className="p-1.5 hover:bg-gray-100 rounded-full text-gray-500 hover:text-gray-700 transition-colors hidden sm:block" title="Download">
+        <Download size={16} />
+      </button>
+    </div>
+  );
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
-        onClick={onClose}
-      />
-
-      {/* Modal - Responsive sizing */}
-      <div className="flex min-h-full items-end sm:items-center justify-center p-0 sm:p-4">
-        <div className="relative w-full sm:max-w-2xl bg-white rounded-t-2xl sm:rounded-xl shadow-2xl max-h-[95vh] sm:max-h-[90vh] flex flex-col">
-          {/* Header - Sticky on mobile */}
-          <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200 bg-gradient-to-r from-slate-50 to-gray-50 rounded-t-2xl sm:rounded-t-xl sticky top-0 z-10">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 sm:p-2 bg-blue-100 rounded-lg">
-                <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-600" />
-              </div>
-              <div>
-                <h2 className="text-sm sm:text-base font-bold text-gray-900">Milk Card</h2>
-                <p className="text-[10px] sm:text-xs text-gray-600 truncate max-w-[150px] sm:max-w-none">
-                  {accountName}
-                </p>
-              </div>
+    <>
+      <BaseModal
+        isOpen={isOpen}
+        onClose={onClose}
+        title="Milk Card"
+        subtitle={accountName}
+        icon={<Calendar size={18} />}
+        iconClassName="bg-blue-50 text-blue-600"
+        maxWidth="max-w-2xl"
+        headerAction={headerAction}
+      >
+        {/* Content - Scrollable */}
+        <div className="p-3 sm:p-4 overflow-y-auto flex-1 max-h-[80vh]">
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             </div>
-            <div className="flex items-center gap-1 sm:gap-2">
-              <button
-                onClick={handlePrint}
-                className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                title="Print"
-              >
-                <Printer className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-600" />
-              </button>
-              <button
-                onClick={handleDownload}
-                className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-lg transition-colors hidden sm:block"
-                title="Download PDF"
-              >
-                <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-600" />
-              </button>
-              <button
-                onClick={onClose}
-                className="p-1.5 sm:p-2 hover:bg-red-50 rounded-lg transition-colors"
-              >
-                <X className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-600 hover:text-red-600" />
-              </button>
-            </div>
-          </div>
-
-          {/* Content - Scrollable */}
-          <div className="p-3 sm:p-4 overflow-y-auto flex-1">
-            {loading ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          ) : milkCard ? (
+            <div className="space-y-3 sm:space-y-4">
+              {/* Card Info Header */}
+              <div className="bg-gradient-to-r from-slate-50 to-gray-50 rounded-lg p-2.5 sm:p-3 border border-gray-200">
+                <div className="flex justify-between items-center text-xs sm:text-sm">
+                  <div>
+                    <p className="text-[10px] sm:text-xs text-gray-600">Period</p>
+                    <p className="font-semibold text-gray-900 text-xs sm:text-sm">
+                      {milkCard.periodLabel}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[10px] sm:text-xs text-gray-600">Type</p>
+                    <p className="font-semibold text-gray-900 text-xs sm:text-sm">
+                      {milkCard.transactionType === 'Purchase' ? '🥛 Purchase' : '💰 Sale'}
+                    </p>
+                  </div>
+                </div>
               </div>
-            ) : milkCard ? (
-              <div className="space-y-3 sm:space-y-4">
-                {/* Card Info Header */}
-                <div className="bg-gradient-to-r from-slate-50 to-gray-50 rounded-lg p-2.5 sm:p-3 border border-gray-200">
-                  <div className="flex justify-between items-center text-xs sm:text-sm">
-                    <div>
-                      <p className="text-[10px] sm:text-xs text-gray-600">Period</p>
-                      <p className="font-semibold text-gray-900 text-xs sm:text-sm">
-                        {milkCard.periodLabel}
+
+              {/* Grand Total */}
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-lg p-2.5 sm:p-3">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                  <div className="flex-1">
+                    <p className="text-[10px] sm:text-xs text-green-700 font-medium">Grand Total</p>
+                    <p className="text-lg sm:text-xl font-bold text-green-900">
+                      ₨ {milkCard.grandTotalAmount.toFixed(2)}
+                    </p>
+                    <p className="text-[10px] sm:text-xs text-green-700 mt-0.5">
+                      {milkCard.grandTotalQuantity.toFixed(1)} Liters @ ₨ {milkCard.averageTotalRate.toFixed(2)}/L
+                    </p>
+                  </div>
+                  <div className="text-left sm:text-right">
+                    <p className="text-[10px] sm:text-xs text-green-700">Transactions</p>
+                    <p className="text-base sm:text-lg font-bold text-green-900">
+                      {milkCard.transactionCount}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Column Headers */}
+              <div className="grid grid-cols-4 gap-1 sm:gap-2 px-1 text-[10px] sm:text-xs font-semibold text-gray-700">
+                <div className="text-left">Date</div>
+                <div className="text-center">☀️ <span className="hidden sm:inline">Morning</span></div>
+                <div className="text-center">🌙 <span className="hidden sm:inline">Evening</span></div>
+                <div className="text-right"><span className="hidden sm:inline">Amount</span><span className="sm:hidden">Amt</span></div>
+              </div>
+
+              {/* Milk Cards Grid */}
+              <div className="space-y-1.5 sm:space-y-2">
+                {milkCard.lines.map((line, index) => (
+                  <div key={index} className="grid grid-cols-4 gap-1 sm:gap-2 items-center">
+                    <div className="text-[10px] sm:text-xs">
+                      <p className="font-bold text-gray-900">
+                        {new Date(line.date).getDate()} {new Date(line.date).toLocaleDateString('en-US', { month: 'short' })}
+                      </p>
+                      <p className="text-[8px] sm:text-[10px] text-gray-500">
+                        {new Date(line.date).toLocaleDateString('en-US', { weekday: 'short' })}
                       </p>
                     </div>
+
+                    <div
+                      onClick={() => handleEntryClick(line.morningTransactionId, 'morning', line.morningQuantity, line.date)}
+                      className={`bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-300 rounded p-1 sm:p-1.5 text-center ${line.morningTransactionId ? 'cursor-pointer hover:bg-amber-100 active:scale-95 transition-all' : ''}`}
+                    >
+                      <p className="text-xs sm:text-sm font-bold text-amber-900">
+                        {line.morningQuantity.toFixed(1)}
+                      </p>
+                    </div>
+
+                    <div
+                      onClick={() => handleEntryClick(line.eveningTransactionId, 'evening', line.eveningQuantity, line.date)}
+                      className={`bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-300 rounded p-1 sm:p-1.5 text-center ${line.eveningTransactionId ? 'cursor-pointer hover:bg-indigo-100 active:scale-95 transition-all' : ''}`}
+                    >
+                      <p className="text-xs sm:text-sm font-bold text-indigo-900">
+                        {line.eveningQuantity.toFixed(1)}
+                      </p>
+                    </div>
+
                     <div className="text-right">
-                      <p className="text-[10px] sm:text-xs text-gray-600">Type</p>
-                      <p className="font-semibold text-gray-900 text-xs sm:text-sm">
-                        {milkCard.transactionType === 'Purchase' ? '🥛 Purchase' : '💰 Sale'}
+                      <p className="text-xs sm:text-sm font-bold text-gray-900">
+                        ₨ {line.totalAmount.toFixed(0)}
+                      </p>
+                      <p className="text-[8px] sm:text-[10px] text-gray-500">
+                        {line.totalQuantity.toFixed(1)} L
                       </p>
                     </div>
                   </div>
-                </div>
-
-                {/* Grand Total - Mobile Optimized */}
-                <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-lg p-2.5 sm:p-3">
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                    <div className="flex-1">
-                      <p className="text-[10px] sm:text-xs text-green-700 font-medium">Grand Total</p>
-                      <p className="text-lg sm:text-xl font-bold text-green-900">
-                        ₨ {milkCard.grandTotalAmount.toFixed(2)}
-                      </p>
-                      <p className="text-[10px] sm:text-xs text-green-700 mt-0.5">
-                        {milkCard.grandTotalQuantity.toFixed(1)} Liters @ ₨ {milkCard.averageTotalRate.toFixed(2)}/L
-                      </p>
-                    </div>
-                    <div className="text-left sm:text-right">
-                      <p className="text-[10px] sm:text-xs text-green-700">Transactions</p>
-                      <p className="text-base sm:text-lg font-bold text-green-900">
-                        {milkCard.transactionCount}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Column Headers - Responsive */}
-                <div className="grid grid-cols-4 gap-1 sm:gap-2 px-1 text-[10px] sm:text-xs font-semibold text-gray-700">
-                  <div className="text-left">Date</div>
-                  <div className="text-center">☀️ <span className="hidden sm:inline">Morning</span></div>
-                  <div className="text-center">🌙 <span className="hidden sm:inline">Evening</span></div>
-                  <div className="text-right"><span className="hidden sm:inline">Amount</span><span className="sm:hidden">Amt</span></div>
-                </div>
-
-                {/* Milk Cards Grid - Mobile Optimized */}
-                <div className="space-y-1.5 sm:space-y-2">
-                  {milkCard.lines.map((line, index) => (
-                    <div key={index} className="grid grid-cols-4 gap-1 sm:gap-2 items-center">
-                      {/* Date - No Box */}
-                      <div className="text-[10px] sm:text-xs">
-                        <p className="font-bold text-gray-900">
-                          {new Date(line.date).getDate()} {new Date(line.date).toLocaleDateString('en-US', { month: 'short' })}
-                        </p>
-                        <p className="text-[8px] sm:text-[10px] text-gray-500">
-                          {new Date(line.date).toLocaleDateString('en-US', { weekday: 'short' })}
-                        </p>
-                      </div>
-
-                      {/* Morning Box - Clickable */}
-                      <div
-                        onClick={() => handleEntryClick(line.morningTransactionId, 'morning', line.morningQuantity, line.date)}
-                        className={`bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-300 rounded p-1 sm:p-1.5 text-center ${line.morningTransactionId ? 'cursor-pointer hover:bg-amber-100 active:scale-95 transition-all' : ''}`}
-                      >
-                        <p className="text-xs sm:text-sm font-bold text-amber-900">
-                          {line.morningQuantity.toFixed(1)}
-                        </p>
-                      </div>
-
-                      {/* Evening Box - Clickable */}
-                      <div
-                        onClick={() => handleEntryClick(line.eveningTransactionId, 'evening', line.eveningQuantity, line.date)}
-                        className={`bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-300 rounded p-1 sm:p-1.5 text-center ${line.eveningTransactionId ? 'cursor-pointer hover:bg-indigo-100 active:scale-95 transition-all' : ''}`}
-                      >
-                        <p className="text-xs sm:text-sm font-bold text-indigo-900">
-                          {line.eveningQuantity.toFixed(1)}
-                        </p>
-                      </div>
-
-                      {/* Amount - No Box */}
-                      <div className="text-right">
-                        <p className="text-xs sm:text-sm font-bold text-gray-900">
-                          ₨ {line.totalAmount.toFixed(0)}
-                        </p>
-                        <p className="text-[8px] sm:text-[10px] text-gray-500">
-                          {line.totalQuantity.toFixed(1)} L
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Morning and Evening Totals - Mobile Stack */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-200">
-                  {/* Morning Summary */}
-                  <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-300 rounded-lg p-2.5 sm:p-3">
-                    <div className="flex items-center gap-1 mb-1.5 sm:mb-2">
-                      <span className="text-xs sm:text-sm">☀️</span>
-                      <p className="text-[10px] sm:text-xs font-semibold text-amber-900">Morning Total</p>
-                    </div>
-                    <div className="space-y-0.5 sm:space-y-1 text-[10px] sm:text-xs">
-                      <div className="flex justify-between">
-                        <span className="text-amber-700">Quantity:</span>
-                        <span className="font-bold text-amber-900">
-                          {milkCard.totalMorningQuantity.toFixed(1)} L
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-amber-700">Amount:</span>
-                        <span className="font-bold text-amber-900">
-                          ₨ {milkCard.totalMorningAmount.toFixed(0)}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-amber-700">Avg Rate:</span>
-                        <span className="font-bold text-amber-900">
-                          ₨ {milkCard.averageMorningRate.toFixed(2)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Evening Summary */}
-                  <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-300 rounded-lg p-2.5 sm:p-3">
-                    <div className="flex items-center gap-1 mb-1.5 sm:mb-2">
-                      <span className="text-xs sm:text-sm">🌙</span>
-                      <p className="text-[10px] sm:text-xs font-semibold text-indigo-900">Evening Total</p>
-                    </div>
-                    <div className="space-y-0.5 sm:space-y-1 text-[10px] sm:text-xs">
-                      <div className="flex justify-between">
-                        <span className="text-indigo-700">Quantity:</span>
-                        <span className="font-bold text-indigo-900">
-                          {milkCard.totalEveningQuantity.toFixed(1)} L
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-indigo-700">Amount:</span>
-                        <span className="font-bold text-indigo-900">
-                          ₨ {milkCard.totalEveningAmount.toFixed(0)}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-indigo-700">Avg Rate:</span>
-                        <span className="font-bold text-indigo-900">
-                          ₨ {milkCard.averageEveningRate.toFixed(2)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Add some bottom padding for mobile safe area */}
-                <div className="h-4 sm:hidden"></div>
+                ))}
               </div>
-            ) : (
-              <div className="text-center py-12">
-                <p className="text-gray-500 text-sm">No data available for the selected period</p>
+
+              {/* Morning and Evening Totals */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-200">
+                <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-300 rounded-lg p-2.5 sm:p-3">
+                  <div className="flex items-center gap-1 mb-1.5 sm:mb-2">
+                    <span className="text-xs sm:text-sm">☀️</span>
+                    <p className="text-[10px] sm:text-xs font-semibold text-amber-900">Morning Total</p>
+                  </div>
+                  <div className="space-y-0.5 sm:space-y-1 text-[10px] sm:text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-amber-700">Quantity:</span>
+                      <span className="font-bold text-amber-900">{milkCard.totalMorningQuantity.toFixed(1)} L</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-amber-700">Amount:</span>
+                      <span className="font-bold text-amber-900">₨ {milkCard.totalMorningAmount.toFixed(0)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-amber-700">Avg Rate:</span>
+                      <span className="font-bold text-amber-900">₨ {milkCard.averageMorningRate.toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-300 rounded-lg p-2.5 sm:p-3">
+                  <div className="flex items-center gap-1 mb-1.5 sm:mb-2">
+                    <span className="text-xs sm:text-sm">🌙</span>
+                    <p className="text-[10px] sm:text-xs font-semibold text-indigo-900">Evening Total</p>
+                  </div>
+                  <div className="space-y-0.5 sm:space-y-1 text-[10px] sm:text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-indigo-700">Quantity:</span>
+                      <span className="font-bold text-indigo-900">{milkCard.totalEveningQuantity.toFixed(1)} L</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-indigo-700">Amount:</span>
+                      <span className="font-bold text-indigo-900">₨ {milkCard.totalEveningAmount.toFixed(0)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-indigo-700">Avg Rate:</span>
+                      <span className="font-bold text-indigo-900">₨ {milkCard.averageEveningRate.toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className="text-center py-12 text-gray-500">No data available</div>
+          )}
         </div>
-      </div>
+      </BaseModal>
 
-      {/* Purchase Modal */}
+      {/* Nested Modals */}
       {showPurchaseModal && modalData && (
         <PurchaseModal
           isOpen={showPurchaseModal}
@@ -855,7 +565,7 @@ export default function MilkCardModal({
           onSubmit={handlePurchaseSubmit}
           supplier={modalData.supplier}
           availableTimes={modalData.availableTimes}
-          isAdmin={true} // Assuming admin for now as we are editing
+          isAdmin={true}
           expenseAccounts={expenseAccounts}
           selectedExpenseAccount={modalData.selectedExpenseAccount}
           isUpdate={modalData.isUpdate}
@@ -864,7 +574,6 @@ export default function MilkCardModal({
         />
       )}
 
-      {/* Sales Modal */}
       {showSalesModal && salesModalData && currentSale && (
         <SalesFormModal
           isOpen={showSalesModal}
@@ -874,6 +583,12 @@ export default function MilkCardModal({
             setCurrentSale(null);
           }}
           onSubmit={handleSalesSubmit}
+          buyerName={salesModalData.buyer.name}
+          buyerId={salesModalData.buyer.id.toString()}
+          date={salesModalData.initialDate}
+          isAdmin={true}
+          isFromAddedList={true}
+          revenueAccounts={revenueAccounts}
           initialData={{
             grossLiters: currentSale.grossLiters,
             lr: currentSale.lr,
@@ -881,23 +596,12 @@ export default function MilkCardModal({
             netLiters: currentSale.netLiters,
             rate: currentSale.rate,
             amountReceived: currentSale.amountReceived,
-            revenueAccountId: currentSale.revenueAccountId,
-            date: salesModalData.initialDate
+            revenueAccountId: currentSale.revenueAccountId
           }}
-          buyerName={salesModalData.buyer.name}
-          buyerId={salesModalData.buyer.id.toString()}
-          date={salesModalData.initialDate}
-          isAdmin={true}
-          isFromAddedList={true}
-          revenueAccounts={revenueAccounts.map(acc => ({
-            accountId: acc.accountId,
-            accountName: acc.name,
-            accountCode: acc.accountCode
-          }))}
           formValues={salesFormValues}
           onInputChange={handleSalesInputChange}
         />
       )}
-    </div>
+    </>
   );
 }
