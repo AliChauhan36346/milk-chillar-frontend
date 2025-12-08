@@ -50,10 +50,10 @@
 //         startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
 //         endDate: new Date().toISOString().split('T')[0]
 //     });
-    
+
 //     // Time filter - simplified to morning/evening/both
 //     const [timeFilter, setTimeFilter] = useState<'' | 'morning' | 'evening'>('');
-    
+
 //     // Data state
 //     const [employees, setEmployees] = useState<Employee[]>([]);
 //     const [receiveRecords, setReceiveRecords] = useState<ReceiveRecord[]>([]);
@@ -64,14 +64,14 @@
 //         chillar: false 
 //     });
 //     const [error, setError] = useState<string | null>(null);
-    
+
 //     // Filter state
 //     const [filters, setFilters] = useState({
 //         search: '',
 //         dodhi: '',
 //         showFilters: false
 //     });
-    
+
 //     // Pagination state
 //     const [currentPage, setCurrentPage] = useState(1);
 //     const itemsPerPage = 10;
@@ -128,10 +128,10 @@
 //                 filters,
 //                 userChillar
 //             });
-            
+
 //             // // Prepare time parameters based on filter selection
 //             // let timeParams: { startTimeOfDay?: string; endTimeOfDay?: string } = {};
-            
+
 //             // if (timeFilter === 'morning') {
 //             //     timeParams = {
 //             //         startTimeOfDay: '05:00',
@@ -215,7 +215,7 @@
 //         const averageFat = receiveRecords.reduce((sum, record) => sum + record.fat, 0) / totalTransactions;
 //         const averageLr = receiveRecords.reduce((sum, record) => sum + record.lr, 0) / totalTransactions;
 //         const uniqueDodhis = new Set(receiveRecords.map(record => record.dodhiID)).size;
-        
+
 //         const morningCollection = receiveRecords
 //             .filter(record => {
 //                 const time = record.timeOfDay;
@@ -224,7 +224,7 @@
 //                 return hour >= 5 && hour < 12;
 //             })
 //             .reduce((sum, record) => sum + record.grossLiters, 0);
-            
+
 //         const eveningCollection = receiveRecords
 //             .filter(record => {
 //                 const time = record.timeOfDay;
@@ -255,9 +255,9 @@
 //             const matchesSearch = !filters.search || 
 //                 transaction.dodhiName.toLowerCase().includes(filters.search.toLowerCase()) ||
 //                 transaction.receiptNo.toLowerCase().includes(filters.search.toLowerCase());
-            
+
 //             const matchesDodhi = filters.dodhi === '' || transaction.dodhiId.toString() === filters.dodhi;
-            
+
 //             return matchesSearch && matchesDodhi;
 //         });
 
@@ -288,7 +288,7 @@
 //         return (
 //             <ProtectedRoute requiredRole="chillarincharge">
 //                 <FieldStaffLayout role="chillarIncharge">
-//                     <MilkLoader />
+//                     <FullPageSpinner message="Loading receive report..." />
 //                 </FieldStaffLayout>
 //             </ProtectedRoute>
 //         );
@@ -516,7 +516,7 @@ import ProtectedRoute from '@/components/ProtectedRoutes';
 import SummaryCard from '@/components/ui/SummaryCard';
 import { BackButton } from '@/components/ui/BackButton';
 import { Table } from '@/components/ui/Table/Table';
-import MilkLoader from '@/components/ui/Loader';
+import { FullPageSpinner } from '@/components/ui/spinner';
 import { getChillarReceiveRecords, ReceiveRecord, ChillarReportsParams } from '@/lib/api/reports';
 import { getEmployees, Employee } from '@/lib/api/employees';
 import { getMyChillar } from '@/lib/api/chillarReceive';
@@ -564,31 +564,31 @@ export default function ReceiveReport() {
         startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         endDate: new Date().toISOString().split('T')[0]
     });
-    
+
     // Time filter - separate start and end time filters
     const [timeFilter, setTimeFilter] = useState({
         startTime: '' as '' | 'morning' | 'evening',
         endTime: '' as '' | 'morning' | 'evening'
     });
-    
+
     // Data state
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [receiveRecords, setReceiveRecords] = useState<ReceiveRecord[]>([]);
     const [userChillar, setUserChillar] = useState<UserChillar | null>(null);
-    const [loading, setLoading] = useState({ 
-        employees: false, 
-        records: false, 
-        chillar: false 
+    const [loading, setLoading] = useState({
+        employees: false,
+        records: false,
+        chillar: false
     });
     const [error, setError] = useState<string | null>(null);
-    
+
     // Filter state
     const [filters, setFilters] = useState({
         search: '',
         dodhi: '',
         showFilters: false
     });
-    
+
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
@@ -668,15 +668,15 @@ export default function ReceiveReport() {
                 filters,
                 userChillar
             });
-            
+
             // Prepare time parameters based on filter selection
             let timeParams: { startTimeOfDay?: string; endTimeOfDay?: string } = {};
-            
+
             // Set start time if selected
             if (timeFilter.startTime) {
                 timeParams.startTimeOfDay = getTimeString(timeFilter.startTime);
             }
-            
+
             // Set end time if selected
             if (timeFilter.endTime) {
                 timeParams.endTimeOfDay = getEndTimeString(timeFilter.endTime);
@@ -736,13 +736,13 @@ export default function ReceiveReport() {
         console.log('Calculating summary for', receiveRecords.length, 'records');
         if (receiveRecords.length === 0) {
             return {
-                totalGrossLiters: 0, 
+                totalGrossLiters: 0,
                 totalNetLiters: 0,
-                totalTransactions: 0, 
+                totalTransactions: 0,
                 averageFat: 0,
-                averageLr: 0, 
-                uniqueDodhis: 0, 
-                morningCollection: 0, 
+                averageLr: 0,
+                uniqueDodhis: 0,
+                morningCollection: 0,
                 eveningCollection: 0
             };
         }
@@ -753,7 +753,7 @@ export default function ReceiveReport() {
         const averageFat = receiveRecords.reduce((sum, record) => sum + record.fat, 0) / totalTransactions;
         const averageLr = receiveRecords.reduce((sum, record) => sum + record.lr, 0) / totalTransactions;
         const uniqueDodhis = new Set(receiveRecords.map(record => record.dodhiID)).size;
-        
+
         const morningCollection = receiveRecords
             .filter(record => {
                 const time = record.timeOfDay;
@@ -762,7 +762,7 @@ export default function ReceiveReport() {
                 return hour >= 5 && hour < 12;
             })
             .reduce((sum, record) => sum + record.grossLiters, 0);
-            
+
         const eveningCollection = receiveRecords
             .filter(record => {
                 const time = record.timeOfDay;
@@ -790,12 +790,12 @@ export default function ReceiveReport() {
     // Filter and paginate transactions
     const { filteredTransactions, paginatedTransactions, totalPages } = useMemo(() => {
         let filtered = displayTransactions.filter(transaction => {
-            const matchesSearch = !filters.search || 
+            const matchesSearch = !filters.search ||
                 transaction.dodhiName.toLowerCase().includes(filters.search.toLowerCase()) ||
                 transaction.receiptNo.toLowerCase().includes(filters.search.toLowerCase());
-            
+
             const matchesDodhi = filters.dodhi === '' || transaction.dodhiId.toString() === filters.dodhi;
-            
+
             return matchesSearch && matchesDodhi;
         });
 
@@ -831,7 +831,7 @@ export default function ReceiveReport() {
         return (
             <ProtectedRoute requiredRole="chillarincharge">
                 <FieldStaffLayout role="chillarIncharge">
-                    <MilkLoader />
+                    <FullPageSpinner message="Loading receive report..." />
                 </FieldStaffLayout>
             </ProtectedRoute>
         );
@@ -939,7 +939,7 @@ export default function ReceiveReport() {
                                         <h3 className="font-semibold text-orange-800">Morning Collection</h3>
                                         <p className="text-2xl font-bold text-orange-600">{summary.morningCollection.toFixed(1)}L</p>
                                         <p className="text-sm text-orange-500">
-                                            {summary.totalGrossLiters > 0 
+                                            {summary.totalGrossLiters > 0
                                                 ? ((summary.morningCollection / summary.totalGrossLiters) * 100).toFixed(1)
                                                 : 0}% of total
                                         </p>
@@ -955,7 +955,7 @@ export default function ReceiveReport() {
                                         <h3 className="font-semibold text-indigo-800">Evening Collection</h3>
                                         <p className="text-2xl font-bold text-indigo-600">{summary.eveningCollection.toFixed(1)}L</p>
                                         <p className="text-sm text-indigo-500">
-                                            {summary.totalGrossLiters > 0 
+                                            {summary.totalGrossLiters > 0
                                                 ? ((summary.eveningCollection / summary.totalGrossLiters) * 100).toFixed(1)
                                                 : 0}% of total
                                         </p>
@@ -966,9 +966,8 @@ export default function ReceiveReport() {
                     )}
 
                     {/* Filters */}
-                    <div className={`bg-white rounded-xl shadow-sm transition-all duration-300 ${
-                        filters.showFilters || (typeof window !== 'undefined' && window.innerWidth >= 640) ? 'block' : 'hidden'
-                    }`}>
+                    <div className={`bg-white rounded-xl shadow-sm transition-all duration-300 ${filters.showFilters || (typeof window !== 'undefined' && window.innerWidth >= 640) ? 'block' : 'hidden'
+                        }`}>
                         <div className="p-4 sm:p-6 space-y-4">
                             {/* Date range */}
                             <div className="grid sm:grid-cols-2 gap-4">
@@ -1121,7 +1120,7 @@ export default function ReceiveReport() {
                                                 <Table.Cell>
                                                     <span className="font-medium text-blue-600">{transaction.netLiters.toFixed(1)}L</span>
                                                 </Table.Cell>
-                                                
+
                                                 <Table.Cell className="hidden sm:table-cell">
                                                     <button className="p-1 text-blue-600 hover:bg-blue-50 rounded">
                                                         <Eye className="w-4 h-4" />
@@ -1163,24 +1162,23 @@ export default function ReceiveReport() {
                                         >
                                             Previous
                                         </button>
-                                        
+
                                         {[...Array(Math.min(5, totalPages))].map((_, i) => {
                                             const page = i + 1;
                                             return (
                                                 <button
                                                     key={page}
                                                     onClick={() => setCurrentPage(page)}
-                                                    className={`px-3 py-2 text-sm border rounded-lg ${
-                                                        page === currentPage
-                                                            ? 'bg-blue-600 text-white border-blue-600'
-                                                            : 'border-gray-300 hover:bg-gray-50'
-                                                    }`}
+                                                    className={`px-3 py-2 text-sm border rounded-lg ${page === currentPage
+                                                        ? 'bg-blue-600 text-white border-blue-600'
+                                                        : 'border-gray-300 hover:bg-gray-50'
+                                                        }`}
                                                 >
                                                     {page}
                                                 </button>
                                             );
                                         })}
-                                        
+
                                         <button
                                             onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                                             disabled={currentPage === totalPages}

@@ -20,7 +20,7 @@ import { Select } from '@/components/ui/Select';
 import { CenteredSpinner, Spinner } from '@/components/ui/spinner';
 import { useToast } from '@/hooks/useToast';
 import { AdminLayout } from '@/components/layouts/AdminLayout';
-import  ProtectedRoute from '@/components/ProtectedRoutes';
+import ProtectedRoute from '@/components/ProtectedRoutes';
 import {
   TrendingUp,
   TrendingDown,
@@ -117,167 +117,158 @@ export default function ProfitLossPage() {
   return (
     <AdminLayout>
       <div className="max-w-7xl mx-auto p-2 space-y-6">
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Profit & Loss Statement</h1>
-            <p className="text-gray-600 mt-1">Comprehensive financial performance report</p>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => handleExport('excel')}
-              disabled={isExporting || !plData}
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Export Excel
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => handleExport('pdf')}
-              disabled={isExporting || !plData}
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Export PDF
-            </Button>
-          </div>
-        </div>
-
-        {/* Filters */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="w-5 h-5" />
-              Report Period
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Start Date
-                </label>
-                <Input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  End Date
-                </label>
-                <Input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                />
-              </div>
-              <div className="flex items-end">
-                <Button onClick={handleGenerateReport} className="w-full">
-                  <FileText className="w-4 h-4 mr-2" />
-                  Generate Report
-                </Button>
-              </div>
+        <div className="space-y-6">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Profit & Loss Statement</h1>
+              <p className="text-gray-600 mt-1">Comprehensive financial performance report</p>
             </div>
-          </CardContent>
-        </Card>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => handleExport('excel')}
+                disabled={isExporting || !plData}
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Export Excel
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => handleExport('pdf')}
+                disabled={isExporting || !plData}
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Export PDF
+              </Button>
+            </div>
+          </div>
 
-        {/* Tabs */}
-        <div className="border-b border-gray-200">
-          <nav className="-mb-px flex space-x-8">
-            <button
-              onClick={() => setActiveTab('report')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'report'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              <FileText className="w-4 h-4 inline mr-2" />
-              Full Report
-            </button>
-            <button
-              onClick={() => setActiveTab('expenses')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'expenses'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              <PieChart className="w-4 h-4 inline mr-2" />
-              Expense Breakdown
-            </button>
-            <button
-              onClick={() => setActiveTab('income')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'income'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              <BarChart3 className="w-4 h-4 inline mr-2" />
-              Income Breakdown
-            </button>
-          </nav>
+          {/* Filters */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="w-5 h-5" />
+                Report Period
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Start Date
+                  </label>
+                  <Input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    End Date
+                  </label>
+                  <Input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                  />
+                </div>
+                <div className="flex items-end">
+                  <Button onClick={handleGenerateReport} className="w-full">
+                    <FileText className="w-4 h-4 mr-2" />
+                    Generate Report
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Tabs */}
+          <div className="border-b border-gray-200">
+            <nav className="-mb-px flex space-x-8">
+              <button
+                onClick={() => setActiveTab('report')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'report'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+              >
+                <FileText className="w-4 h-4 inline mr-2" />
+                Full Report
+              </button>
+              <button
+                onClick={() => setActiveTab('expenses')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'expenses'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+              >
+                <PieChart className="w-4 h-4 inline mr-2" />
+                Expense Breakdown
+              </button>
+              <button
+                onClick={() => setActiveTab('income')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'income'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+              >
+                <BarChart3 className="w-4 h-4 inline mr-2" />
+                Income Breakdown
+              </button>
+            </nav>
+          </div>
+
+          {/* Content */}
+          {activeTab === 'report' && (
+            <>
+              {isPlLoading ? (
+                <CenteredSpinner size="lg" />
+              ) : plData ? (
+                <PLReportView data={plData} formatCurrency={formatCurrency} formatPercentage={formatPercentage} />
+              ) : (
+                <Card>
+                  <CardContent className="py-12 text-center text-gray-500">
+                    Select a date range and click "Generate Report" to view the Profit & Loss statement.
+                  </CardContent>
+                </Card>
+              )}
+            </>
+          )}
+
+          {activeTab === 'expenses' && (
+            <>
+              {isExpenseLoading ? (
+                <CenteredSpinner size="lg" />
+              ) : expenseData ? (
+                <ExpenseBreakdownView data={expenseData} formatCurrency={formatCurrency} />
+              ) : (
+                <Card>
+                  <CardContent className="py-12 text-center text-gray-500">
+                    Select a date range and click "Generate Report" to view expense breakdown.
+                  </CardContent>
+                </Card>
+              )}
+            </>
+          )}
+
+          {activeTab === 'income' && (
+            <>
+              {isIncomeLoading ? (
+                <CenteredSpinner size="lg" />
+              ) : incomeData ? (
+                <IncomeBreakdownView data={incomeData} formatCurrency={formatCurrency} />
+              ) : (
+                <Card>
+                  <CardContent className="py-12 text-center text-gray-500">
+                    Select a date range and click "Generate Report" to view income breakdown.
+                  </CardContent>
+                </Card>
+              )}
+            </>
+          )}
         </div>
-
-        {/* Content */}
-        {activeTab === 'report' && (
-          <>
-            {isPlLoading ? (
-              <div className="flex justify-center py-12">
-                <Spinner size="lg" />
-              </div>
-            ) : plData ? (
-              <PLReportView data={plData} formatCurrency={formatCurrency} formatPercentage={formatPercentage} />
-            ) : (
-              <Card>
-                <CardContent className="py-12 text-center text-gray-500">
-                  Select a date range and click "Generate Report" to view the Profit & Loss statement.
-                </CardContent>
-              </Card>
-            )}
-          </>
-        )}
-
-        {activeTab === 'expenses' && (
-          <>
-            {isExpenseLoading ? (
-              <div className="flex justify-center py-12">
-                <Spinner size="lg" />
-              </div>
-            ) : expenseData ? (
-              <ExpenseBreakdownView data={expenseData} formatCurrency={formatCurrency} />
-            ) : (
-              <Card>
-                <CardContent className="py-12 text-center text-gray-500">
-                  Select a date range and click "Generate Report" to view expense breakdown.
-                </CardContent>
-              </Card>
-            )}
-          </>
-        )}
-
-        {activeTab === 'income' && (
-          <>
-            {isIncomeLoading ? (
-              <div className="flex justify-center py-12">
-                <Spinner size="lg" />
-              </div>
-            ) : incomeData ? (
-              <IncomeBreakdownView data={incomeData} formatCurrency={formatCurrency} />
-            ) : (
-              <Card>
-                <CardContent className="py-12 text-center text-gray-500">
-                  Select a date range and click "Generate Report" to view income breakdown.
-                </CardContent>
-              </Card>
-            )}
-          </>
-        )}
-      </div>
       </div>
     </AdminLayout>
   );

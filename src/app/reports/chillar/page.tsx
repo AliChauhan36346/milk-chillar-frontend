@@ -2,11 +2,11 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
-  BarChart3, 
-  Calendar, 
-  Milk, 
-  ShoppingCart, 
+import {
+  BarChart3,
+  Calendar,
+  Milk,
+  ShoppingCart,
   Truck,
   Download,
   RefreshCw,
@@ -23,7 +23,7 @@ import { FieldStaffLayout } from '@/components/layouts/FieldStaffLayout';
 import ProtectedRoute from '@/components/ProtectedRoutes';
 import SummaryCard from '@/components/ui/SummaryCard';
 import { BackButton } from '@/components/ui/BackButton';
-import MilkLoader from '@/components/ui/Loader';
+import { FullPageSpinner } from '@/components/ui/spinner';
 import { fetchChillarInchargeDashboardStats, ChillarInchargeDashboardStats } from '@/lib/api/reports';
 import { getMyChillar } from '@/lib/api/chillarReceive';
 
@@ -137,7 +137,7 @@ export default function ChillarReports() {
       alert('No data to export');
       return;
     }
-    
+
     // Create CSV data
     const csvData = [
       ['Metric', 'Value (Liters)'],
@@ -221,7 +221,7 @@ export default function ChillarReports() {
       <ProtectedRoute requiredRole="chillarincharge">
         <FieldStaffLayout role="chillarIncharge">
           <div className="flex items-center justify-center min-h-screen">
-            <MilkLoader />
+            <FullPageSpinner />
           </div>
         </FieldStaffLayout>
       </ProtectedRoute>
@@ -338,8 +338,8 @@ export default function ChillarReports() {
               color="gray"
               subtitle="Opening balance"
             />
-            
-            <div 
+
+            <div
               onClick={navigateToReceiveReport}
               className="cursor-pointer transform hover:scale-105 transition-transform"
             >
@@ -349,11 +349,11 @@ export default function ChillarReports() {
                 icon={<Truck className="w-6 h-6" />}
                 color="blue"
                 subtitle="Received from dodhis"
-                
+
               />
             </div>
 
-            <div 
+            <div
               onClick={navigateToSaleReport}
               className="cursor-pointer transform hover:scale-105 transition-transform"
             >
@@ -363,7 +363,7 @@ export default function ChillarReports() {
                 icon={<ShoppingCart className="w-6 h-6" />}
                 color="green"
                 subtitle="Sold to buyers"
-                
+
               />
             </div>
 
@@ -465,11 +465,10 @@ export default function ChillarReports() {
                   <button
                     key={key}
                     onClick={() => setActiveView(key as any)}
-                    className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
-                      activeView === key
+                    className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${activeView === key
                         ? 'border-blue-500 text-blue-600'
                         : 'border-transparent text-gray-500 hover:text-gray-700'
-                    }`}
+                      }`}
                   >
                     <Icon className="w-4 h-4" />
                     {label}
@@ -483,7 +482,7 @@ export default function ChillarReports() {
               {activeView === 'summary' && (
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold">Stock Movement Summary</h3>
-                  
+
                   <div className="bg-gray-50 rounded-lg p-6">
                     <div className="grid md:grid-cols-2 gap-6">
                       <div className="space-y-4">
@@ -546,7 +545,7 @@ export default function ChillarReports() {
                     <h3 className="text-lg font-semibold">Daily Stock Movement</h3>
                     <span className="text-sm text-gray-500">Historical data (sample)</span>
                   </div>
-                  
+
                   <div className="overflow-x-auto">
                     <table className="min-w-full bg-white border border-gray-200 rounded-lg">
                       <thead className="bg-gray-50">

@@ -9,6 +9,7 @@ import {
   AccountBalanceDetail
 } from '@/lib/api/reports';
 import { ChevronLeft, ChevronRight, Users, TrendingUp, TrendingDown } from 'lucide-react';
+import { CenteredSpinner } from '@/components/ui/spinner';
 
 type AccountType = 'Supplier' | 'Buyer';
 
@@ -82,21 +83,19 @@ export default function AccountBalancesPage() {
           <div className="flex gap-2 border-b border-gray-200">
             <button
               onClick={() => handleTabChange('Supplier')}
-              className={`px-6 py-3 font-medium transition-colors ${
-                activeTab === 'Supplier'
+              className={`px-6 py-3 font-medium transition-colors ${activeTab === 'Supplier'
                   ? 'text-blue-600 border-b-2 border-blue-600'
                   : 'text-gray-600 hover:text-gray-900'
-              }`}
+                }`}
             >
               Suppliers
             </button>
             <button
               onClick={() => handleTabChange('Buyer')}
-              className={`px-6 py-3 font-medium transition-colors ${
-                activeTab === 'Buyer'
+              className={`px-6 py-3 font-medium transition-colors ${activeTab === 'Buyer'
                   ? 'text-blue-600 border-b-2 border-blue-600'
                   : 'text-gray-600 hover:text-gray-900'
-              }`}
+                }`}
             >
               Buyers
             </button>
@@ -152,13 +151,12 @@ export default function AccountBalancesPage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-gray-600 mb-1">Net Balance</p>
-                      <p className={`text-2xl font-bold ${
-                        data.summary.netBalance >= 0 ? 'text-purple-600' : 'text-orange-600'
-                      }`}>
+                      <p className={`text-2xl font-bold ${data.summary.netBalance >= 0 ? 'text-purple-600' : 'text-orange-600'
+                        }`}>
                         {formatCurrency(Math.abs(data.summary.netBalance))}
                       </p>
                       <p className="text-xs text-gray-500 mt-1">
-                        {activeTab === 'Supplier' 
+                        {activeTab === 'Supplier'
                           ? 'We owe suppliers'
                           : 'Buyers owe us'}
                       </p>
@@ -171,9 +169,7 @@ export default function AccountBalancesPage() {
 
           {/* Loading State */}
           {loading && (
-            <div className="flex items-center justify-center h-64">
-              <div className="text-lg text-gray-600">Loading balances...</div>
-            </div>
+            <CenteredSpinner message="Loading balances..." />
           )}
 
           {/* Error State */}
@@ -250,8 +246,8 @@ export default function AccountBalancesPage() {
                                   balance.balance > 0
                                     ? 'text-blue-600'
                                     : balance.balance < 0
-                                    ? 'text-red-600'
-                                    : 'text-gray-600'
+                                      ? 'text-red-600'
+                                      : 'text-gray-600'
                                 }
                               >
                                 {formatCurrency(Math.abs(balance.balance))}
@@ -280,11 +276,10 @@ export default function AccountBalancesPage() {
                       <button
                         onClick={() => handlePageChange(currentPage - 1)}
                         disabled={currentPage === 1}
-                        className={`p-2 rounded-lg border transition-colors ${
-                          currentPage === 1
+                        className={`p-2 rounded-lg border transition-colors ${currentPage === 1
                             ? 'border-gray-200 text-gray-400 cursor-not-allowed'
                             : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                        }`}
+                          }`}
                       >
                         <ChevronLeft className="w-5 h-5" />
                       </button>
@@ -307,11 +302,10 @@ export default function AccountBalancesPage() {
                             <button
                               key={pageNum}
                               onClick={() => handlePageChange(pageNum)}
-                              className={`px-3 py-1 rounded-lg border transition-colors ${
-                                currentPage === pageNum
+                              className={`px-3 py-1 rounded-lg border transition-colors ${currentPage === pageNum
                                   ? 'bg-blue-600 text-white border-blue-600'
                                   : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                              }`}
+                                }`}
                             >
                               {pageNum}
                             </button>
@@ -322,11 +316,10 @@ export default function AccountBalancesPage() {
                       <button
                         onClick={() => handlePageChange(currentPage + 1)}
                         disabled={currentPage === data.totalPages}
-                        className={`p-2 rounded-lg border transition-colors ${
-                          currentPage === data.totalPages
+                        className={`p-2 rounded-lg border transition-colors ${currentPage === data.totalPages
                             ? 'border-gray-200 text-gray-400 cursor-not-allowed'
                             : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                        }`}
+                          }`}
                       >
                         <ChevronRight className="w-5 h-5" />
                       </button>

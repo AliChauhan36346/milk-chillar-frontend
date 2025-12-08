@@ -16,6 +16,7 @@ import { getEmployees } from '@/lib/api/employees';
 import { PurchaseReportFilters } from '@/components/reports/PurchaseReportFilters';
 import { FileText, TrendingUp, DollarSign, Droplet, Users, ChevronLeft, ChevronRight } from 'lucide-react';
 import SummaryCard from '@/components/ui/SummaryCard';
+import { CenteredSpinner } from '@/components/ui/spinner';
 import PurchaseModal from '@/components/modals/PurchaseModal';
 import MilkCardModal from '@/components/modals/MilkCardModal';
 import { getPurchaseById, Purchase, updatePurchase } from '@/lib/api/purchases';
@@ -366,9 +367,7 @@ export default function PurchaseReportPage() {
 
           {/* Loading State */}
           {loading && (
-            <div className="flex items-center justify-center h-64">
-              <div className="text-lg text-gray-600">Loading report...</div>
-            </div>
+            <CenteredSpinner message="Loading report..." />
           )}
 
           {/* Error State */}

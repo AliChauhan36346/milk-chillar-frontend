@@ -154,6 +154,7 @@ export interface PurchaseReportQuery {
 
 export interface PurchaseDetail {
   purchaseId: number;
+  accountId: number;
   date: string;
   timeOfDay: string;
   accountCode: string;

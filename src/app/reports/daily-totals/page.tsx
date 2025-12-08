@@ -21,6 +21,7 @@ import { BackButton } from '@/components/ui/BackButton';
 import { Table } from '@/components/ui/Table/Table';
 import { Select } from '@/components/ui/Select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { FullPageSpinner } from '@/components/ui/spinner';
 import { getDailyTotalsReport, DailyTotalsDto } from '@/lib/api/reports';
 import { getChillars, Chillar } from '@/lib/api/chillar';
 import { getMyChillar } from '@/lib/api/chillarReceive';
@@ -218,12 +219,7 @@ export default function DailyTotalsReport() {
         return (
             <ProtectedRoute allowedRoles={['admin', 'chillarincharge']}>
                 <DynamicLayout>
-                    <div className="flex items-center justify-center min-h-screen">
-                        <div className="text-center">
-                            <RefreshCw className="animate-spin h-12 w-12 text-blue-600 mx-auto mb-4" />
-                            <p className="text-gray-600">Loading daily totals...</p>
-                        </div>
-                    </div>
+                    <FullPageSpinner message="Loading daily totals..." />
                 </DynamicLayout>
             </ProtectedRoute>
         );

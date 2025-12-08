@@ -2,10 +2,12 @@
 
 'use client';
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Milk, Sun, Moon, CheckCircle, User, Loader2 } from 'lucide-react';
+import { Milk, Sun, Moon, CheckCircle, User } from 'lucide-react';
 import { useAuth } from '@/lib/auth/AuthContext';
 import PurchaseModal from '@/components/modals/PurchaseModal';
 import { DynamicLayout } from '@/components/layouts/DynamicLayout';
+import MilkLoader from '@/components/ui/Loader';
+import { CenteredSpinner } from '@/components/ui/spinner';
 import { BackButton } from '@/components/ui/BackButton';
 import { InfiniteAddedList } from '@/components/ui/List/InfiniteAddedList';
 import { InfiniteRemainingList } from '@/components/ui/List/InfiniteRemainingList';
@@ -371,18 +373,7 @@ export default function PurchasePage() {
 
 
   if (loadingInitial || loadingDodhi) {
-    return (
-      <ProtectedRoute allowedRoles={['admin', 'dodhi']}>
-        <DynamicLayout>
-          <div className="flex items-center justify-center min-h-screen">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading purchase data...</p>
-            </div>
-          </div>
-        </DynamicLayout>
-      </ProtectedRoute>
-    );
+    return <MilkLoader />;
   }
 
 
@@ -477,8 +468,8 @@ export default function PurchasePage() {
               {/* Summary Cards */}
               <div className="bg-white rounded-xl shadow-sm p-4 mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
                 {loadingSummary ? (
-                  <div className="md:col-span-3 flex justify-center py-4">
-                    <Loader2 className="w-6 h-6 animate-spin text-gray-500" />
+                  <div className="md:col-span-3">
+                    <CenteredSpinner size="sm" />
                   </div>
                 ) : (
                   <>
@@ -562,8 +553,7 @@ export default function PurchasePage() {
                 {loadingAddedList ? (
                   <div className="bg-gray-50 rounded-xl p-6 border border-gray-100 flex justify-center items-center" style={{ maxHeight: '70vh' }}>
                     <div className="flex flex-col items-center">
-                      <Loader2 className="w-8 h-8 animate-spin text-green-500" />
-                      <p className="mt-2 text-gray-600">Loading added purchases...</p>
+                      <CenteredSpinner size="md" message="Loading added purchases..." />
                     </div>
                   </div>
                 ) : (

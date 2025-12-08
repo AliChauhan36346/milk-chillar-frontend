@@ -15,6 +15,7 @@ import {
   Filter,
   Droplet
 } from 'lucide-react';
+import { FullPageSpinner } from '@/components/ui/spinner';
 import { DynamicLayout } from '@/components/layouts/DynamicLayout';
 import { useAuth } from '@/lib/auth/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoutes';
@@ -567,12 +568,7 @@ export default function SalesReport() {
     return (
       <ProtectedRoute allowedRoles={['admin', 'chillarincharge']}>
         <DynamicLayout>
-          <div className="flex items-center justify-center min-h-screen">
-            <div className="text-center">
-              <RefreshCw className="animate-spin h-12 w-12 text-blue-600 mx-auto mb-4" />
-              <p className="text-gray-600">Loading sales report...</p>
-            </div>
-          </div>
+          <FullPageSpinner message="Loading sales report..." />
         </DynamicLayout>
       </ProtectedRoute>
     );
