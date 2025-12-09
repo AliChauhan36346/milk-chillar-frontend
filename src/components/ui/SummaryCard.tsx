@@ -54,20 +54,20 @@ import { ReactNode } from 'react';
 
 interface SummaryCardProps {
   title: string;
-  value: string;
+  value: React.ReactNode;
   icon: ReactNode;
   color: 'blue' | 'green' | 'yellow' | 'red' | 'purple' | 'gray' | 'orange';
   className?: string;
   subtitle?: string;
 }
 
-export default function SummaryCard({ 
-  title, 
-  value, 
-  icon, 
-  color, 
+export default function SummaryCard({
+  title,
+  value,
+  icon,
+  color,
   className = '',
-  subtitle 
+  subtitle
 }: SummaryCardProps) {
   const colorClasses = {
     blue: 'bg-blue-50 border-blue-200 text-blue-600',

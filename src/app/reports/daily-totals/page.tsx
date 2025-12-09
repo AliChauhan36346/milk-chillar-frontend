@@ -103,7 +103,9 @@ export default function DailyTotalsReport() {
         totalSalesLiters: acc.totalSalesLiters + curr.totalSalesLiters,
         totalChillarReceiveLiters: acc.totalChillarReceiveLiters + curr.totalChillarReceiveLiters,
         dodhiLoss: acc.dodhiLoss + curr.dodhiLoss,
-        chillarLoss: acc.chillarLoss + curr.chillarLoss,
+        chillarLoss: acc.chillarLoss + (curr.totalSalesLiters - curr.totalChillarReceiveLiters),
+        tsSalesLiters: acc.tsSalesLiters + curr.tsSalesLiters,
+        tsLoss: acc.tsLoss + (curr.tsSalesLiters - curr.totalSalesLiters),
         grossProfit: acc.grossProfit + curr.grossProfit
     }), {
         totalPurchaseLiters: 0,
@@ -111,6 +113,8 @@ export default function DailyTotalsReport() {
         totalChillarReceiveLiters: 0,
         dodhiLoss: 0,
         chillarLoss: 0,
+        tsSalesLiters: 0,
+        tsLoss: 0,
         grossProfit: 0
     });
 
@@ -121,6 +125,44 @@ export default function DailyTotalsReport() {
             minimumFractionDigits: 0,
             maximumFractionDigits: 0
         }).format(amount);
+    };
+
+    const formatDifference = (value: number) => {
+        const sign = value > 0 ? '+' : '';
+        const colorClass = value > 0 ? 'text-green-600' : value < 0 ? 'text-red-600' : 'text-gray-900';
+        return (
+            <span className={colorClass}>
+                {sign}{value.toFixed(2)}
+            </span>
+        );
+    };
+
+    const formatDifferenceWithCurrency = (value: number) => {
+        const sign = value > 0 ? '+' : '';
+        const formattedValue = new Intl.NumberFormat('en-PK', {
+            style: 'currency',
+            currency: 'PKR',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(Math.abs(value)); // Format absolute value
+
+        const colorClass = value > 0 ? 'text-green-600' : value < 0 ? 'text-red-600' : 'text-gray-900';
+
+        return (
+            <span className={colorClass}>
+                {value >= 0 ? '+' : '-'}{formattedValue.replace('PKR', '').trim()} {/* Custom sign handling to ensure correct placement if needed, or just let formatting handle it but adding color */}
+            </span>
+        );
+    };
+
+    // Simplified version for currency that keeps it simple
+    const formatProfit = (value: number) => {
+        const colorClass = value > 0 ? 'text-green-600' : value < 0 ? 'text-red-600' : 'text-gray-900';
+        return (
+            <span className={colorClass}>
+                {formatPKR(value)}
+            </span>
+        );
     };
 
     const handleCardClick = (reportType: 'purchase' | 'sales' | 'chillarReceive') => {
@@ -248,7 +290,8 @@ export default function DailyTotalsReport() {
                     </div>
 
                     {/* Summary Cards */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 sm:gap-4">
+                        {/* 1. Total Purchase */}
                         <div onClick={() => handleCardClick('purchase')} className="cursor-pointer transition-transform hover:scale-105">
                             <SummaryCard
                                 title="Total Purchase"
@@ -257,14 +300,8 @@ export default function DailyTotalsReport() {
                                 color="blue"
                             />
                         </div>
-                        <div onClick={() => handleCardClick('sales')} className="cursor-pointer transition-transform hover:scale-105">
-                            <SummaryCard
-                                title="Total Sales"
-                                value={`${summary.totalSalesLiters.toFixed(2)}L`}
-                                icon={<ShoppingBag className="w-6 h-6" />}
-                                color="green"
-                            />
-                        </div>
+
+                        {/* 2. Total Chillar Receive */}
                         <div onClick={() => handleCardClick('chillarReceive')} className="cursor-pointer transition-transform hover:scale-105">
                             <SummaryCard
                                 title="Chillar Receive"
@@ -273,25 +310,58 @@ export default function DailyTotalsReport() {
                                 color="purple"
                             />
                         </div>
-                    </div>
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
+
+                        {/* 3. Dodhi Loss */}
                         <SummaryCard
                             title="Dodhi Loss"
-                            value={`${summary.dodhiLoss.toFixed(2)}L`}
+                            value={formatDifference(summary.dodhiLoss)}
                             icon={<TrendingDown className="w-6 h-6" />}
                             color="orange"
                         />
+                        {/* Note: User said "if there is dodhi loss whose value is positive... show +sign". formatDifference handles signs. 
+                            User also said "dont change the card background color". "orange" is fine for Dodhi Loss context, or I could change to neutral. 
+                            I'll keep 'orange' as it identifies the category, but the number will be colored. */}
+
+                        {/* 4. Gross Sales */}
+                        <div onClick={() => handleCardClick('sales')} className="cursor-pointer transition-transform hover:scale-105">
+                            <SummaryCard
+                                title="Gross Sales"
+                                value={`${summary.totalSalesLiters.toFixed(2)}L`}
+                                icon={<ShoppingBag className="w-6 h-6" />}
+                                color="green"
+                            />
+                        </div>
+
+                        {/* 5. Chillar Loss/Gain */}
                         <SummaryCard
-                            title="Chillar Loss"
-                            value={`${summary.chillarLoss.toFixed(2)}L`}
+                            title="Chillar Loss/Gain"
+                            value={<>{formatDifference(summary.chillarLoss)}L</>}
                             icon={<TrendingDown className="w-6 h-6" />}
-                            color="red"
+                            color="gray"
                         />
+
+                        {/* 6. TS Sales */}
+                        <SummaryCard
+                            title="TS Sales"
+                            value={`${summary.tsSalesLiters.toFixed(2)}L`}
+                            icon={<ShoppingBag className="w-6 h-6" />}
+                            color="blue"
+                        />
+
+                        {/* 7. TS Loss/Gain */}
+                        <SummaryCard
+                            title="TS Loss/Gain"
+                            value={<>{formatDifference(summary.tsLoss)}L</>}
+                            icon={<TrendingDown className="w-6 h-6" />}
+                            color="gray"
+                        />
+
+                        {/* 8. Gross Profit */}
                         <SummaryCard
                             title="Gross Profit"
-                            value={formatPKR(summary.grossProfit)}
+                            value={formatProfit(summary.grossProfit)}
                             icon={<DollarSign className="w-6 h-6" />}
-                            color={summary.grossProfit >= 0 ? "green" : "red"}
+                            color="gray"
                         />
                     </div>
 
@@ -375,13 +445,13 @@ export default function DailyTotalsReport() {
                                             <Table.Head>Dodhi Loss</Table.Head>
                                             <Table.Head>
                                                 <div className="flex flex-col">
-                                                    <span>Sales</span>
+                                                    <span>Gross Sales</span>
                                                     <span className="text-xs font-normal text-gray-500">(Liters / Amount)</span>
                                                 </div>
                                             </Table.Head>
-                                            <Table.Head>Chillar Loss</Table.Head>
+                                            <Table.Head>Chillar Loss/Gain</Table.Head>
                                             <Table.Head>TS Sales</Table.Head>
-                                            <Table.Head>TS Loss</Table.Head>
+                                            <Table.Head>TS Loss/Gain</Table.Head>
                                             {isAdmin && <Table.Head>Profit/Loss</Table.Head>}
                                         </Table.Row>
                                     </Table.Header>
@@ -434,9 +504,11 @@ export default function DailyTotalsReport() {
                                                             </div>
                                                         </Table.Cell>
 
-                                                        {/* Chillar Loss */}
+                                                        {/* Chillar Loss/Gain */}
                                                         <Table.Cell>
-                                                            <span className="text-red-600">{item.chillarLoss.toFixed(2)} L</span>
+                                                            <span className={item.totalSalesLiters - item.totalChillarReceiveLiters >= 0 ? 'text-green-600 font-medium' : 'text-red-600 font-medium'}>
+                                                                {formatDifference(item.totalSalesLiters - item.totalChillarReceiveLiters)} L
+                                                            </span>
                                                         </Table.Cell>
 
                                                         {/* TS Sales */}
@@ -444,10 +516,10 @@ export default function DailyTotalsReport() {
                                                             <span className="text-gray-700">{item.tsSalesLiters.toFixed(2)} L</span>
                                                         </Table.Cell>
 
-                                                        {/* TS Loss */}
+                                                        {/* TS Loss/Gain */}
                                                         <Table.Cell>
-                                                            <span className={`font-medium ${item.tsDifference >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                                                {item.tsDifference.toFixed(2)} L
+                                                            <span className={`font-medium ${(item.tsSalesLiters - item.totalSalesLiters) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                                {formatDifference(item.tsSalesLiters - item.totalSalesLiters)} L
                                                             </span>
                                                         </Table.Cell>
 
