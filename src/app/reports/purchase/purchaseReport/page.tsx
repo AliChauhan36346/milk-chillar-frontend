@@ -2,7 +2,7 @@
 import { AdminLayout } from '@/components/layouts/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import ProtectedRoute from '@/components/ProtectedRoutes';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   getDetailedPurchaseReport,
@@ -26,7 +26,7 @@ import { getDefaultDateRange } from '@/lib/utils/dateRange';
 
 type ReportView = 'detailed' | 'summary';
 
-export default function PurchaseReportPage() {
+function PurchaseReportContent() {
   const [view, setView] = useState<ReportView>('detailed');
   const [detailedReport, setDetailedReport] = useState<PagedPurchaseReport | null>(null);
   const [summaryReport, setSummaryReport] = useState<SupplierWisePurchaseReport | null>(null);
@@ -284,352 +284,360 @@ export default function PurchaseReportPage() {
   const summary = view === 'detailed' ? purchaseSummary : summaryReport?.overallSummary;
 
   return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Purchase Report</h1>
+        <p className="text-sm text-gray-600 mt-1">
+          View detailed and summary purchase reports
+        </p>
+      </div>
+
+      {/* View Toggle */}
+      <div className="flex gap-2 border-b border-gray-200">
+        <button
+          onClick={() => setView('detailed')}
+          className={`px-6 py-3 font-medium transition-colors ${view === 'detailed'
+            ? 'text-blue-600 border-b-2 border-blue-600'
+            : 'text-gray-600 hover:text-gray-900'
+            }`}
+        >
+          Detailed Report
+        </button>
+        <button
+          onClick={() => setView('summary')}
+          className={`px-6 py-3 font-medium transition-colors ${view === 'summary'
+            ? 'text-blue-600 border-b-2 border-blue-600'
+            : 'text-gray-600 hover:text-gray-900'
+            }`}
+        >
+          Supplier Summary
+        </button>
+      </div>
+
+      {/* Filters */}
+      <PurchaseReportFilters
+        startDate={filters.startDate}
+        endDate={filters.endDate}
+        timeOfDay={filters.timeOfDay || ''}
+        dodhiId={filters.dodhiId?.toString() || ''}
+        chillarId={filters.chillarId?.toString() || ''}
+        supplierCode={filters.supplierCode || ''}
+        dodhiOptions={dodhiOptions}
+        onFilterChange={handleFilterChange}
+        onSearch={handleSearch}
+        onClear={handleClearFilters}
+      />
+
+      {/* Summary Cards */}
+      {summary && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <SummaryCard
+            title="Total Liters"
+            value={summaryLoading ? '...' : summary.totalLiters.toFixed(2)}
+            icon={<Droplet className="w-6 h-6" />}
+            color="blue"
+          />
+          <SummaryCard
+            title="Total Amount"
+            value={summaryLoading ? '...' : formatCurrency(summary.totalAmount)}
+            icon={<DollarSign className="w-6 h-6" />}
+            color="green"
+          />
+          <SummaryCard
+            title="Avg Rate"
+            value={summaryLoading ? '...' : `${summary.averageRate.toFixed(2)}`}
+            icon={<TrendingUp className="w-6 h-6" />}
+            color="purple"
+          />
+          <SummaryCard
+            title="Transactions"
+            value={summaryLoading ? '...' : summary.totalTransactions.toString()}
+            icon={<FileText className="w-6 h-6" />}
+            color="orange"
+          />
+          <SummaryCard
+            title="Suppliers"
+            value={summaryLoading ? '...' : summary.totalSuppliers.toString()}
+            icon={<Users className="w-6 h-6" />}
+            color="yellow"
+          />
+        </div>
+      )}
+
+      {/* Loading State */}
+      {loading && (
+        <CenteredSpinner message="Loading report..." />
+      )}
+
+      {/* Error State */}
+      {error && (
+        <div className="flex items-center justify-center h-64">
+          <div className="text-lg text-red-600">{error}</div>
+        </div>
+      )}
+
+      {/* Detailed Report Table */}
+      {!loading && !error && view === 'detailed' && detailedReport && (
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              Purchase Details
+              {detailedReport.paginatedPurchases.totalCount > 0 && (
+                <span className="text-sm font-normal text-gray-600 ml-2">
+                  (Page {currentPage} of {detailedReport.paginatedPurchases.totalPages})
+                </span>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200 bg-gray-50">
+                    <th className="text-left p-3 text-sm font-semibold text-gray-700">Date</th>
+                    <th className="text-left p-3 text-sm font-semibold text-gray-700">Time</th>
+                    <th className="text-left p-3 text-sm font-semibold text-gray-700">Supplier</th>
+                    <th className="text-left p-3 text-sm font-semibold text-gray-700">Dodhi</th>
+                    <th className="text-left p-3 text-sm font-semibold text-gray-700">Chillar</th>
+                    <th className="text-right p-3 text-sm font-semibold text-gray-700">Liters</th>
+                    <th className="text-right p-3 text-sm font-semibold text-gray-700">Rate</th>
+                    <th className="text-right p-3 text-sm font-semibold text-gray-700">Amount</th>
+                    <th className="text-right p-3 text-sm font-semibold text-gray-700">Balance</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {detailedReport.paginatedPurchases.items.length === 0 ? (
+                    <tr>
+                      <td colSpan={9} className="text-center p-8 text-gray-500">
+                        No purchases found for the selected filters
+                      </td>
+                    </tr>
+                  ) : (
+                    detailedReport.paginatedPurchases.items.map((purchase) => (
+                      <tr
+                        key={purchase.purchaseId}
+                        className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                      >
+                        <td className="p-3 text-sm text-gray-700">{formatDate(purchase.date)}</td>
+                        <td className="p-3 text-sm text-gray-700 capitalize">{purchase.timeOfDay}</td>
+                        <td className="p-3 text-sm">
+                          <div className="font-medium text-gray-900">{purchase.accountName}</div>
+                          <div className="text-xs text-gray-500">{purchase.accountCode}</div>
+                        </td>
+                        <td className="p-3 text-sm text-gray-700">{purchase.dodhiName}</td>
+                        <td className="p-3 text-sm text-gray-700">{purchase.chillarName}</td>
+                        <td
+                          className="p-3 text-sm text-right font-medium text-blue-600 cursor-pointer hover:underline"
+                          onClick={() => handlePurchaseClick(
+                            purchase.purchaseId,
+                            purchase.accountId,
+                            purchase.accountName,
+                            purchase.accountCode,
+                            purchase.date,
+                            purchase.timeOfDay
+                          )}
+                          title="Click to edit purchase"
+                        >
+                          {purchase.grossLiters.toFixed(2)}
+                        </td>
+                        <td className="p-3 text-sm text-right text-gray-700">
+                          {formatCurrency(purchase.rate)}
+                        </td>
+                        <td className="p-3 text-sm text-right font-medium text-green-600">
+                          {formatCurrency(purchase.totalAmount)}
+                        </td>
+                        <td className="p-3 text-sm text-right font-medium text-red-600">
+                          {formatCurrency(purchase.balance)}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            {detailedReport.paginatedPurchases.totalPages > 1 && (
+              <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
+                <div className="text-sm text-gray-600">
+                  Showing {((currentPage - 1) * pageSize) + 1} to{' '}
+                  {Math.min(currentPage * pageSize, detailedReport.paginatedPurchases.totalCount)} of{' '}
+                  {detailedReport.paginatedPurchases.totalCount} purchases
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className={`p-2 rounded-lg border transition-colors ${currentPage === 1
+                      ? 'border-gray-200 text-gray-400 cursor-not-allowed'
+                      : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                      }`}
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+
+                  {/* Page Numbers */}
+                  <div className="flex gap-1">
+                    {Array.from({ length: Math.min(5, detailedReport.paginatedPurchases.totalPages) }, (_, i) => {
+                      let pageNum;
+                      const totalPages = detailedReport.paginatedPurchases.totalPages;
+
+                      if (totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i;
+                      } else {
+                        pageNum = currentPage - 2 + i;
+                      }
+
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => handlePageChange(pageNum)}
+                          className={`px-3 py-1 rounded-lg border transition-colors ${currentPage === pageNum
+                            ? 'bg-blue-600 text-white border-blue-600'
+                            : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                            }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === detailedReport.paginatedPurchases.totalPages}
+                    className={`p-2 rounded-lg border transition-colors ${currentPage === detailedReport.paginatedPurchases.totalPages
+                      ? 'border-gray-200 text-gray-400 cursor-not-allowed'
+                      : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                      }`}
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Supplier Summary Table */}
+      {!loading && !error && view === 'summary' && summaryReport && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Supplier-wise Summary</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200 bg-gray-50">
+                    <th className="text-left p-3 text-sm font-semibold text-gray-700">Supplier Code</th>
+                    <th className="text-left p-3 text-sm font-semibold text-gray-700">Supplier Name</th>
+                    <th className="text-right p-3 text-sm font-semibold text-gray-700">Total Liters</th>
+                    <th className="text-right p-3 text-sm font-semibold text-gray-700">Total Amount</th>
+                    <th className="text-right p-3 text-sm font-semibold text-gray-700">Avg Rate</th>
+                    <th className="text-right p-3 text-sm font-semibold text-gray-700">Transactions</th>
+                    <th className="text-right p-3 text-sm font-semibold text-gray-700">Balance</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {summaryReport.supplierSummaries.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="text-center p-8 text-gray-500">
+                        No purchases found for the selected filters
+                      </td>
+                    </tr>
+                  ) : (
+                    summaryReport.supplierSummaries.map((supplier) => (
+                      <tr
+                        key={supplier.accountId}
+                        className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                      >
+                        <td className="p-3 text-sm font-medium text-gray-900">
+                          {supplier.accountCode}
+                        </td>
+                        <td className="p-3 text-sm text-gray-700">{supplier.accountName}</td>
+                        <td
+                          className="p-3 text-sm text-right font-medium text-blue-600 cursor-pointer hover:underline"
+                          onClick={() => handleSupplierClick(supplier.accountId, supplier.accountName)}
+                          title="Click to view milk card"
+                        >
+                          {supplier.totalLiters.toFixed(2)}
+                        </td>
+                        <td className="p-3 text-sm text-right font-medium text-green-600">
+                          {formatCurrency(supplier.totalAmount)}
+                        </td>
+                        <td className="p-3 text-sm text-right text-gray-700">
+                          {formatCurrency(supplier.averageRate)}
+                        </td>
+                        <td className="p-3 text-sm text-right text-gray-700">
+                          {supplier.transactionCount}
+                        </td>
+                        <td className="p-3 text-sm text-right font-medium text-red-600">
+                          {formatCurrency(supplier.balance)}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Purchase Modal */}
+      {showPurchaseModal && purchaseModalData && expenseAccounts.length > 0 && (
+        <PurchaseModal
+          isOpen={showPurchaseModal}
+          onClose={() => {
+            setShowPurchaseModal(false);
+            setPurchaseModalData(null);
+            setCurrentPurchase(null);
+          }}
+          onSubmit={handlePurchaseSubmit}
+          supplier={purchaseModalData.supplier}
+          availableTimes={purchaseModalData.availableTimes}
+          isAdmin={true}
+          expenseAccounts={expenseAccounts}
+          selectedExpenseAccount={purchaseModalData.selectedExpenseAccount}
+          isUpdate={purchaseModalData.isUpdate}
+          updateData={purchaseModalData.updateData}
+          initialDate={purchaseModalData.initialDate}
+        />
+      )}
+
+      {/* Milk Card Modal */}
+      {showMilkCardModal && milkCardData && (
+        <MilkCardModal
+          isOpen={showMilkCardModal}
+          onClose={() => {
+            setShowMilkCardModal(false);
+            setMilkCardData(null);
+          }}
+          accountId={milkCardData.accountId}
+          accountName={milkCardData.accountName}
+          date={milkCardData.date}
+          transactionType={milkCardData.transactionType}
+        />
+      )}
+    </div>
+  );
+}
+
+export default function PurchaseReportPage() {
+  return (
     <ProtectedRoute requiredRole="admin">
       <AdminLayout>
-        <div className="space-y-6">
-          {/* Header */}
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Purchase Report</h1>
-            <p className="text-sm text-gray-600 mt-1">
-              View detailed and summary purchase reports
-            </p>
-          </div>
-
-          {/* View Toggle */}
-          <div className="flex gap-2 border-b border-gray-200">
-            <button
-              onClick={() => setView('detailed')}
-              className={`px-6 py-3 font-medium transition-colors ${view === 'detailed'
-                ? 'text-blue-600 border-b-2 border-blue-600'
-                : 'text-gray-600 hover:text-gray-900'
-                }`}
-            >
-              Detailed Report
-            </button>
-            <button
-              onClick={() => setView('summary')}
-              className={`px-6 py-3 font-medium transition-colors ${view === 'summary'
-                ? 'text-blue-600 border-b-2 border-blue-600'
-                : 'text-gray-600 hover:text-gray-900'
-                }`}
-            >
-              Supplier Summary
-            </button>
-          </div>
-
-          {/* Filters */}
-          <PurchaseReportFilters
-            startDate={filters.startDate}
-            endDate={filters.endDate}
-            timeOfDay={filters.timeOfDay || ''}
-            dodhiId={filters.dodhiId?.toString() || ''}
-            chillarId={filters.chillarId?.toString() || ''}
-            supplierCode={filters.supplierCode || ''}
-            dodhiOptions={dodhiOptions}
-            onFilterChange={handleFilterChange}
-            onSearch={handleSearch}
-            onClear={handleClearFilters}
-          />
-
-          {/* Summary Cards */}
-          {summary && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-              <SummaryCard
-                title="Total Liters"
-                value={summaryLoading ? '...' : summary.totalLiters.toFixed(2)}
-                icon={<Droplet className="w-6 h-6" />}
-                color="blue"
-              />
-              <SummaryCard
-                title="Total Amount"
-                value={summaryLoading ? '...' : formatCurrency(summary.totalAmount)}
-                icon={<DollarSign className="w-6 h-6" />}
-                color="green"
-              />
-              <SummaryCard
-                title="Avg Rate"
-                value={summaryLoading ? '...' : `${summary.averageRate.toFixed(2)}`}
-                icon={<TrendingUp className="w-6 h-6" />}
-                color="purple"
-              />
-              <SummaryCard
-                title="Transactions"
-                value={summaryLoading ? '...' : summary.totalTransactions.toString()}
-                icon={<FileText className="w-6 h-6" />}
-                color="orange"
-              />
-              <SummaryCard
-                title="Suppliers"
-                value={summaryLoading ? '...' : summary.totalSuppliers.toString()}
-                icon={<Users className="w-6 h-6" />}
-                color="yellow"
-              />
-            </div>
-          )}
-
-          {/* Loading State */}
-          {loading && (
-            <CenteredSpinner message="Loading report..." />
-          )}
-
-          {/* Error State */}
-          {error && (
-            <div className="flex items-center justify-center h-64">
-              <div className="text-lg text-red-600">{error}</div>
-            </div>
-          )}
-
-          {/* Detailed Report Table */}
-          {!loading && !error && view === 'detailed' && detailedReport && (
-            <Card>
-              <CardHeader>
-                <CardTitle>
-                  Purchase Details
-                  {detailedReport.paginatedPurchases.totalCount > 0 && (
-                    <span className="text-sm font-normal text-gray-600 ml-2">
-                      (Page {currentPage} of {detailedReport.paginatedPurchases.totalPages})
-                    </span>
-                  )}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-gray-200 bg-gray-50">
-                        <th className="text-left p-3 text-sm font-semibold text-gray-700">Date</th>
-                        <th className="text-left p-3 text-sm font-semibold text-gray-700">Time</th>
-                        <th className="text-left p-3 text-sm font-semibold text-gray-700">Supplier</th>
-                        <th className="text-left p-3 text-sm font-semibold text-gray-700">Dodhi</th>
-                        <th className="text-left p-3 text-sm font-semibold text-gray-700">Chillar</th>
-                        <th className="text-right p-3 text-sm font-semibold text-gray-700">Liters</th>
-                        <th className="text-right p-3 text-sm font-semibold text-gray-700">Rate</th>
-                        <th className="text-right p-3 text-sm font-semibold text-gray-700">Amount</th>
-                        <th className="text-right p-3 text-sm font-semibold text-gray-700">Balance</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {detailedReport.paginatedPurchases.items.length === 0 ? (
-                        <tr>
-                          <td colSpan={9} className="text-center p-8 text-gray-500">
-                            No purchases found for the selected filters
-                          </td>
-                        </tr>
-                      ) : (
-                        detailedReport.paginatedPurchases.items.map((purchase) => (
-                          <tr
-                            key={purchase.purchaseId}
-                            className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
-                          >
-                            <td className="p-3 text-sm text-gray-700">{formatDate(purchase.date)}</td>
-                            <td className="p-3 text-sm text-gray-700 capitalize">{purchase.timeOfDay}</td>
-                            <td className="p-3 text-sm">
-                              <div className="font-medium text-gray-900">{purchase.accountName}</div>
-                              <div className="text-xs text-gray-500">{purchase.accountCode}</div>
-                            </td>
-                            <td className="p-3 text-sm text-gray-700">{purchase.dodhiName}</td>
-                            <td className="p-3 text-sm text-gray-700">{purchase.chillarName}</td>
-                            <td
-                              className="p-3 text-sm text-right font-medium text-blue-600 cursor-pointer hover:underline"
-                              onClick={() => handlePurchaseClick(
-                                purchase.purchaseId,
-                                purchase.accountId,
-                                purchase.accountName,
-                                purchase.accountCode,
-                                purchase.date,
-                                purchase.timeOfDay
-                              )}
-                              title="Click to edit purchase"
-                            >
-                              {purchase.grossLiters.toFixed(2)}
-                            </td>
-                            <td className="p-3 text-sm text-right text-gray-700">
-                              {formatCurrency(purchase.rate)}
-                            </td>
-                            <td className="p-3 text-sm text-right font-medium text-green-600">
-                              {formatCurrency(purchase.totalAmount)}
-                            </td>
-                            <td className="p-3 text-sm text-right font-medium text-red-600">
-                              {formatCurrency(purchase.balance)}
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Pagination */}
-                {detailedReport.paginatedPurchases.totalPages > 1 && (
-                  <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
-                    <div className="text-sm text-gray-600">
-                      Showing {((currentPage - 1) * pageSize) + 1} to{' '}
-                      {Math.min(currentPage * pageSize, detailedReport.paginatedPurchases.totalCount)} of{' '}
-                      {detailedReport.paginatedPurchases.totalCount} purchases
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handlePageChange(currentPage - 1)}
-                        disabled={currentPage === 1}
-                        className={`p-2 rounded-lg border transition-colors ${currentPage === 1
-                          ? 'border-gray-200 text-gray-400 cursor-not-allowed'
-                          : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                          }`}
-                      >
-                        <ChevronLeft className="w-5 h-5" />
-                      </button>
-
-                      {/* Page Numbers */}
-                      <div className="flex gap-1">
-                        {Array.from({ length: Math.min(5, detailedReport.paginatedPurchases.totalPages) }, (_, i) => {
-                          let pageNum;
-                          const totalPages = detailedReport.paginatedPurchases.totalPages;
-
-                          if (totalPages <= 5) {
-                            pageNum = i + 1;
-                          } else if (currentPage <= 3) {
-                            pageNum = i + 1;
-                          } else if (currentPage >= totalPages - 2) {
-                            pageNum = totalPages - 4 + i;
-                          } else {
-                            pageNum = currentPage - 2 + i;
-                          }
-
-                          return (
-                            <button
-                              key={pageNum}
-                              onClick={() => handlePageChange(pageNum)}
-                              className={`px-3 py-1 rounded-lg border transition-colors ${currentPage === pageNum
-                                ? 'bg-blue-600 text-white border-blue-600'
-                                : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                                }`}
-                            >
-                              {pageNum}
-                            </button>
-                          );
-                        })}
-                      </div>
-
-                      <button
-                        onClick={() => handlePageChange(currentPage + 1)}
-                        disabled={currentPage === detailedReport.paginatedPurchases.totalPages}
-                        className={`p-2 rounded-lg border transition-colors ${currentPage === detailedReport.paginatedPurchases.totalPages
-                          ? 'border-gray-200 text-gray-400 cursor-not-allowed'
-                          : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                          }`}
-                      >
-                        <ChevronRight className="w-5 h-5" />
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Supplier Summary Table */}
-          {!loading && !error && view === 'summary' && summaryReport && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Supplier-wise Summary</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-gray-200 bg-gray-50">
-                        <th className="text-left p-3 text-sm font-semibold text-gray-700">Supplier Code</th>
-                        <th className="text-left p-3 text-sm font-semibold text-gray-700">Supplier Name</th>
-                        <th className="text-right p-3 text-sm font-semibold text-gray-700">Total Liters</th>
-                        <th className="text-right p-3 text-sm font-semibold text-gray-700">Total Amount</th>
-                        <th className="text-right p-3 text-sm font-semibold text-gray-700">Avg Rate</th>
-                        <th className="text-right p-3 text-sm font-semibold text-gray-700">Transactions</th>
-                        <th className="text-right p-3 text-sm font-semibold text-gray-700">Balance</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {summaryReport.supplierSummaries.length === 0 ? (
-                        <tr>
-                          <td colSpan={7} className="text-center p-8 text-gray-500">
-                            No purchases found for the selected filters
-                          </td>
-                        </tr>
-                      ) : (
-                        summaryReport.supplierSummaries.map((supplier) => (
-                          <tr
-                            key={supplier.accountId}
-                            className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
-                          >
-                            <td className="p-3 text-sm font-medium text-gray-900">
-                              {supplier.accountCode}
-                            </td>
-                            <td className="p-3 text-sm text-gray-700">{supplier.accountName}</td>
-                            <td
-                              className="p-3 text-sm text-right font-medium text-blue-600 cursor-pointer hover:underline"
-                              onClick={() => handleSupplierClick(supplier.accountId, supplier.accountName)}
-                              title="Click to view milk card"
-                            >
-                              {supplier.totalLiters.toFixed(2)}
-                            </td>
-                            <td className="p-3 text-sm text-right font-medium text-green-600">
-                              {formatCurrency(supplier.totalAmount)}
-                            </td>
-                            <td className="p-3 text-sm text-right text-gray-700">
-                              {formatCurrency(supplier.averageRate)}
-                            </td>
-                            <td className="p-3 text-sm text-right text-gray-700">
-                              {supplier.transactionCount}
-                            </td>
-                            <td className="p-3 text-sm text-right font-medium text-red-600">
-                              {formatCurrency(supplier.balance)}
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Purchase Modal */}
-          {showPurchaseModal && purchaseModalData && expenseAccounts.length > 0 && (
-            <PurchaseModal
-              isOpen={showPurchaseModal}
-              onClose={() => {
-                setShowPurchaseModal(false);
-                setPurchaseModalData(null);
-                setCurrentPurchase(null);
-              }}
-              onSubmit={handlePurchaseSubmit}
-              supplier={purchaseModalData.supplier}
-              availableTimes={purchaseModalData.availableTimes}
-              isAdmin={true}
-              expenseAccounts={expenseAccounts}
-              selectedExpenseAccount={purchaseModalData.selectedExpenseAccount}
-              isUpdate={purchaseModalData.isUpdate}
-              updateData={purchaseModalData.updateData}
-              initialDate={purchaseModalData.initialDate}
-            />
-          )}
-
-          {/* Milk Card Modal */}
-          {showMilkCardModal && milkCardData && (
-            <MilkCardModal
-              isOpen={showMilkCardModal}
-              onClose={() => {
-                setShowMilkCardModal(false);
-                setMilkCardData(null);
-              }}
-              accountId={milkCardData.accountId}
-              accountName={milkCardData.accountName}
-              date={milkCardData.date}
-              transactionType={milkCardData.transactionType}
-            />
-          )}
-        </div>
+        <Suspense fallback={<CenteredSpinner message="Loading purchase report..." />}>
+          <PurchaseReportContent />
+        </Suspense>
       </AdminLayout>
     </ProtectedRoute>
   );
