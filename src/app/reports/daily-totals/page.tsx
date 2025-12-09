@@ -106,6 +106,8 @@ export default function DailyTotalsReport() {
         chillarLoss: acc.chillarLoss + (curr.totalSalesLiters - curr.totalChillarReceiveLiters),
         tsSalesLiters: acc.tsSalesLiters + curr.tsSalesLiters,
         tsLoss: acc.tsLoss + (curr.tsSalesLiters - curr.totalSalesLiters),
+        totalPurchaseAmount: acc.totalPurchaseAmount + curr.totalPurchaseAmount,
+        salesAmount: acc.salesAmount + curr.salesAmount,
         grossProfit: acc.grossProfit + curr.grossProfit
     }), {
         totalPurchaseLiters: 0,
@@ -115,6 +117,8 @@ export default function DailyTotalsReport() {
         chillarLoss: 0,
         tsSalesLiters: 0,
         tsLoss: 0,
+        totalPurchaseAmount: 0,
+        salesAmount: 0,
         grossProfit: 0
     });
 
@@ -296,6 +300,7 @@ export default function DailyTotalsReport() {
                             <SummaryCard
                                 title="Total Purchase"
                                 value={`${summary.totalPurchaseLiters.toFixed(2)}L`}
+                                subtitle={formatPKR(summary.totalPurchaseAmount)}
                                 icon={<ShoppingCart className="w-6 h-6" />}
                                 color="blue"
                             />
@@ -327,6 +332,7 @@ export default function DailyTotalsReport() {
                             <SummaryCard
                                 title="Gross Sales"
                                 value={`${summary.totalSalesLiters.toFixed(2)}L`}
+                                subtitle={formatPKR(summary.salesAmount)}
                                 icon={<ShoppingBag className="w-6 h-6" />}
                                 color="green"
                             />
@@ -344,6 +350,10 @@ export default function DailyTotalsReport() {
                         <SummaryCard
                             title="TS Sales"
                             value={`${summary.tsSalesLiters.toFixed(2)}L`}
+                            subtitle={summary.totalSalesLiters > 0
+                                ? formatPKR((summary.salesAmount / summary.totalSalesLiters) * summary.tsSalesLiters)
+                                : 'N/A'
+                            }
                             icon={<ShoppingBag className="w-6 h-6" />}
                             color="blue"
                         />
