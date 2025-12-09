@@ -80,24 +80,26 @@ export default function DailyTotalsReport() {
         fetchUserChillar();
     }, [isAdmin]);
 
+    // Update URL when filters change
+    useEffect(() => {
+        if (typeof window === 'undefined') return; // Skip during SSR
+
+        const params = new URLSearchParams();
+        params.set('startDate', dateRange.startDate);
+        params.set('endDate', dateRange.endDate);
+        if (selectedChillarId) {
+            params.set('chillarId', selectedChillarId.toString());
+        }
+
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    }, [dateRange.startDate, dateRange.endDate, selectedChillarId, router, pathname]);
+
     // Load daily totals data
     useEffect(() => {
         const loadDailyTotals = async () => {
             setLoading(true);
             try {
                 const chillarId = isAdmin ? (selectedChillarId || 0) : (userChillarId || 0);
-
-                // Update URL with current filters
-                const params = new URLSearchParams(searchParams);
-                params.set('startDate', dateRange.startDate);
-                params.set('endDate', dateRange.endDate);
-                if (selectedChillarId) {
-                    params.set('chillarId', selectedChillarId.toString());
-                } else {
-                    params.delete('chillarId');
-                }
-                router.replace(`${pathname}?${params.toString()}`);
-
                 const data = await getDailyTotalsReport(dateRange.startDate, dateRange.endDate, chillarId);
                 setDailyTotals(data);
             } catch (error) {
@@ -111,7 +113,7 @@ export default function DailyTotalsReport() {
         if (isAdmin || userChillarId) {
             loadDailyTotals();
         }
-    }, [dateRange, userChillarId, isAdmin, selectedChillarId]);
+    }, [dateRange.startDate, dateRange.endDate, userChillarId, isAdmin, selectedChillarId]);
 
     // Calculate summaries
     const summary = dailyTotals.reduce((acc, curr) => ({
