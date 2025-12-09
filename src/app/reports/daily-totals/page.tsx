@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import {
     BarChart2,
     Calendar,
@@ -31,17 +31,21 @@ export default function DailyTotalsReport() {
     const { user } = useAuth();
     const isAdmin = user?.role === 'admin';
     const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
 
     const defaultDateRange = getDefaultDateRange();
     const [dateRange, setDateRange] = useState({
-        startDate: defaultDateRange.startDate,
-        endDate: defaultDateRange.endDate
+        startDate: searchParams.get('startDate') || defaultDateRange.startDate,
+        endDate: searchParams.get('endDate') || defaultDateRange.endDate
     });
     const [loading, setLoading] = useState(true);
     const [dailyTotals, setDailyTotals] = useState<DailyTotalsDto[]>([]);
     const [userChillarId, setUserChillarId] = useState<number | null>(null);
     const [chillars, setChillars] = useState<Chillar[]>([]);
-    const [selectedChillarId, setSelectedChillarId] = useState<number | undefined>(undefined);
+    const [selectedChillarId, setSelectedChillarId] = useState<number | undefined>(
+        searchParams.get('chillarId') ? Number(searchParams.get('chillarId')) : undefined
+    );
     const [showFilters, setShowFilters] = useState(false);
 
     // Load chillars for admin
@@ -82,6 +86,18 @@ export default function DailyTotalsReport() {
             setLoading(true);
             try {
                 const chillarId = isAdmin ? (selectedChillarId || 0) : (userChillarId || 0);
+
+                // Update URL with current filters
+                const params = new URLSearchParams(searchParams);
+                params.set('startDate', dateRange.startDate);
+                params.set('endDate', dateRange.endDate);
+                if (selectedChillarId) {
+                    params.set('chillarId', selectedChillarId.toString());
+                } else {
+                    params.delete('chillarId');
+                }
+                router.replace(`${pathname}?${params.toString()}`);
+
                 const data = await getDailyTotalsReport(dateRange.startDate, dateRange.endDate, chillarId);
                 setDailyTotals(data);
             } catch (error) {

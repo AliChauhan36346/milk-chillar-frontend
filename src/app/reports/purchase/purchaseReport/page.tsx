@@ -3,6 +3,7 @@ import { AdminLayout } from '@/components/layouts/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import ProtectedRoute from '@/components/ProtectedRoutes';
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   getDetailedPurchaseReport,
   getPurchaseReportSummary,
@@ -40,12 +41,13 @@ export default function PurchaseReportPage() {
   const defaultDateRange = getDefaultDateRange();
 
   // Filter states
+  const searchParams = useSearchParams();
   const [filters, setFilters] = useState<PurchaseReportQuery>({
-    startDate: defaultDateRange.startDate,
-    endDate: defaultDateRange.endDate,
+    startDate: searchParams.get('startDate') || defaultDateRange.startDate,
+    endDate: searchParams.get('endDate') || defaultDateRange.endDate,
     timeOfDay: undefined,
     dodhiId: undefined,
-    chillarId: undefined,
+    chillarId: searchParams.get('chillarId') ? Number(searchParams.get('chillarId')) : undefined,
     supplierCode: undefined,
   });
 

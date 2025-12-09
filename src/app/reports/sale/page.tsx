@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   ShoppingCart,
   Search,
@@ -48,9 +49,10 @@ export default function SalesReport() {
 
   const [view, setView] = useState<ReportView>('detailed');
   const defaultDateRange = getDefaultDateRange();
+  const searchParams = useSearchParams();
   const [dateRange, setDateRange] = useState({
-    startDate: defaultDateRange.startDate,
-    endDate: defaultDateRange.endDate
+    startDate: searchParams.get('startDate') || defaultDateRange.startDate,
+    endDate: searchParams.get('endDate') || defaultDateRange.endDate
   });
   const [loading, setLoading] = useState(true);
   const [summaryLoading, setSummaryLoading] = useState(false);
@@ -62,7 +64,9 @@ export default function SalesReport() {
   const [salesSummary, setSalesSummary] = useState<SalesReportSummary | null>(null);
   const [userChillarId, setUserChillarId] = useState<number | null>(null);
   const [chillars, setChillars] = useState<Chillar[]>([]);
-  const [selectedChillarId, setSelectedChillarId] = useState<number | undefined>(undefined);
+  const [selectedChillarId, setSelectedChillarId] = useState<number | undefined>(
+    searchParams.get('chillarId') ? Number(searchParams.get('chillarId')) : undefined
+  );
   const [showFilters, setShowFilters] = useState(false);
 
   // Missing state definitions

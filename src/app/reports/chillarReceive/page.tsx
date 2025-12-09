@@ -61,8 +61,8 @@ export default function ReceiveReport() {
     const searchParams = useSearchParams();
     // Date state
     const [dateRange, setDateRange] = useState({
-        startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        endDate: new Date().toISOString().split('T')[0]
+        startDate: searchParams.get('startDate') || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        endDate: searchParams.get('endDate') || new Date().toISOString().split('T')[0]
     });
 
     // Time filter - separate start and end time filters
