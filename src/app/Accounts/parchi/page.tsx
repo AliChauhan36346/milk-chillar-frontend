@@ -133,84 +133,84 @@ export default function ParchiPage() {
   };
 
   const handleConfirmPayments = async (cashAccountId: number, confirmationText: string) => {
-  try {
-    // Group parchis into batches of 5
-    const batches: ParchiDto[][] = [];
-    for (let i = 0; i < selectedParchisForPayment.length; i += 5) {
-      batches.push(selectedParchisForPayment.slice(i, i + 5));
-    }
-
-    let successCount = 0;
-    let failCount = 0;
-
-    // Helper function to format date
-    const formatDateShort = (dateString: string) => {
-      return new Date(dateString).toLocaleDateString('en-PK', {
-        day: '2-digit',
-        month: 'short'
-      });
-    };
-
-    // Create payments for each batch
-    for (let i = 0; i < batches.length; i++) {
-      try {
-        const batch = batches[i];
-        const totalAmount = batch.reduce((sum, p) => sum + p.parchiAmount, 0);
-
-        // ✅ UPDATED: Create payment lines with new description format
-        const paymentLines = batch.map(parchi => {
-          // Format: "Parchi Payment 26-Sept to 11-Oct - 24.50 Ltrs"
-          const description = `Parchi Payment ${formatDateShort(filters.startDate)} to ${formatDateShort(filters.endDate)} - ${parchi.totalLiters.toFixed(2)} Ltrs`;
-          
-          return {
-            accountId: parchi.accountId,
-            description: description,
-            amount: parchi.parchiAmount
-          };
-        });
-
-        // Create cash payment
-        await cashPaymentsApi.createPayment({
-          paymentDate: new Date().toISOString(),
-          jobDescription: `Parchi Payment ${i + 1}/${batches.length} - ${formatDateShort(filters.startDate)} to ${formatDateShort(filters.endDate)}`,
-          cashAccountId: cashAccountId,
-          totalAmount: totalAmount,
-          remarks: `Bulk parchi payment for ${batch.length} suppliers`,
-          paymentLines: paymentLines
-        });
-
-        successCount++;
-      } catch (error) {
-        console.error(`Failed to create payment batch ${i + 1}:`, error);
-        failCount++;
+    try {
+      // Group parchis into batches of 5
+      const batches: ParchiDto[][] = [];
+      for (let i = 0; i < selectedParchisForPayment.length; i += 5) {
+        batches.push(selectedParchisForPayment.slice(i, i + 5));
       }
-    }
 
-    // Show results
-    if (successCount > 0) {
+      let successCount = 0;
+      let failCount = 0;
+
+      // Helper function to format date
+      const formatDateShort = (dateString: string) => {
+        return new Date(dateString).toLocaleDateString('en-PK', {
+          day: '2-digit',
+          month: 'short'
+        });
+      };
+
+      // Create payments for each batch
+      for (let i = 0; i < batches.length; i++) {
+        try {
+          const batch = batches[i];
+          const totalAmount = batch.reduce((sum, p) => sum + p.parchiAmount, 0);
+
+          // ✅ UPDATED: Create payment lines with new description format
+          const paymentLines = batch.map(parchi => {
+            // Format: "Parchi Payment 26-Sept to 11-Oct - 24.50 Ltrs"
+            const description = `Parchi Payment ${formatDateShort(filters.startDate)} to ${formatDateShort(filters.endDate)} - ${parchi.totalLiters.toFixed(2)} Ltrs`;
+
+            return {
+              accountId: parchi.accountId,
+              description: description,
+              amount: parchi.parchiAmount
+            };
+          });
+
+          // Create cash payment
+          await cashPaymentsApi.createPayment({
+            paymentDate: new Date(filters.endDate).toISOString(),
+            jobDescription: `Parchi Payment ${i + 1}/${batches.length} - ${formatDateShort(filters.startDate)} to ${formatDateShort(filters.endDate)}`,
+            cashAccountId: cashAccountId,
+            totalAmount: totalAmount,
+            remarks: `Bulk parchi payment for ${batch.length} suppliers`,
+            paymentLines: paymentLines
+          });
+
+          successCount++;
+        } catch (error) {
+          console.error(`Failed to create payment batch ${i + 1}:`, error);
+          failCount++;
+        }
+      }
+
+      // Show results
+      if (successCount > 0) {
+        toast({
+          title: `Created ${successCount} payment(s) successfully`,
+          description: failCount > 0 ? `${failCount} payment(s) failed` : undefined,
+          variant: 'success'
+        });
+        setPaymentModalOpen(false); // ✅ Close modal on success
+        loadParchiData(); // Refresh data
+      } else {
+        toast({
+          title: 'Failed to create payments',
+          description: 'Please try again or contact support',
+          variant: 'error'
+        });
+      }
+    } catch (error) {
       toast({
-        title: `Created ${successCount} payment(s) successfully`,
-        description: failCount > 0 ? `${failCount} payment(s) failed` : undefined,
-        variant: 'success'
-      });
-      setPaymentModalOpen(false); // ✅ Close modal on success
-      loadParchiData(); // Refresh data
-    } else {
-      toast({
-        title: 'Failed to create payments',
-        description: 'Please try again or contact support',
+        title: 'Error creating payments',
+        description: (error as Error)?.message || 'An error occurred',
         variant: 'error'
       });
+      throw error;
     }
-  } catch (error) {
-    toast({
-      title: 'Error creating payments',
-      description: (error as Error)?.message || 'An error occurred',
-      variant: 'error'
-    });
-    throw error;
-  }
-};
+  };
 
   const handlePrintSelected = (parchi: ParchiDto) => {
     setSelectedParchiForPrint([parchi]);
