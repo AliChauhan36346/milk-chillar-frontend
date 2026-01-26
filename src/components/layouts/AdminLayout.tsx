@@ -108,7 +108,8 @@ const adminNavigation = [
           { label: 'Sales Report', href: '/reports/sale', icon: <ShoppingBag size={18} /> },
           { label: 'Purchase Report', href: '/reports/purchase/purchaseReport', icon: <ShoppingCart size={18} /> },
           { label: 'Chillar Receive Report', href: '/reports/chillarReceive', icon: <Scale size={18} /> },
-          { label: 'Daily Totals', href: '/reports/daily-totals', icon: <BarChart2 size={18} /> }
+          { label: 'Daily Totals', href: '/reports/daily-totals', icon: <BarChart2 size={18} /> },
+          { label: 'Dodhi Report', href: '/reports/dodhiSummary', icon: <BarChart2 size={18} /> }
         ]
       }
     ]

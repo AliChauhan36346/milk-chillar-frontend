@@ -48,6 +48,24 @@ export interface CreateAccountRequest {
   name: string;
 }
 
+export interface UpdateMainAccountRequest {
+  tenantId: number;
+  name: string;
+  financialStatementComponent: string;
+}
+
+export interface UpdateSubAccountRequest {
+  tenantId: number;
+  mainAccountId: number;
+  name: string;
+}
+
+export interface UpdateAccountRequest {
+  tenantId: number;
+  subAccountId: number;
+  name: string;
+}
+
 export interface ChartAccount {
   mainAccountId: number;
   mainAccountCode: string;
@@ -77,6 +95,21 @@ export const getMainAccounts = async (tenantId: number) => {
   return response.data;
 };
 
+export const getMainAccountById = async (mainAccountId: number) => {
+  const response = await api.get<MainAccount>(`/accounts/main/${mainAccountId}`);
+  return response.data;
+};
+
+export const updateMainAccount = async (mainAccountId: number, data: UpdateMainAccountRequest) => {
+  const response = await api.put(`/accounts/main/${mainAccountId}`, data);
+  return response.data;
+};
+
+export const deleteMainAccount = async (mainAccountId: number) => {
+  const response = await api.delete(`/accounts/main/${mainAccountId}`);
+  return response.data;
+};
+
 // Sub Accounts API
 export const createSubAccount = async (data: CreateSubAccountRequest) => {
   const response = await api.post('/accounts/sub', data);
@@ -90,6 +123,21 @@ export const getSubAccounts = async (tenantId: number, mainAccountId: number) =>
 
 export const getSubAccountsByMainCode = async (tenantId: number, mainAccountCode: string) => {
   const response = await api.get<SubAccount[]>(`/accounts/sub/by-main-code?tenantId=${tenantId}&mainAccountCode=${mainAccountCode}`);
+  return response.data;
+};
+
+export const getSubAccountById = async (subAccountId: number) => {
+  const response = await api.get<SubAccount>(`/accounts/sub/${subAccountId}`);
+  return response.data;
+};
+
+export const updateSubAccount = async (subAccountId: number, data: UpdateSubAccountRequest) => {
+  const response = await api.put(`/accounts/sub/${subAccountId}`, data);
+  return response.data;
+};
+
+export const deleteSubAccount = async (subAccountId: number) => {
+  const response = await api.delete(`/accounts/sub/${subAccountId}`);
   return response.data;
 };
 
@@ -107,7 +155,22 @@ export const getAccounts = async (tenantId: number, subAccountId: number) => {
 export const getChartOfAccounts = async (tenantId: number) => {
   const response = await api.get<ChartAccount[]>(`/accounts/chart?tenantId=${tenantId}`);
   return response.data;
-}; 
+};
+
+export const getAccountById = async (accountId: number) => {
+  const response = await api.get<Account>(`/accounts/${accountId}`);
+  return response.data;
+};
+
+export const updateAccount = async (accountId: number, data: UpdateAccountRequest) => {
+  const response = await api.put(`/accounts/${accountId}`, data);
+  return response.data;
+};
+
+export const deleteAccount = async (accountId: number) => {
+  const response = await api.delete(`/Accounts/${accountId}`);
+  return response.data;
+};
 
 // Search accounts
 export const searchAccounts = async (query: string, mainAccountCode?: string, tenantId?: number) => {
@@ -150,7 +213,7 @@ export const getAccountsByComponent = async (component: 'assets' | 'liabilities'
   try {
     const componentPrefixes = {
       assets: '100',
-      liabilities: '200', 
+      liabilities: '200',
       equity: '300',
       revenue: '400',
       expenses: '500'
@@ -173,17 +236,26 @@ export const accountsApi = {
   // Main accounts
   createMainAccount,
   getMainAccounts,
-  
+  getMainAccountById,
+  updateMainAccount,
+  deleteMainAccount,
+
   // Sub accounts
   createSubAccount,
   getSubAccounts,
   getSubAccountsByMainCode,
-  
+  getSubAccountById,
+  updateSubAccount,
+  deleteSubAccount,
+
   // Accounts
   createAccount,
   getAccounts,
   getChartOfAccounts,
-  
+  getAccountById,
+  updateAccount,
+  deleteAccount,
+
   // Search and filtering
   searchAccounts,
   getAccountsByCodePrefix,

@@ -266,6 +266,44 @@ export interface BuyerWiseSalesReport {
   overallSummary: SalesReportSummary;
 }
 
+export interface OverallDodhiSummaryDto {
+  totalPurchasedLiters: number;
+  totalPurchaseAmount: number;
+  averagePurchaseRate: number;
+  totalPurchaseTransactions: number;
+  totalReceivedLiters: number;
+  totalNetLiters: number;
+  totalReceptionLoss: number;
+  overallReceptionLossPercentage: number;
+  totalReceiveTransactions: number;
+  totalPurchaseReceiveDifference: number;
+  totalDodhis: number;
+}
+
+export interface SingleDodhiSummaryDto {
+  dodhiId: number;
+  dodhiName: string;
+  chillarId: number;
+  chillarName: string;
+  totalPurchasedLiters: number;
+  totalPurchaseAmount: number;
+  averagePurchaseRate: number;
+  purchaseTransactionCount: number;
+  totalReceivedLiters: number;
+  totalNetLiters: number;
+  receptionLoss: number;
+  receptionLossPercentage: number;
+  receiveTransactionCount: number;
+  purchaseReceiveDifference: number;
+  purchaseReceiveDifferencePercentage: number;
+}
+
+export interface DodhiSummaryQuery {
+  startDate: string;
+  endDate: string;
+  chillarId?: number;
+}
+
 export const getDailyTotalsReport = async (
   startDate: string,
   endDate: string,
@@ -425,6 +463,40 @@ export const getSalesReportSummary = async (
   } catch (error) {
     console.error('Failed to fetch sales report summary:', error);
     throw new Error('Failed to fetch sales report summary');
+  }
+};
+
+export const getOverallDodhiSummary = async (params: DodhiSummaryQuery): Promise<OverallDodhiSummaryDto> => {
+  try {
+    const queryParams = new URLSearchParams();
+    queryParams.append('startDate', params.startDate);
+    queryParams.append('endDate', params.endDate);
+    if (params.chillarId) {
+      queryParams.append('chillarId', params.chillarId.toString());
+    }
+
+    const response = await api.get(`/Reports/OverallDodhiSummary?${queryParams.toString()}`);
+    return response.data;
+  } catch (error) {
+    console.error('Failed to fetch overall dodhi summary:', error);
+    throw new Error('Failed to fetch overall dodhi summary');
+  }
+};
+
+export const getSingleDodhiSummary = async (params: DodhiSummaryQuery): Promise<SingleDodhiSummaryDto[]> => {
+  try {
+    const queryParams = new URLSearchParams();
+    queryParams.append('startDate', params.startDate);
+    queryParams.append('endDate', params.endDate);
+    if (params.chillarId) {
+      queryParams.append('chillarId', params.chillarId.toString());
+    }
+
+    const response = await api.get(`/Reports/SingleDodhiSummary?${queryParams.toString()}`);
+    return response.data;
+  } catch (error) {
+    console.error('Failed to fetch single dodhi summary:', error);
+    throw new Error('Failed to fetch single dodhi summary');
   }
 };
 

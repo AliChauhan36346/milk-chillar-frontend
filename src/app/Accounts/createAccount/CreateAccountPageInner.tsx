@@ -9,7 +9,20 @@ import { Label } from '@/components/ui/Label';
 import { Select } from '@/components/ui/Select';
 import AccountFormModal from '@/components/modals/AccountFormModal';
 import ProtectedRoute from '@/components/ProtectedRoutes';
-import { getMainAccounts, getSubAccounts, createMainAccount, createSubAccount, createAccount, MainAccount, SubAccount, type CreateAccountRequest } from '@/lib/api/accounts';
+import {
+  getMainAccounts,
+  getSubAccounts,
+  createMainAccount,
+  createSubAccount,
+  createAccount,
+  updateAccount,
+  getAccountById,
+  getMainAccountById,
+  getSubAccountById,
+  MainAccount,
+  SubAccount,
+  type CreateAccountRequest
+} from '@/lib/api/accounts';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { SuccessMessage } from '@/components/ui/SuccessMessage';
 
@@ -24,7 +37,6 @@ export default function CreateAccountPage() {
   const searchParams = useSearchParams();
   const { user } = useAuth();
   const accountId = searchParams.get('id');
-  const accountData = searchParams.get('data') ? JSON.parse(decodeURIComponent(searchParams.get('data') || '')) : null;
   const mainAccountId = searchParams.get('mainId');
   const subAccountId = searchParams.get('subId');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -44,27 +56,51 @@ export default function CreateAccountPage() {
 
   useEffect(() => {
     const initializeData = async () => {
-      // First, fetch main accounts
-      await fetchMainAccounts();
-      
-      // If we have a mainAccountId, set it and fetch its sub accounts
-      if (mainAccountId) {
-        setFormData(prev => ({ ...prev, mainAccountId: parseInt(mainAccountId) }));
-        const subAccounts = await fetchSubAccounts(parseInt(mainAccountId));
-        
-        // After sub accounts are loaded, set the subAccountId if it exists
-        if (subAccountId && subAccounts) {
-          setFormData(prev => ({ ...prev, subAccountId: parseInt(subAccountId) }));
+      setIsLoading(true);
+      try {
+        // Always fetch main accounts list for the dropdown
+        await fetchMainAccounts();
+
+        if (accountId) {
+          // Edit Mode: Fetch account details
+          const account = await getAccountById(parseInt(accountId));
+          if (account) {
+            // We need to find the mainAccountId from the subAccountId
+            // But the getAccountById response might not include the full hierarchy directly if the API doesn't support it purely.
+            // Assuming Account model has subAccountId.
+
+            // We need to get subAccount details to know the mainAccountId
+            const subAccount = await getSubAccountById(account.subAccountId);
+
+            setFormData({
+              mainAccountId: subAccount.mainAccountId,
+              subAccountId: account.subAccountId,
+              name: account.name
+            });
+
+            // Load subaccounts for the selected main account
+            await fetchSubAccounts(subAccount.mainAccountId);
+          }
+        } else if (mainAccountId) {
+          // Create Mode: Pre-select Main Account
+          const mainId = parseInt(mainAccountId);
+          setFormData(prev => ({ ...prev, mainAccountId: mainId }));
+          await fetchSubAccounts(mainId);
+
+          if (subAccountId) {
+            // Create Mode: Pre-select Sub Account
+            setFormData(prev => ({ ...prev, subAccountId: parseInt(subAccountId) }));
+          }
         }
-      }
-      
-      if (accountData) {
-        setAccountDetails();
+      } catch (error) {
+        console.error('Error initializing data:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
-    
+
     initializeData();
-  }, []);
+  }, [accountId, mainAccountId, subAccountId]);
 
   const fetchMainAccounts = async () => {
     try {
@@ -82,7 +118,7 @@ export default function CreateAccountPage() {
     if (!user?.tenantId) return;
     const mainAccountId = mainId || formData.mainAccountId;
     if (!mainAccountId) return;
-    
+
     try {
       const data = await getSubAccounts(user.tenantId, mainAccountId);
       setSubAccounts(data);
@@ -93,16 +129,7 @@ export default function CreateAccountPage() {
     }
   };
 
-  const setAccountDetails = () => {
-    if (accountData) {
-      setFormData({
-        mainAccountId: accountData.mainAccount.mainAccountId,
-        subAccountId: accountData.subAccount.subAccountId,
-        name: accountData.name
-      });
-      setIsLoading(false);
-    }
-  };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -111,17 +138,20 @@ export default function CreateAccountPage() {
 
     try {
       if (accountId) {
-        // TODO: Implement update account API
-        const response = await fetch(`/api/accounts/${accountId}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(formData),
-        });
-        if (!response.ok) {
-          throw new Error('Failed to update account');
+        if (formData.subAccountId === undefined) {
+          throw new Error('subAccountId is required');
         }
+
+        await updateAccount(parseInt(accountId), {
+          tenantId: user.tenantId,
+          subAccountId: formData.subAccountId,
+          name: formData.name
+        });
+
+        setSuccessMessage('Account updated successfully');
+        setTimeout(() => {
+          router.push('/Accounts/chartOfAccounts');
+        }, 1500);
       } else {
         if (formData.subAccountId === undefined) {
           throw new Error('subAccountId is required');
@@ -131,8 +161,12 @@ export default function CreateAccountPage() {
           subAccountId: formData.subAccountId,
           name: formData.name
         });
+
+        setSuccessMessage('Account created successfully');
+        setTimeout(() => {
+          router.push('/Accounts/chartOfAccounts');
+        }, 1500);
       }
-      router.push('/Accounts/chartOfAccounts');
     } catch (error) {
       console.error('Error saving account:', error);
       // TODO: Add proper error handling/notification
@@ -174,8 +208,8 @@ export default function CreateAccountPage() {
   };
 
   const handleMainAccountChange = async (mainAccountId: number) => {
-    setFormData(prev => ({ 
-      ...prev, 
+    setFormData(prev => ({
+      ...prev,
       mainAccountId,
       // Clear subAccountId when manually changing main account
       subAccountId: undefined
@@ -187,8 +221,8 @@ export default function CreateAccountPage() {
   const handleMainAccountSubmit = async (data: any) => {
     try {
       if (!user?.tenantId) return;
-      await createMainAccount({ 
-        tenantId: user.tenantId, 
+      await createMainAccount({
+        tenantId: user.tenantId,
         name: data.name,
         financialStatementComponent: data.financial_statement_component
       });
@@ -203,10 +237,10 @@ export default function CreateAccountPage() {
   const handleSubAccountSubmit = async (data: any) => {
     try {
       if (!user?.tenantId || !formData.mainAccountId) return;
-      await createSubAccount({ 
-        tenantId: user.tenantId, 
+      await createSubAccount({
+        tenantId: user.tenantId,
         mainAccountId: formData.mainAccountId,
-        name: data.name 
+        name: data.name
       });
       await fetchSubAccounts();
       setIsSubAccountModalOpen(false);
@@ -238,14 +272,14 @@ export default function CreateAccountPage() {
               onClose={() => setSuccessMessage(null)}
             />
           )}
-          
+
           <div className="flex items-center gap-4 mb-8">
             <BackButton href="/Accounts/chartOfAccounts" />
-            <h1 className="text-2xl font-bold text-gray-900">Create Account</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{accountId ? 'Edit Account' : 'Create Account'}</h1>
           </div>
 
           <div className="bg-white rounded-xl shadow-sm p-6">
-            <form onSubmit={handleCreateAccount} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <Label htmlFor="mainAccount">Main Account</Label>
@@ -317,10 +351,10 @@ export default function CreateAccountPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                  disabled={!formData.subAccountId || !formData.name}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={!formData.subAccountId || !formData.name || isSubmitting}
                 >
-                  Create Account
+                  {accountId ? 'Update Account' : 'Create Account'}
                 </button>
               </div>
             </form>

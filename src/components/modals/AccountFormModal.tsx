@@ -48,8 +48,8 @@ const CustomSelect: React.FC<CustomSelectProps> = ({ value, onChange, options, p
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={`w-full px-4 py-3 text-left bg-white border-2 rounded-xl transition-all duration-200 flex items-center justify-between ${isOpen
-            ? 'border-blue-500 shadow-lg ring-4 ring-blue-50'
-            : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
+          ? 'border-blue-500 shadow-lg ring-4 ring-blue-50'
+          : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
           }`}
       >
         <span className={selectedOption ? 'text-gray-900 font-medium' : 'text-gray-500'}>
@@ -158,6 +158,12 @@ interface AccountFormModalProps {
   type: 'main' | 'sub';
   mainAccounts?: MainAccount[];
   initialMainAccount?: MainAccount;
+  isUpdate?: boolean;
+  initialData?: {
+    name: string;
+    financial_statement_component?: string;
+    main_account_code?: string;
+  };
 }
 
 export default function EnhancedAccountFormModal({
@@ -166,13 +172,31 @@ export default function EnhancedAccountFormModal({
   onSubmit,
   type,
   mainAccounts = [],
-  initialMainAccount
+  initialMainAccount,
+  isUpdate = false,
+  initialData
 }: AccountFormModalProps) {
   const [formData, setFormData] = useState({
-    name: '',
-    financial_statement_component: '',
-    main_account_code: initialMainAccount?.main_account_code || ''
+    name: initialData?.name || '',
+    financial_statement_component: initialData?.financial_statement_component || '',
+    main_account_code: initialData?.main_account_code || initialMainAccount?.main_account_code || ''
   });
+
+  useEffect(() => {
+    if (isOpen && initialData) {
+      setFormData({
+        name: initialData.name || '',
+        financial_statement_component: initialData.financial_statement_component || '',
+        main_account_code: initialData.main_account_code || initialMainAccount?.main_account_code || ''
+      });
+    } else if (isOpen && !isUpdate) {
+      setFormData({
+        name: '',
+        financial_statement_component: '',
+        main_account_code: initialMainAccount?.main_account_code || ''
+      });
+    }
+  }, [isOpen, initialData, isUpdate, initialMainAccount]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -185,20 +209,25 @@ export default function EnhancedAccountFormModal({
     await new Promise(resolve => setTimeout(resolve, 1000));
 
     onSubmit(formData);
-    setFormData({
-      name: '',
-      financial_statement_component: '',
-      main_account_code: ''
-    });
+    // Don't clear form immediately if updating, to prevent flicker before modal closes
+    if (!isUpdate) {
+      setFormData({
+        name: '',
+        financial_statement_component: '',
+        main_account_code: ''
+      });
+    }
     setIsSubmitting(false);
   };
 
   const handleClose = () => {
-    setFormData({
-      name: '',
-      financial_statement_component: '',
-      main_account_code: ''
-    });
+    if (!isUpdate) {
+      setFormData({
+        name: '',
+        financial_statement_component: '',
+        main_account_code: ''
+      });
+    }
     onClose();
   };
 
@@ -221,8 +250,13 @@ export default function EnhancedAccountFormModal({
     label: acc.name
   }));
 
-  const title = type === 'main' ? 'Create Main Account' : 'Create Sub Account';
-  const subtitle = type === 'main' ? 'Set up a new account category' : 'Add a subcategory to organize accounts';
+  const title = type === 'main'
+    ? (isUpdate ? 'Edit Main Account' : 'Create Main Account')
+    : (isUpdate ? 'Edit Sub Account' : 'Create Sub Account');
+
+  const subtitle = type === 'main'
+    ? (isUpdate ? 'Update account category details' : 'Set up a new account category')
+    : (isUpdate ? 'Update subcategory details' : 'Add a subcategory to organize accounts');
   const icon = type === 'main' ? <Building2 size={18} /> : <FolderOpen size={18} />;
   const iconColor = type === 'main' ? 'bg-blue-50 text-blue-600' : 'bg-purple-50 text-purple-600';
 
@@ -234,7 +268,6 @@ export default function EnhancedAccountFormModal({
       subtitle={subtitle}
       icon={icon}
       iconClassName={iconColor}
-      maxWidth="max-w-lg"
     >
       {/* Form Content */}
       <div className="p-6 space-y-6">
@@ -284,8 +317,8 @@ export default function EnhancedAccountFormModal({
             onClick={handleSubmit}
             disabled={!formData.name || (type === 'main' && !formData.financial_statement_component) || isSubmitting}
             className={`flex-1 py-3 px-6 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-2 ${formData.name && (type === 'sub' || formData.financial_statement_component)
-                ? 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg hover:shadow-xl transform hover:scale-[1.02]'
-                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              ? 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg hover:shadow-xl transform hover:scale-[1.02]'
+              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
               }`}
           >
             {isSubmitting ? (
@@ -296,7 +329,8 @@ export default function EnhancedAccountFormModal({
             ) : (
               <>
                 <CheckCircle className="w-5 h-5" />
-                Create Account
+                <CheckCircle className="w-5 h-5" />
+                {isUpdate ? 'Update Account' : 'Create Account'}
               </>
             )}
           </button>
@@ -311,8 +345,8 @@ export default function EnhancedAccountFormModal({
               className="h-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-300"
               style={{
                 width: `${type === 'main'
-                    ? (formData.financial_statement_component ? 50 : 0) + (formData.name ? 50 : 0)
-                    : (formData.main_account_code ? 50 : 0) + (formData.name ? 50 : 0)
+                  ? (formData.financial_statement_component ? 50 : 0) + (formData.name ? 50 : 0)
+                  : (formData.main_account_code ? 50 : 0) + (formData.name ? 50 : 0)
                   }%`
               }}
             ></div>
