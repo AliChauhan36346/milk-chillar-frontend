@@ -301,6 +301,8 @@ export interface SingleDodhiSummaryDto {
 export interface DodhiSummaryQuery {
   startDate: string;
   endDate: string;
+  startTimeOfDay?: string;
+  endTimeOfDay?: string;
   chillarId?: number;
 }
 
@@ -471,6 +473,12 @@ export const getOverallDodhiSummary = async (params: DodhiSummaryQuery): Promise
     const queryParams = new URLSearchParams();
     queryParams.append('startDate', params.startDate);
     queryParams.append('endDate', params.endDate);
+    if (params.startTimeOfDay) {
+      queryParams.append('startTimeOfDay', params.startTimeOfDay);
+    }
+    if (params.endTimeOfDay) {
+      queryParams.append('endTimeOfDay', params.endTimeOfDay);
+    }
     if (params.chillarId) {
       queryParams.append('chillarId', params.chillarId.toString());
     }
@@ -488,6 +496,12 @@ export const getSingleDodhiSummary = async (params: DodhiSummaryQuery): Promise<
     const queryParams = new URLSearchParams();
     queryParams.append('startDate', params.startDate);
     queryParams.append('endDate', params.endDate);
+    if (params.startTimeOfDay) {
+      queryParams.append('startTimeOfDay', params.startTimeOfDay);
+    }
+    if (params.endTimeOfDay) {
+      queryParams.append('endTimeOfDay', params.endTimeOfDay);
+    }
     if (params.chillarId) {
       queryParams.append('chillarId', params.chillarId.toString());
     }

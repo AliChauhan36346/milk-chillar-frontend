@@ -19,7 +19,8 @@ import {
     ArrowRightLeft,
     Scale,
     Calendar,
-    Filter
+    Filter,
+    Clock
 } from 'lucide-react';
 
 export default function DodhiSummaryReportPage() {
@@ -30,6 +31,8 @@ export default function DodhiSummaryReportPage() {
     // State
     const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
     const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
+    const [startTimeOfDay, setStartTimeOfDay] = useState<string>('');
+    const [endTimeOfDay, setEndTimeOfDay] = useState<string>('');
     const [selectedChillarId, setSelectedChillarId] = useState<number | undefined>(undefined);
     const [chillars, setChillars] = useState<Chillar[]>([]);
 
@@ -76,10 +79,14 @@ export default function DodhiSummaryReportPage() {
                 const query: {
                     startDate: string;
                     endDate: string;
+                    startTimeOfDay?: string;
+                    endTimeOfDay?: string;
                     chillarId?: number;
                 } = {
                     startDate,
-                    endDate
+                    endDate,
+                    startTimeOfDay: startTimeOfDay || undefined,
+                    endTimeOfDay: endTimeOfDay || undefined
                 };
                 
                 // Only include chillarId if it's defined (not undefined or 0)
@@ -102,7 +109,7 @@ export default function DodhiSummaryReportPage() {
         };
 
         fetchReport();
-    }, [startDate, endDate, selectedChillarId, isAdmin]);
+    }, [startDate, endDate, startTimeOfDay, endTimeOfDay, selectedChillarId, isAdmin]);
 
     return (
         <ProtectedRoute>
@@ -120,7 +127,7 @@ export default function DodhiSummaryReportPage() {
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                                {/* Date Inputs */}
+                                {/* Start Date */}
                                 <div className="space-y-1">
                                     <label className="text-xs font-medium text-slate-500 uppercase">Start Date</label>
                                     <div className="relative">
@@ -134,6 +141,24 @@ export default function DodhiSummaryReportPage() {
                                     </div>
                                 </div>
 
+                                {/* Start Time */}
+                                <div className="space-y-1">
+                                    <label className="text-xs font-medium text-slate-500 uppercase">Start Time</label>
+                                    <div className="relative">
+                                        <Clock className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
+                                        <select
+                                            value={startTimeOfDay}
+                                            onChange={(e) => setStartTimeOfDay(e.target.value)}
+                                            className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none appearance-none bg-white transition-all"
+                                        >
+                                            <option value="">All Day</option>
+                                            <option value="Morning">Morning</option>
+                                            <option value="Evening">Evening</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                {/* End Date */}
                                 <div className="space-y-1">
                                     <label className="text-xs font-medium text-slate-500 uppercase">End Date</label>
                                     <div className="relative">
@@ -147,9 +172,26 @@ export default function DodhiSummaryReportPage() {
                                     </div>
                                 </div>
 
+                                {/* End Time */}
+                                <div className="space-y-1">
+                                    <label className="text-xs font-medium text-slate-500 uppercase">End Time</label>
+                                    <div className="relative">
+                                        <Clock className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
+                                        <select
+                                            value={endTimeOfDay}
+                                            onChange={(e) => setEndTimeOfDay(e.target.value)}
+                                            className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none appearance-none bg-white transition-all"
+                                        >
+                                            <option value="">All Day</option>
+                                            <option value="Morning">Morning</option>
+                                            <option value="Evening">Evening</option>
+                                        </select>
+                                    </div>
+                                </div>
+
                                 {/* Chillar Select (Admin Only) */}
                                 {isAdmin && (
-                                    <div className="space-y-1 md:col-span-2">
+                                    <div className="space-y-1 md:col-span-4">
                                         <label className="text-xs font-medium text-slate-500 uppercase">Select Chillar</label>
                                         <div className="relative">
                                             <Building2 className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
