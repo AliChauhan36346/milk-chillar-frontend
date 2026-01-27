@@ -8,7 +8,6 @@ import {
   Milk,
   ShoppingCart,
   Truck,
-  Download,
   RefreshCw,
   Scale,
   TrendingUp,
@@ -132,30 +131,8 @@ export default function ChillarReports() {
     fetchStockData();
   }, [dateRange]);
 
-  const handleExportData = () => {
-    if (!dashboardStats) {
-      alert('No data to export');
-      return;
-    }
-
-    // Create CSV data
-    const csvData = [
-      ['Metric', 'Value (Liters)'],
-      ['Previous Stock', dashboardStats.previousStock.toString()],
-      ['Total Received', dashboardStats.totalChillarReceive.toString()],
-      ['Total Sold', dashboardStats.totalSales.toString()],
-      ['Current Stock', dashboardStats.currentStock.toString()],
-      ['Period', `${dateRange.startDate}${dateRange.startTime ? ` (${dateRange.startTime})` : ''} to ${dateRange.endDate}${dateRange.endTime ? ` (${dateRange.endTime})` : ''}`]
-    ];
-
-    const csvContent = csvData.map(row => row.join(',')).join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `chillar-stock-report-${dateRange.startDate}-to-${dateRange.endDate}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
+  const navigateToDodhiSummary = () => {
+    router.push('/reports/dodhiSummary');
   };
 
   const navigateToReceiveReport = () => {
@@ -242,12 +219,11 @@ export default function ChillarReports() {
               </div>
             </div>
             <button
-              onClick={handleExportData}
-              disabled={!dashboardStats}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              onClick={navigateToDodhiSummary}
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
             >
-              <Download className="w-4 h-4" />
-              Export
+              <FileText className="w-4 h-4" />
+              Dodhi Summary
             </button>
           </div>
 
@@ -438,15 +414,14 @@ export default function ChillarReports() {
               </button>
 
               <button
-                onClick={handleExportData}
-                disabled={!dashboardStats}
-                className="flex items-center justify-between p-4 border border-purple-200 rounded-lg hover:bg-purple-50 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
+                onClick={navigateToDodhiSummary}
+                className="flex items-center justify-between p-4 border border-purple-200 rounded-lg hover:bg-purple-50 transition-colors"
               >
                 <div className="flex items-center gap-3">
-                  <Download className="w-6 h-6 text-purple-600" />
+                  <FileText className="w-6 h-6 text-purple-600" />
                   <div className="text-left">
-                    <h4 className="font-medium text-gray-900">Export Data</h4>
-                    <p className="text-sm text-gray-500">Download stock report</p>
+                    <h4 className="font-medium text-gray-900">Dodhi Summary</h4>
+                    <p className="text-sm text-gray-500">View dodhi performance report</p>
                   </div>
                 </div>
                 <ArrowRight className="w-5 h-5 text-purple-600" />
