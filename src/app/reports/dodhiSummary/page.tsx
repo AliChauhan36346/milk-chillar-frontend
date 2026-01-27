@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { DynamicLayout } from '@/components/layouts/DynamicLayout';
 import ProtectedRoute from '@/components/ProtectedRoutes';
 import { useAuth } from '@/lib/auth/AuthContext';
+import { getMyChillar } from '@/lib/api/chillarReceive';
 import {
     getOverallDodhiSummary,
     getSingleDodhiSummary,
@@ -50,8 +51,15 @@ export default function DodhiSummaryReportPage() {
                 } catch (error) {
                     console.error('Failed to fetch chillars:', error);
                 }
-            } else if (user?.chillarId) {
-                setSelectedChillarId(user.chillarId);
+            } else {
+                // For chillar incharge (non-admin), derive chillarId from backend
+                // because AuthContext's User type doesn't include chillarId.
+                try {
+                    const myChillar = await getMyChillar();
+                    setSelectedChillarId(myChillar.chillarId);
+                } catch (error) {
+                    console.error('Failed to fetch my chillar:', error);
+                }
             }
         };
         initialize();
@@ -218,7 +226,6 @@ export default function DodhiSummaryReportPage() {
                                             <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-200">
                                                 <tr>
                                                     <th className="px-6 py-3">Dodhi Name</th>
-                                                    {isAdmin && <th className="px-6 py-3">Chillar</th>}
                                                     <th className="px-6 py-3 text-right">Purchased (L)</th>
                                                     <th className="px-6 py-3 text-right">Amount (Rs)</th>
                                                     <th className="px-6 py-3 text-right">Received (L)</th>
@@ -232,9 +239,6 @@ export default function DodhiSummaryReportPage() {
                                                     dodhiDetails.map((record) => (
                                                         <tr key={`${record.dodhiId}-${record.chillarId}`} className="hover:bg-slate-50/50 transition-colors">
                                                             <td className="px-6 py-3 font-medium text-slate-700">{record.dodhiName}</td>
-                                                            {isAdmin && (
-                                                                <td className="px-6 py-3 text-slate-600">{record.chillarName}</td>
-                                                            )}
                                                             <td className="px-6 py-3 text-right text-slate-600">
                                                                 {record.totalPurchasedLiters.toLocaleString()}
                                                                 <div className="text-xs text-slate-400">{record.purchaseTransactionCount} txns</div>
@@ -265,7 +269,7 @@ export default function DodhiSummaryReportPage() {
                                                     ))
                                                 ) : (
                                                     <tr>
-                                                        <td colSpan={isAdmin ? 8 : 7} className="px-6 py-12 text-center text-slate-500">
+                                                        <td colSpan={7} className="px-6 py-12 text-center text-slate-500">
                                                             No records found for the selected criteria
                                                         </td>
                                                     </tr>
