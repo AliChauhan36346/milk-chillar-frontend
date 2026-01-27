@@ -107,7 +107,7 @@ export default function DodhiSummaryReportPage() {
     return (
         <ProtectedRoute>
             <DynamicLayout allowedRoles={['admin', 'chillarincharge']}>
-                <div className="min-h-screen bg-slate-50 p-6">
+                <div className="min-h-screen bg-slate-50 p-2">
                     <div className="max-w-7xl mx-auto space-y-6">
 
                         {/* Header & Filters */}
