@@ -41,7 +41,7 @@ import axios from 'axios';
 
 // Create axios instance with base URL
 export const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'https://milkchillarapi-production.up.railway.app/api',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'milkchillarapi20260131101544-ayaxakcpdba3agb3.canadacentral-01.azurewebsites.net',
   //baseURL: 'https://localhost:7013/api',
   headers: {
     'Content-Type': 'application/json',
