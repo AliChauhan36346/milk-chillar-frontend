@@ -39,7 +39,7 @@ import { SalesFormModal } from '@/components/modals/SalesFormModal';
 import MilkCardModal from '@/components/modals/MilkCardModal';
 import { getSaleById, SaleDto, updateSale } from '@/lib/api/sales';
 import { getAccountsByComponent, SearchAccountResult } from '@/lib/api/accounts';
-import { getDefaultDateRange } from '@/lib/utils/dateRange';
+import { getCurrentMonthHalfDateRange } from '@/lib/utils/dateRange';
 
 type ReportView = 'detailed' | 'summary';
 
@@ -48,7 +48,7 @@ function SalesReportContent() {
   const isAdmin = user?.role === 'admin';
 
   const [view, setView] = useState<ReportView>('detailed');
-  const defaultDateRange = getDefaultDateRange();
+  const defaultDateRange = getCurrentMonthHalfDateRange();
   const searchParams = useSearchParams();
   const [dateRange, setDateRange] = useState({
     startDate: searchParams.get('startDate') || defaultDateRange.startDate,

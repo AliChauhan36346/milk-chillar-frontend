@@ -12,6 +12,7 @@ import {
 } from '@/lib/api/reports';
 import { getChillars, Chillar } from '@/lib/api/chillar';
 import SummaryCard from '@/components/ui/SummaryCard';
+import { getCurrentMonthHalfDateRange } from '@/lib/utils/dateRange';
 import {
     Building2,
     Droplets,
@@ -28,9 +29,10 @@ export default function DodhiSummaryReportPage() {
     const { user } = useAuth();
     const isAdmin = user?.role === 'admin';
 
-    // State
-    const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
-    const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
+    // State - Initialize with current month half date range
+    const initialDateRange = getCurrentMonthHalfDateRange();
+    const [startDate, setStartDate] = useState(initialDateRange.startDate);
+    const [endDate, setEndDate] = useState(initialDateRange.endDate);
     const [startTimeOfDay, setStartTimeOfDay] = useState<string>('');
     const [endTimeOfDay, setEndTimeOfDay] = useState<string>('');
     const [selectedChillarId, setSelectedChillarId] = useState<number | undefined>(undefined);

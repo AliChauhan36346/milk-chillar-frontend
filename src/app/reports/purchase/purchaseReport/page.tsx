@@ -22,7 +22,7 @@ import PurchaseModal from '@/components/modals/PurchaseModal';
 import MilkCardModal from '@/components/modals/MilkCardModal';
 import { getPurchaseById, Purchase, updatePurchase } from '@/lib/api/purchases';
 import { getAccountsByComponent, SearchAccountResult } from '@/lib/api/accounts';
-import { getDefaultDateRange } from '@/lib/utils/dateRange';
+import { getCurrentMonthHalfDateRange } from '@/lib/utils/dateRange';
 
 type ReportView = 'detailed' | 'summary';
 
@@ -37,8 +37,8 @@ function PurchaseReportContent() {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 50;
 
-  // Get default date range based on current date
-  const defaultDateRange = getDefaultDateRange();
+  // Get default date range based on current month half
+  const defaultDateRange = getCurrentMonthHalfDateRange();
 
   // Filter states
   const searchParams = useSearchParams();
