@@ -238,9 +238,8 @@ export default function ChartOfAccountsPage() {
       if (!user?.tenantId) return;
       const data = await getChartOfAccounts(user.tenantId);
       setAccounts(data);
-      // Auto expand all main accounts initially for convenience
-      const initialExpanded = new Set(data.map(a => a.mainAccountId));
-      setExpandedAccounts(initialExpanded);
+      // Keep accounts collapsed by default on initial open
+      setExpandedAccounts(new Set());
     } catch (error) {
       console.error('Error fetching chart of accounts:', error);
     } finally {
