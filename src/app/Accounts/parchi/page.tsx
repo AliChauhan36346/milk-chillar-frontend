@@ -380,8 +380,8 @@ export default function ParchiPage() {
 
                   <div>
                     <Select
-                      value={filters.isActive?.toString() || 'true'}
-                      onChange={(value) => handleFilterChange('isActive', value === 'true')}
+                      value={filters.isActive === undefined ? '' : String(filters.isActive)}
+                      onChange={(value) => handleFilterChange('isActive', value === '' ? undefined : value === 'true')}
                       options={[
                         { value: 'true', label: 'Active Only' },
                         { value: 'false', label: 'Inactive Only' },
