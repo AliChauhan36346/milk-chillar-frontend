@@ -1,52 +1,17 @@
-// import axios from 'axios';
-
-// // Create axios instance with base URL
-// export const api = axios.create({
-//   // baseURL: 'https://localhost:7013/api', // Match the backend URL from login page
-//   baseURL: process.env.NEXT_PUBLIC_API_URL || 'https://localhost:7013/api',
-//   headers: {
-//     'Content-Type': 'application/json',
-//   },
-// });
-
-// // Add request interceptor for authentication
-// api.interceptors.request.use(
-//   (config) => {
-//     const token = localStorage.getItem('token');
-//     if (token) {
-//       config.headers.Authorization = `Bearer ${token}`;
-//     }
-//     return config;
-//   },
-//   (error) => {
-//     return Promise.reject(error);
-//   }
-// );
-
-// // Add response interceptor for error handling
-// api.interceptors.response.use(
-//   (response) => response,
-//   (error) => {
-//     if (error.response?.status === 401) {
-//       // Handle unauthorized access (e.g., redirect to login)
-//       localStorage.removeItem('token');
-//       localStorage.removeItem('userInfo');
-//       window.location.href = '/login';
-//     }
-//     return Promise.reject(error);
-//   }
-// );
-
 import axios from 'axios';
+
+const DEFAULT_API_URL = 'https://localhost:7013/api';
+
+// Support production NEXT_PUBLIC_API_URL or fallback to localhost
+export const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || DEFAULT_API_URL).replace(/\/+$/, '');
 
 // Create axios instance with base URL
 export const api = axios.create({
-  //baseURL: process.env.NEXT_PUBLIC_API_URL || 'https://milkchillarapi-production.up.railway.app/api',
-  baseURL: 'https://localhost:7013/api',
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 10000, // 10 second timeout
+  timeout: 30000, // 30-second timeout to handle free-tier cloud cold starts gracefully
 });
 
 // Add request interceptor for authentication
