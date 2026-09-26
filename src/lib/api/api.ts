@@ -2,8 +2,9 @@ import axios from 'axios';
 
 const DEFAULT_API_URL = 'https://localhost:7013/api';
 
-// Support production NEXT_PUBLIC_API_URL or fallback to localhost
-export const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || DEFAULT_API_URL).replace(/\/+$/, '');
+// Normalize URL: trim whitespace, remove trailing slashes, and ensure /api is present
+const rawUrl = (process.env.NEXT_PUBLIC_API_URL || DEFAULT_API_URL).trim().replace(/\/+$/, '');
+export const API_BASE_URL = rawUrl.endsWith('/api') ? rawUrl : `${rawUrl}/api`;
 
 // Create axios instance with base URL
 export const api = axios.create({
