@@ -45,36 +45,36 @@ export default function Sidebar({
 
   const [searchQuery, setSearchQuery] = useState('');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [hoveredSection, setHoveredSection] = useState<string | null>(null);
+  const leaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Initialize expanded sections from sessionStorage if available
-  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>(() => {
-    if (typeof window === 'undefined') return {};
-    try {
-      const saved = sessionStorage.getItem('sidebar_expanded_sections');
-      return saved ? JSON.parse(saved) : {};
-    } catch {
-      return {};
+  // Expanded sections for manual click / toggle all
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+
+  const handleMouseEnter = (sectionKey: string) => {
+    if (leaveTimeoutRef.current) {
+      clearTimeout(leaveTimeoutRef.current);
+      leaveTimeoutRef.current = null;
     }
-  });
+    setHoveredSection(sectionKey);
+  };
 
-  // Automatically expand the section that contains the current active route
+  const handleMouseLeave = () => {
+    if (leaveTimeoutRef.current) {
+      clearTimeout(leaveTimeoutRef.current);
+    }
+    leaveTimeoutRef.current = setTimeout(() => {
+      setHoveredSection(null);
+    }, 150);
+  };
+
   useEffect(() => {
-    navigation.forEach(sec => {
-      sec.items.forEach(item => {
-        if (item.subItems && item.subItems.some(sub => sub.href === pathname)) {
-          const sectionKey = item.label.toLowerCase().replace(/\s+/g, '-');
-          setExpandedSections(prev => {
-            if (prev[sectionKey] === true) return prev;
-            const updated = { ...prev, [sectionKey]: true };
-            try {
-              sessionStorage.setItem('sidebar_expanded_sections', JSON.stringify(updated));
-            } catch {}
-            return updated;
-          });
-        }
-      });
-    });
-  }, [pathname, navigation]);
+    return () => {
+      if (leaveTimeoutRef.current) {
+        clearTimeout(leaveTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Restore scroll position on mount & scroll active item into view
   useEffect(() => {
@@ -284,15 +284,21 @@ export default function Sidebar({
 
                   if (hasSubItems) {
                     const sectionKey = item.label.toLowerCase().replace(/\s+/g, '-');
-                    // When searching, auto-expand. Otherwise, check state or auto-expand if sub-item is active
                     const isExpanded = searchQuery
                       ? true
-                      : (expandedSections[sectionKey] ?? isSubItemActive);
+                      : (hoveredSection === sectionKey);
 
                     return (
-                      <div key={item.label} className="space-y-0.5">
+                      <div
+                        key={item.label}
+                        className="space-y-0.5"
+                        onMouseEnter={() => handleMouseEnter(sectionKey)}
+                        onMouseLeave={handleMouseLeave}
+                      >
                         <button
-                          onClick={() => toggleSection(sectionKey)}
+                          onClick={() => {
+                            setHoveredSection(prev => prev === sectionKey ? null : sectionKey);
+                          }}
                           className={clsx(
                             'w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all group',
                             isSubItemActive
@@ -320,7 +326,7 @@ export default function Sidebar({
 
                         {/* Sub-items */}
                         {isExpanded && !isCollapsed && (
-                          <div className="ml-4 pl-2 border-l border-slate-200/80 space-y-0.5 py-0.5">
+                          <div className="ml-4 pl-2 border-l border-slate-200/80 space-y-0.5 py-0.5 animate-in fade-in-50 duration-150">
                             {item.subItems!.map((subItem) => {
                               const isChildActive = pathname === subItem.href;
 
