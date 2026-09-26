@@ -29,7 +29,7 @@ export function Select({
 }: SelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const selectedOption = options.find(opt => opt.value === value);
+  const selectedOption = options.find(opt => opt.value === value || (Boolean(value) && opt.value.toLowerCase() === String(value).toLowerCase()));
 
   // Close dropdown when clicking outside
   useEffect(() => {

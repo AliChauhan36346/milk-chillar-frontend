@@ -20,11 +20,11 @@ import { FullPageSpinner } from '@/components/ui/spinner';
 import { DynamicLayout } from '@/components/layouts/DynamicLayout';
 import { useAuth } from '@/lib/auth/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoutes';
-import SummaryCard from '@/components/ui/SummaryCard';
-import { BackButton } from '@/components/ui/BackButton';
-import { Table } from '@/components/ui/Table/Table';
+import { StatStrip, StatItem } from '@/components/ui/StatStrip';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { CompactToolbar } from '@/components/ui/CompactToolbar';
+import { Table, TableContainer } from '@/components/ui/Table/Table';
 import { Select } from '@/components/ui/Select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   getSalesReport,
   getBuyerWiseSalesReport,
@@ -568,202 +568,167 @@ function SalesReportContent() {
 
   const summary = view === 'detailed' ? salesSummary : buyerSummaryData?.overallSummary;
 
+  const summaryStats: StatItem[] = summary ? [
+    {
+      label: 'Gross Liters',
+      value: `${summary.totalGrossLiters.toFixed(2)} L`,
+      color: 'success',
+      icon: <Milk className="w-4 h-4 text-emerald-600" />,
+    },
+    {
+      label: 'Net Liters',
+      value: `${summary.totalNetLiters.toFixed(2)} L`,
+      color: 'primary',
+      icon: <Droplet className="w-4 h-4 text-blue-600" />,
+    },
+    ...(isAdmin ? [
+      {
+        label: 'Total Amount',
+        value: formatPKR(summary.totalAmount),
+        subtext: `Avg: ${formatPKR(summary.averageRate)}/L`,
+        color: 'primary' as const,
+        icon: <DollarSign className="w-4 h-4 text-purple-600" />,
+      },
+      {
+        label: 'Received',
+        value: formatPKR(summary.totalAmountReceived),
+        color: 'warning' as const,
+        icon: <TrendingUp className="w-4 h-4 text-amber-600" />,
+      },
+      {
+        label: 'Buyers',
+        value: summary.totalBuyers.toString(),
+        subtext: `${summary.totalTransactions} txns`,
+        color: 'info' as const,
+        icon: <Users className="w-4 h-4 text-cyan-600" />,
+      },
+    ] : [
+      {
+        label: 'Buyers',
+        value: summary.totalBuyers.toString(),
+        subtext: `${summary.totalTransactions} txns`,
+        color: 'info' as const,
+        icon: <Users className="w-4 h-4 text-cyan-600" />,
+      },
+    ]),
+  ] : [];
+
   if (loading && !salesData.length && !buyerSummaryData) {
     return <FullPageSpinner message="Loading sales report..." />;
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-1 sm:p-1 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <BackButton />
+    <div className="max-w-7xl mx-auto space-y-4">
+      <PageHeader
+        title="Sales Report"
+        subtitle="Detailed milk sales transactions and buyer-wise aggregation"
+        icon={<ShoppingCart className="w-5 h-5 text-emerald-600" />}
+        actions={
           <div className="flex items-center gap-2">
-            <ShoppingCart className="w-6 sm:w-8 h-6 sm:h-8 text-green-600" />
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Sales Report</h1>
-          </div>
-        </div>
-        <button
-          onClick={handleExportData}
-          className="flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-        >
-          <Download className="w-4 h-4" />
-          Export CSV
-        </button>
-      </div>
-
-      {/* View Toggle */}
-      <div className="flex gap-2 border-b border-gray-200 bg-white rounded-t-xl px-4">
-        <button
-          onClick={() => {
-            setView('detailed');
-            setCurrentPage(1);
-          }}
-          className={`px-6 py-3 font-medium transition-colors ${view === 'detailed'
-            ? 'text-blue-600 border-b-2 border-blue-600'
-            : 'text-gray-600 hover:text-gray-900'
-            }`}
-        >
-          Detailed Report
-        </button>
-        <button
-          onClick={() => {
-            setView('summary');
-            setCurrentPage(1);
-          }}
-          className={`px-6 py-3 font-medium transition-colors ${view === 'summary'
-            ? 'text-blue-600 border-b-2 border-blue-600'
-            : 'text-gray-600 hover:text-gray-900'
-            }`}
-        >
-          Buyer Summary
-        </button>
-      </div>
-
-      {/* Summary Cards */}
-      {summary && (
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-3 sm:gap-4">
-          <SummaryCard
-            title="Total Gross Liters"
-            value={summaryLoading ? '...' : `${summary.totalGrossLiters.toFixed(2)}L`}
-            icon={<Milk className="w-6 h-6" />}
-            color="green"
-          />
-          <SummaryCard
-            title="Total Net Liters"
-            value={summaryLoading ? '...' : `${summary.totalNetLiters.toFixed(2)}L`}
-            icon={<Droplet className="w-6 h-6" />}
-            color="blue"
-          />
-          {isAdmin && (
-            <>
-              <SummaryCard
-                title="Total Amount"
-                value={summaryLoading ? '...' : formatPKR(summary.totalAmount)}
-                icon={<DollarSign className="w-6 h-6" />}
-                color="purple"
-                subtitle={`Avg: ${formatPKR(summary.averageRate)}/L`}
-              />
-              <SummaryCard
-                title="Received Amount"
-                value={summaryLoading ? '...' : formatPKR(summary.totalAmountReceived)}
-                icon={<TrendingUp className="w-6 h-6" />}
-                color="yellow"
-              />
-              <SummaryCard
-                title="Buyers"
-                value={summaryLoading ? '...' : summary.totalBuyers.toString()}
-                icon={<Users className="w-6 h-6" />}
-                color="orange"
-                subtitle={`${summary.totalTransactions} transactions`}
-              />
-            </>
-          )}
-          {!isAdmin && (
-            <SummaryCard
-              title="Unique Buyers"
-              value={summaryLoading ? '...' : summary.totalBuyers.toString()}
-              icon={<Users className="w-6 h-6" />}
-              color="purple"
-              subtitle={`${summary.totalTransactions} transactions`}
-            />
-          )}
-        </div>
-      )}
-
-      {/* Filters */}
-      <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
-          >
-            <Filter className="w-4 h-4" />
-            {showFilters ? 'Hide' : 'Show'}
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-            <input
-              type="date"
-              value={dateRange.startDate}
-              onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
-              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
-            <input
-              type="date"
-              value={dateRange.endDate}
-              onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
-              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          {isAdmin && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Chillar</label>
-              <Select
-                value={selectedChillarId?.toString() || ''}
-                onChange={(value) => setSelectedChillarId(value ? Number(value) : undefined)}
-                options={[
-                  { value: '', label: 'All Chillars' },
-                  ...chillars.map(chillar => ({
-                    value: chillar.chillarId.toString(),
-                    label: chillar.name
-                  }))
-                ]}
-              />
+            <div className="inline-flex p-0.5 bg-slate-100 rounded-lg border border-slate-200">
+              <button
+                onClick={() => {
+                  setView('detailed');
+                  setCurrentPage(1);
+                }}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
+                  view === 'detailed'
+                    ? 'bg-white text-slate-900 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Detailed Report
+              </button>
+              <button
+                onClick={() => {
+                  setView('summary');
+                  setCurrentPage(1);
+                }}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
+                  view === 'summary'
+                    ? 'bg-white text-slate-900 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Buyer Summary
+              </button>
             </div>
-          )}
+            <button
+              onClick={handleExportData}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-medium hover:bg-emerald-700 transition-colors shadow-xs"
+            >
+              <Download className="w-3.5 h-3.5" />
+              Export CSV
+            </button>
+          </div>
+        }
+      />
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+      {summary && <StatStrip items={summaryStats} loading={summaryLoading} />}
+
+      <CompactToolbar
+        filters={
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-slate-500 font-medium">From:</span>
               <input
-                type="text"
-                placeholder="Search by buyer, code..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                type="date"
+                value={dateRange.startDate}
+                onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
+                className="text-xs border border-slate-300 rounded-lg px-2 py-1.5 focus:ring-1 focus:ring-blue-500 bg-white"
+              />
+              <span className="text-xs text-slate-500 font-medium">To:</span>
+              <input
+                type="date"
+                value={dateRange.endDate}
+                onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
+                className="text-xs border border-slate-300 rounded-lg px-2 py-1.5 focus:ring-1 focus:ring-blue-500 bg-white"
               />
             </div>
-          </div>
-        </div>
 
-        {showFilters && (
-          <div className="pt-4 border-t border-gray-200">
-            <div className="text-sm text-gray-600">
-              Showing <span className="font-semibold text-gray-900">
-                {view === 'detailed' ? filteredTransactions.length : filteredBuyerSummaries.length}
-              </span> of <span className="font-semibold text-gray-900">
-                {view === 'detailed' ? salesData.length : (buyerSummaryData?.buyerSummaries.length || 0)}
-              </span> results
-            </div>
+            {isAdmin && chillars.length > 0 && (
+              <div className="min-w-[150px]">
+                <Select
+                  value={selectedChillarId?.toString() || ''}
+                  onChange={(value) => setSelectedChillarId(value ? Number(value) : undefined)}
+                  options={[
+                    { value: '', label: 'All Chillars' },
+                    ...chillars.map(chillar => ({
+                      value: chillar.chillarId.toString(),
+                      label: chillar.name
+                    }))
+                  ]}
+                />
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        }
+        search={{
+          value: searchTerm,
+          onChange: setSearchTerm,
+          placeholder: 'Search buyer, code...',
+        }}
+        rightActions={
+          <span className="text-xs text-slate-500 font-medium">
+            Showing <strong className="text-slate-800">{view === 'detailed' ? filteredTransactions.length : filteredBuyerSummaries.length}</strong> of{' '}
+            <strong className="text-slate-800">{view === 'detailed' ? salesData.length : (buyerSummaryData?.buyerSummaries.length || 0)}</strong>
+          </span>
+        }
+      />
 
       {loading && (
-        <div className="flex items-center justify-center h-64">
-          <div className="text-lg text-gray-600">Loading report...</div>
+        <div className="flex items-center justify-center h-48 bg-white rounded-xl border border-slate-200">
+          <div className="text-sm text-slate-500">Loading report...</div>
         </div>
       )}
 
       {/* Detailed Sales Table */}
       {!loading && view === 'detailed' && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Sales Transactions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <Table>
+        <>
+          {/* Desktop Table View */}
+          <div className="hidden md:block">
+            <TableContainer title="Sales Transactions">
+              <Table dense>
                 <Table.Header>
                   <Table.Row>
                     <Table.Head>Date</Table.Head>
@@ -787,9 +752,9 @@ function SalesReportContent() {
                   {paginatedData.length === 0 ? (
                     <tr>
                       <td colSpan={isAdmin ? 11 : 7} className="text-center py-8">
-                        <div className="text-gray-500">
-                          <ShoppingCart className="w-12 h-12 mx-auto mb-2 text-gray-400" />
-                          <p className="text-sm">No sales data found for the selected period</p>
+                        <div className="text-slate-400">
+                          <ShoppingCart className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                          <p className="text-xs">No sales data found for the selected period</p>
                         </div>
                       </td>
                     </tr>
@@ -797,7 +762,7 @@ function SalesReportContent() {
                     (paginatedData as SalesRecord[]).map((transaction) => (
                       <Table.Row key={transaction.saleId}>
                         <Table.Cell>
-                          <div className="font-medium text-gray-900 text-sm">
+                          <div className="font-medium text-slate-900 text-xs">
                             {new Date(transaction.date).toLocaleDateString('en-PK', {
                               day: '2-digit',
                               month: 'short'
@@ -806,19 +771,19 @@ function SalesReportContent() {
                         </Table.Cell>
                         <Table.Cell>
                           <div className="space-y-0.5">
-                            <div className="font-medium text-gray-900 text-sm">{transaction.accountName}</div>
-                            <div className="text-xs text-gray-500">{transaction.accountCode}</div>
+                            <div className="font-medium text-slate-900 text-xs">{transaction.accountName}</div>
+                            <div className="text-[11px] text-slate-500 font-mono">{transaction.accountCode}</div>
                           </div>
                         </Table.Cell>
                         <Table.Cell>
                           <div className="space-y-0.5">
-                            <div className="text-sm font-medium text-gray-900">{transaction.chillarName}</div>
-                            <div className="text-xs text-gray-500">By: {transaction.addedByName}</div>
+                            <div className="text-xs font-medium text-slate-900">{transaction.chillarName}</div>
+                            <div className="text-[11px] text-slate-500">By: {transaction.addedByName}</div>
                           </div>
                         </Table.Cell>
                         <Table.Cell>
                           <span
-                            className="font-medium text-green-600 text-sm cursor-pointer hover:underline"
+                            className="font-semibold text-emerald-600 text-xs cursor-pointer hover:underline"
                             onClick={() => handleSaleClick(
                               transaction.saleId,
                               transaction.accountId,
@@ -832,43 +797,43 @@ function SalesReportContent() {
                           </span>
                         </Table.Cell>
                         <Table.Cell>
-                          <div className="space-y-0.5 text-xs">
-                            <div>LR: {transaction.lr.toFixed(2)}</div>
-                            <div>Fat: {transaction.fat.toFixed(2)}</div>
+                          <div className="space-y-0.5 text-[11px] text-slate-600">
+                            <div>LR: <span className="font-medium">{transaction.lr.toFixed(1)}</span></div>
+                            <div>Fat: <span className="font-medium">{transaction.fat.toFixed(1)}</span></div>
                           </div>
                         </Table.Cell>
                         <Table.Cell>
-                          <span className="font-medium text-blue-600 text-sm">{transaction.netLiters.toFixed(2)}L</span>
+                          <span className="font-semibold text-blue-600 text-xs">{transaction.netLiters.toFixed(2)}L</span>
                         </Table.Cell>
                         {isAdmin && (
                           <>
                             <Table.Cell>
-                              <span className="font-medium text-sm">{formatPKR(transaction.rate)}/L</span>
+                              <span className="font-medium text-xs text-slate-700">{formatPKR(transaction.rate)}/L</span>
                             </Table.Cell>
                             <Table.Cell>
-                              <span className="font-bold text-purple-600 text-sm">{formatPKR(transaction.totalAmount)}</span>
+                              <span className="font-semibold text-purple-700 text-xs">{formatPKR(transaction.totalAmount)}</span>
                             </Table.Cell>
                             <Table.Cell>
-                              <span className="font-medium text-green-600 text-sm">{formatPKR(transaction.amountReceived)}</span>
+                              <span className="font-medium text-emerald-600 text-xs">{formatPKR(transaction.amountReceived)}</span>
                             </Table.Cell>
                             <Table.Cell>
-                              <span className="font-medium text-red-600 text-sm">{formatPKR(transaction.balance)}</span>
+                              <span className="font-medium text-rose-600 text-xs">{formatPKR(transaction.balance)}</span>
                             </Table.Cell>
                           </>
                         )}
                         <Table.Cell>
-                          <div className="flex gap-2">
+                          <div className="flex gap-1">
                             <button
                               className="p-1 text-blue-600 hover:bg-blue-50 rounded"
                               title="View Details"
                             >
-                              <Eye className="w-4 h-4" />
+                              <Eye className="w-3.5 h-3.5" />
                             </button>
                             <button
                               className="p-1 text-purple-600 hover:bg-purple-50 rounded"
                               title="Print Receipt"
                             >
-                              <Receipt className="w-4 h-4" />
+                              <Receipt className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         </Table.Cell>
@@ -877,115 +842,226 @@ function SalesReportContent() {
                   )}
                 </Table.Body>
               </Table>
-            </div>
-          </CardContent>
-        </Card>
+            </TableContainer>
+          </div>
+
+          {/* Mobile Card List for Detailed Sales */}
+          <div className="md:hidden space-y-2.5">
+            {paginatedData.length === 0 ? (
+              <div className="bg-white rounded-xl border border-slate-200 p-8 text-center text-slate-400">
+                <ShoppingCart className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                <p className="text-xs">No sales data found for the selected period</p>
+              </div>
+            ) : (
+              (paginatedData as SalesRecord[]).map((transaction) => (
+                <div key={transaction.saleId} className="bg-white rounded-xl border border-slate-200/90 p-3 shadow-xs space-y-2.5">
+                  <div className="flex items-start justify-between border-b border-slate-100 pb-2">
+                    <div>
+                      <div className="font-bold text-xs text-slate-900">{transaction.accountName}</div>
+                      <div className="text-[11px] text-slate-500 font-mono flex items-center gap-1.5 mt-0.5">
+                        <span>{transaction.accountCode}</span>
+                        <span>•</span>
+                        <span>{new Date(transaction.date).toLocaleDateString('en-PK', { day: '2-digit', month: 'short' })}</span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleSaleClick(
+                        transaction.saleId,
+                        transaction.accountId,
+                        transaction.accountName,
+                        transaction.accountCode,
+                        transaction.date
+                      )}
+                      className="px-2 py-1 bg-blue-50 text-blue-700 text-[11px] font-semibold rounded-md border border-blue-200"
+                    >
+                      Edit
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="bg-slate-50/80 p-2 rounded-lg border border-slate-100">
+                      <span className="text-[10px] uppercase font-semibold text-slate-500 block">Gross / Net Liters</span>
+                      <span className="font-bold text-emerald-600">{transaction.grossLiters.toFixed(2)}L</span>
+                      <span className="text-[11px] text-blue-600 font-semibold block">{transaction.netLiters.toFixed(2)}L Net</span>
+                      <span className="text-[10px] text-slate-500">LR {transaction.lr.toFixed(1)} / Fat {transaction.fat.toFixed(1)}</span>
+                    </div>
+
+                    <div className="bg-slate-50/80 p-2 rounded-lg border border-slate-100">
+                      <span className="text-[10px] uppercase font-semibold text-slate-500 block">Chillar & Added By</span>
+                      <span className="font-semibold text-slate-800 block truncate">{transaction.chillarName}</span>
+                      <span className="text-[11px] text-slate-500 block truncate">By: {transaction.addedByName}</span>
+                    </div>
+                  </div>
+
+                  {isAdmin && (
+                    <div className="flex items-center justify-between pt-1 border-t border-slate-100 text-xs">
+                      <div>
+                        <span className="text-[10px] text-slate-500 block">Rate / Amount</span>
+                        <span className="font-bold text-purple-700">{formatPKR(transaction.totalAmount)}</span>
+                        <span className="text-[10px] text-slate-500 ml-1">({formatPKR(transaction.rate)}/L)</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[10px] text-slate-500 block">Rcvd / Balance</span>
+                        <span className="font-medium text-emerald-600">{formatPKR(transaction.amountReceived)}</span>
+                        <span className="font-bold text-rose-600 ml-1">Bal: {formatPKR(transaction.balance)}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        </>
       )}
 
       {/* Buyer Summary Table */}
       {!loading && view === 'summary' && buyerSummaryData && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Buyer-wise Summary</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-200 bg-gray-50">
-                    <th className="text-left p-3 text-sm font-semibold text-gray-700">Buyer Code</th>
-                    <th className="text-left p-3 text-sm font-semibold text-gray-700">Buyer Name</th>
-                    <th className="text-right p-3 text-sm font-semibold text-gray-700">Gross Liters</th>
-                    <th className="text-right p-3 text-sm font-semibold text-gray-700">Net Liters</th>
+        <>
+          {/* Desktop Table View */}
+          <div className="hidden md:block">
+            <TableContainer title="Buyer-wise Summary">
+              <Table dense>
+                <Table.Header>
+                  <Table.Row>
+                    <Table.Head>Buyer Code</Table.Head>
+                    <Table.Head>Buyer Name</Table.Head>
+                    <Table.Head className="text-right">Gross Liters</Table.Head>
+                    <Table.Head className="text-right">Net Liters</Table.Head>
                     {isAdmin && (
                       <>
-                        <th className="text-right p-3 text-sm font-semibold text-gray-700">Total Amount</th>
-                        <th className="text-right p-3 text-sm font-semibold text-gray-700">Received</th>
-                        <th className="text-right p-3 text-sm font-semibold text-gray-700">Avg Rate</th>
+                        <Table.Head className="text-right">Total Amount</Table.Head>
+                        <Table.Head className="text-right">Received</Table.Head>
+                        <Table.Head className="text-right">Avg Rate</Table.Head>
                       </>
                     )}
-                    <th className="text-right p-3 text-sm font-semibold text-gray-700">Avg LR/Fat</th>
-                    <th className="text-right p-3 text-sm font-semibold text-gray-700">Transactions</th>
+                    <Table.Head className="text-right">Avg LR / Fat</Table.Head>
+                    <Table.Head className="text-right">Txns</Table.Head>
                     {isAdmin && (
-                      <th className="text-right p-3 text-sm font-semibold text-gray-700">Balance</th>
+                      <Table.Head className="text-right">Balance</Table.Head>
                     )}
-                  </tr>
-                </thead>
-                <tbody>
+                  </Table.Row>
+                </Table.Header>
+                <Table.Body>
                   {filteredBuyerSummaries.length === 0 ? (
                     <tr>
-                      <td colSpan={isAdmin ? 10 : 6} className="text-center p-8 text-gray-500">
+                      <td colSpan={isAdmin ? 10 : 6} className="text-center py-8 text-xs text-gray-500">
                         No buyer data found for the selected filters
                       </td>
                     </tr>
                   ) : (
                     paginatedData.map((buyer: any) => (
-                      <tr
-                        key={buyer.accountId}
-                        className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
-                      >
-                        <td className="p-3 text-sm font-medium text-gray-900">
+                      <Table.Row key={buyer.accountId}>
+                        <Table.Cell className="font-mono text-xs text-slate-600">
                           {buyer.accountCode}
-                        </td>
-                        <td className="p-3 text-sm text-gray-700">{buyer.accountName}</td>
-                        <td
-                          className="p-3 text-sm text-right font-medium text-green-600 cursor-pointer hover:underline"
-                          onClick={() => handleBuyerClick(buyer.accountId, buyer.accountName)}
-                          title="Click to view milk card"
-                        >
-                          {buyer.totalGrossLiters.toFixed(2)}L
-                        </td>
-                        <td className="p-3 text-sm text-right font-medium text-blue-600">
+                        </Table.Cell>
+                        <Table.Cell className="font-medium text-xs text-slate-900">{buyer.accountName}</Table.Cell>
+                        <Table.Cell className="text-right">
+                          <span
+                            className="font-semibold text-xs text-emerald-600 cursor-pointer hover:underline"
+                            onClick={() => handleBuyerClick(buyer.accountId, buyer.accountName)}
+                            title="Click to view milk card"
+                          >
+                            {buyer.totalGrossLiters.toFixed(2)}L
+                          </span>
+                        </Table.Cell>
+                        <Table.Cell className="text-right font-semibold text-xs text-blue-600">
                           {buyer.totalNetLiters.toFixed(2)}L
-                        </td>
+                        </Table.Cell>
                         {isAdmin && (
                           <>
-                            <td className="p-3 text-sm text-right font-medium text-purple-600">
+                            <Table.Cell className="text-right font-semibold text-xs text-purple-700">
                               {formatPKR(buyer.totalAmount)}
-                            </td>
-                            <td className="p-3 text-sm text-right font-medium text-green-600">
+                            </Table.Cell>
+                            <Table.Cell className="text-right font-medium text-xs text-emerald-600">
                               {formatPKR(buyer.totalAmountReceived)}
-                            </td>
-                            <td className="p-3 text-sm text-right text-gray-700">
+                            </Table.Cell>
+                            <Table.Cell className="text-right text-xs text-slate-700">
                               {formatPKR(buyer.averageRate)}/L
-                            </td>
+                            </Table.Cell>
                           </>
                         )}
-                        <td className="p-3 text-sm text-right text-gray-700">
-                          <div className="text-xs">
-                            <div>LR: {buyer.averageLR.toFixed(2)}</div>
-                            <div>Fat: {buyer.averageFat.toFixed(2)}</div>
-                          </div>
-                        </td>
-                        <td className="p-3 text-sm text-right text-gray-700">
+                        <Table.Cell className="text-right text-xs text-slate-600">
+                          <span className="font-medium">{buyer.averageLR.toFixed(1)}</span> / <span className="font-medium">{buyer.averageFat.toFixed(1)}</span>
+                        </Table.Cell>
+                        <Table.Cell className="text-right text-xs text-slate-700 font-mono">
                           {buyer.transactionCount}
-                        </td>
+                        </Table.Cell>
                         {isAdmin && (
-                          <td className="p-3 text-sm text-right font-medium text-red-600">
+                          <Table.Cell className="text-right font-semibold text-xs text-rose-600">
                             {formatPKR(buyer.balance)}
-                          </td>
+                          </Table.Cell>
                         )}
-                      </tr>
+                      </Table.Row>
                     ))
                   )}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+                </Table.Body>
+              </Table>
+            </TableContainer>
+          </div>
+
+          {/* Mobile Card List for Buyer Summary */}
+          <div className="md:hidden space-y-2.5">
+            {filteredBuyerSummaries.length === 0 ? (
+              <div className="bg-white rounded-xl border border-slate-200 p-8 text-center text-xs text-gray-500">
+                No buyer data found for the selected filters
+              </div>
+            ) : (
+              paginatedData.map((buyer: any) => (
+                <div key={buyer.accountId} className="bg-white rounded-xl border border-slate-200/90 p-3 shadow-xs space-y-2">
+                  <div className="flex items-start justify-between border-b border-slate-100 pb-2">
+                    <div>
+                      <div className="font-bold text-xs text-slate-900">{buyer.accountName}</div>
+                      <div className="text-[11px] text-slate-500 font-mono">{buyer.accountCode} • {buyer.transactionCount} txns</div>
+                    </div>
+                    <button
+                      onClick={() => handleBuyerClick(buyer.accountId, buyer.accountName)}
+                      className="px-2 py-1 bg-emerald-50 text-emerald-700 text-[11px] font-semibold rounded-md border border-emerald-200"
+                    >
+                      Milk Card
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="bg-slate-50/80 p-2 rounded-lg border border-slate-100">
+                      <span className="text-[10px] uppercase font-semibold text-slate-500 block">Liters</span>
+                      <span className="font-bold text-emerald-600">{buyer.totalGrossLiters.toFixed(2)}L Gross</span>
+                      <span className="text-[11px] text-blue-600 block">{buyer.totalNetLiters.toFixed(2)}L Net</span>
+                      <span className="text-[10px] text-slate-500">Avg LR {buyer.averageLR.toFixed(1)} / Fat {buyer.averageFat.toFixed(1)}</span>
+                    </div>
+
+                    {isAdmin ? (
+                      <div className="bg-slate-50/80 p-2 rounded-lg border border-slate-100">
+                        <span className="text-[10px] uppercase font-semibold text-slate-500 block">Financials</span>
+                        <span className="font-bold text-purple-700 block">{formatPKR(buyer.totalAmount)}</span>
+                        <span className="text-[11px] text-emerald-600 block">Rcvd: {formatPKR(buyer.totalAmountReceived)}</span>
+                        <span className="text-[11px] font-bold text-rose-600 block">Bal: {formatPKR(buyer.balance)}</span>
+                      </div>
+                    ) : (
+                      <div className="bg-slate-50/80 p-2 rounded-lg border border-slate-100">
+                        <span className="text-[10px] uppercase font-semibold text-slate-500 block">Quality</span>
+                        <span className="text-slate-700 block">LR: {buyer.averageLR.toFixed(2)}</span>
+                        <span className="text-slate-700 block">Fat: {buyer.averageFat.toFixed(2)}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </>
       )}
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="bg-white rounded-lg shadow-sm px-4 sm:px-6 py-4 border-t border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="text-sm text-gray-700">
-            Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, view === 'detailed' ? filteredTransactions.length : filteredBuyerSummaries.length)} of {view === 'detailed' ? filteredTransactions.length : filteredBuyerSummaries.length} results
+        <div className="bg-white rounded-xl border border-slate-200 px-4 py-2.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-xs">
+          <div className="text-xs text-slate-500">
+            Showing <span className="font-semibold text-slate-800">{startIndex + 1}</span> to <span className="font-semibold text-slate-800">{Math.min(startIndex + itemsPerPage, view === 'detailed' ? filteredTransactions.length : filteredBuyerSummaries.length)}</span> of <span className="font-semibold text-slate-800">{view === 'detailed' ? filteredTransactions.length : filteredBuyerSummaries.length}</span> results
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0">
+          <div className="flex items-center gap-1.5 overflow-x-auto">
             <button
               onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
-              className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+              className="px-2.5 py-1 text-xs border border-slate-200 rounded-md hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed font-medium text-slate-700 transition-colors"
             >
               Previous
             </button>
@@ -997,9 +1073,9 @@ function SalesReportContent() {
                 <button
                   key={page}
                   onClick={() => setCurrentPage(page)}
-                  className={`px-3 py-2 text-sm border rounded-lg ${isActive
-                    ? 'bg-blue-600 text-white border-blue-600'
-                    : 'border-gray-300 hover:bg-gray-50'
+                  className={`w-7 h-7 text-xs font-semibold rounded-md transition-colors ${isActive
+                    ? 'bg-blue-600 text-white'
+                    : 'text-slate-700 hover:bg-slate-100 border border-slate-200'
                     }`}
                 >
                   {page}
@@ -1010,7 +1086,7 @@ function SalesReportContent() {
             <button
               onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
               disabled={currentPage === totalPages}
-              className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+              className="px-2.5 py-1 text-xs border border-slate-200 rounded-md hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed font-medium text-slate-700 transition-colors"
             >
               Next
             </button>

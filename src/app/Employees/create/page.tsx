@@ -76,7 +76,7 @@ export default function CreateEmployeePage() {
     };
 
     fetchChillars();
-  }, [toast]);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

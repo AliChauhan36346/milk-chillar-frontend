@@ -20,8 +20,10 @@ import {
 } from 'lucide-react';
 import { FieldStaffLayout } from '@/components/layouts/FieldStaffLayout';
 import ProtectedRoute from '@/components/ProtectedRoutes';
-import SummaryCard from '@/components/ui/SummaryCard';
-import { BackButton } from '@/components/ui/BackButton';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { StatStrip, StatItem } from '@/components/ui/StatStrip';
+import { CompactToolbar } from '@/components/ui/CompactToolbar';
+import { Table, TableContainer } from '@/components/ui/Table/Table';
 import { FullPageSpinner } from '@/components/ui/spinner';
 import { fetchChillarInchargeDashboardStats, ChillarInchargeDashboardStats } from '@/lib/api/reports';
 import { getMyChillar } from '@/lib/api/chillarReceive';
@@ -208,359 +210,292 @@ export default function ChillarReports() {
   return (
     <ProtectedRoute requiredRole="chillarincharge">
       <FieldStaffLayout role="chillarIncharge">
-        <div className="max-w-6xl mx-auto p-1 space-y-6">
+        <div className="max-w-7xl mx-auto space-y-4">
           {/* Header */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <BackButton />
+          <PageHeader
+            title="Stock & Chillar Reports"
+            subtitle={`Chillar stock movement, balance reconciliation and logs${dashboardStats ? ` • Last updated: ${new Date().toLocaleTimeString()}` : ''}`}
+            icon={<BarChart3 className="w-5 h-5 text-blue-600" />}
+            actions={
               <div className="flex items-center gap-2">
-                <BarChart3 className="w-8 h-8 text-blue-600" />
-                <h1 className="text-3xl font-bold text-gray-900">Stock Reports</h1>
-              </div>
-            </div>
-            <button
-              onClick={navigateToDodhiSummary}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-            >
-              <FileText className="w-4 h-4" />
-              Dodhi Summary
-            </button>
-          </div>
-
-          {/* Date and Time Range Filter */}
-          <div className="bg-white rounded-xl shadow-sm p-4">
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-blue-600" />
-              Filter by Date & Time Range
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-                <input
-                  type="date"
-                  value={dateRange.startDate}
-                  onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
-                  <Clock className="w-4 h-4" />
-                  Start Time
-                </label>
-                <select
-                  value={dateRange.startTime}
-                  onChange={(e) => setDateRange(prev => ({ ...prev, startTime: e.target.value }))}
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                <button
+                  onClick={navigateToReceiveReport}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-xs font-semibold border border-blue-200 transition-colors"
                 >
-                  <option value="">All Day</option>
-                  <option value="Morning">Morning</option>
-                  <option value="Evening">Evening</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
-                <input
-                  type="date"
-                  value={dateRange.endDate}
-                  onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
-                  <Clock className="w-4 h-4" />
-                  End Time
-                </label>
-                <select
-                  value={dateRange.endTime}
-                  onChange={(e) => setDateRange(prev => ({ ...prev, endTime: e.target.value }))}
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  <Truck className="w-3.5 h-3.5" />
+                  Chillar Receive
+                </button>
+                <button
+                  onClick={navigateToSaleReport}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg text-xs font-semibold border border-emerald-200 transition-colors"
                 >
-                  <option value="">All Day</option>
-                  <option value="Morning">Morning</option>
-                  <option value="Evening">Evening</option>
-                </select>
+                  <ShoppingCart className="w-3.5 h-3.5" />
+                  Sales Report
+                </button>
+                <button
+                  onClick={navigateToDodhiSummary}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 text-white hover:bg-purple-700 rounded-lg text-xs font-semibold transition-colors shadow-xs"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  Dodhi Summary
+                </button>
               </div>
-            </div>
-            <div className="mt-4 flex justify-end">
-              <button
-                onClick={fetchStockData}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              >
-                <RefreshCw className="w-4 h-4" />
-                Apply Filter
-              </button>
-            </div>
-          </div>
+            }
+          />
 
-          {/* Data Status Indicator */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-            <div className="flex items-center gap-2 text-sm text-blue-800">
-              <Activity className="w-4 h-4" />
-              <span>
-                Showing data from {dateRange.startDate}{dateRange.startTime ? ` (${dateRange.startTime})` : ''} to {dateRange.endDate}{dateRange.endTime ? ` (${dateRange.endTime})` : ''}
-                {dashboardStats && ` • Last updated: ${new Date().toLocaleTimeString()}`}
-              </span>
-            </div>
-          </div>
-
-          {/* Main Stock Summary Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <SummaryCard
-              title="Previous Stock"
-              value={`${stockSummary.previousStock}L`}
-              icon={<Package className="w-6 h-6" />}
-              color="gray"
-              subtitle="Opening balance"
-            />
-
-            <div
-              onClick={navigateToReceiveReport}
-              className="cursor-pointer transform hover:scale-105 transition-transform"
-            >
-              <SummaryCard
-                title="Total Received"
-                value={`${stockSummary.totalReceived}L`}
-                icon={<Truck className="w-6 h-6" />}
-                color="blue"
-                subtitle="Received from dodhis"
-
-              />
-            </div>
-
-            <div
-              onClick={navigateToSaleReport}
-              className="cursor-pointer transform hover:scale-105 transition-transform"
-            >
-              <SummaryCard
-                title="Total Sold"
-                value={`${stockSummary.totalSold}L`}
-                icon={<ShoppingCart className="w-6 h-6" />}
-                color="green"
-                subtitle="Sold to buyers"
-
-              />
-            </div>
-
-            <SummaryCard
-              title="Current Stock"
-              value={`${stockSummary.currentStock}L`}
-              icon={<Milk className="w-6 h-6" />}
-              color="purple"
-              subtitle="Available now"
-            />
-          </div>
+          {/* Main Stock Summary Ribbon */}
+          <StatStrip
+            items={[
+              {
+                label: 'Opening Stock',
+                value: `${stockSummary.previousStock} L`,
+                color: 'default',
+                icon: <Package className="w-4 h-4 text-slate-500" />,
+              },
+              {
+                label: 'Total Received',
+                value: `${stockSummary.totalReceived} L`,
+                color: 'primary',
+                icon: <Truck className="w-4 h-4 text-blue-600" />,
+                subtext: 'From dodhis',
+              },
+              {
+                label: 'Total Sold',
+                value: `${stockSummary.totalSold} L`,
+                color: 'success',
+                icon: <ShoppingCart className="w-4 h-4 text-emerald-600" />,
+                subtext: 'To buyers',
+              },
+              {
+                label: 'Current Stock',
+                value: `${stockSummary.currentStock} L`,
+                color: stockSummary.deficit > 0 ? 'danger' : 'info',
+                icon: <Milk className="w-4 h-4 text-purple-600" />,
+                badge: stockSummary.deficit > 0 ? `Deficit ${stockSummary.deficit}L` : stockSummary.surplus > 0 ? `Surplus ${stockSummary.surplus}L` : undefined,
+              },
+            ]}
+          />
 
           {/* Deficit/Surplus Alert */}
-          <div className="grid md:grid-cols-2 gap-4">
-            {stockSummary.deficit > 0 && (
-              <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-                <div className="flex items-center gap-3">
-                  <TrendingDown className="w-8 h-8 text-red-600" />
-                  <div>
-                    <h3 className="text-lg font-semibold text-red-800">Stock Deficit</h3>
-                    <p className="text-red-600">{stockSummary.deficit}L shortage detected</p>
-                    <p className="text-sm text-red-500 mt-1">Please verify stock records and investigate discrepancies</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {stockSummary.surplus > 0 && (
-              <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-                <div className="flex items-center gap-3">
-                  <TrendingUp className="w-8 h-8 text-green-600" />
-                  <div>
-                    <h3 className="text-lg font-semibold text-green-800">Stock Surplus</h3>
-                    <p className="text-green-600">{stockSummary.surplus}L excess stock available</p>
-                    <p className="text-sm text-green-500 mt-1">Good inventory management</p>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Quick Actions */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
-            <div className="grid md:grid-cols-3 gap-4">
-              <button
-                onClick={navigateToReceiveReport}
-                className="flex items-center justify-between p-4 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <FileText className="w-6 h-6 text-blue-600" />
-                  <div className="text-left">
-                    <h4 className="font-medium text-gray-900">Chillar Receive Report</h4>
-                    <p className="text-sm text-gray-500">View detailed milk receipts</p>
-                  </div>
-                </div>
-                <ArrowRight className="w-5 h-5 text-blue-600" />
-              </button>
-
-              <button
-                onClick={navigateToSaleReport}
-                className="flex items-center justify-between p-4 border border-green-200 rounded-lg hover:bg-green-50 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <Activity className="w-6 h-6 text-green-600" />
-                  <div className="text-left">
-                    <h4 className="font-medium text-gray-900">Sales Report</h4>
-                    <p className="text-sm text-gray-500">View detailed sales records</p>
-                  </div>
-                </div>
-                <ArrowRight className="w-5 h-5 text-green-600" />
-              </button>
-
-              <button
-                onClick={navigateToDodhiSummary}
-                className="flex items-center justify-between p-4 border border-purple-200 rounded-lg hover:bg-purple-50 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <FileText className="w-6 h-6 text-purple-600" />
-                  <div className="text-left">
-                    <h4 className="font-medium text-gray-900">Dodhi Summary</h4>
-                    <p className="text-sm text-gray-500">View dodhi performance report</p>
-                  </div>
-                </div>
-                <ArrowRight className="w-5 h-5 text-purple-600" />
-              </button>
+          {stockSummary.deficit > 0 && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-rose-50 border border-rose-200 rounded-lg text-xs text-rose-800">
+              <TrendingDown className="w-4 h-4 text-rose-600 shrink-0" />
+              <span><strong>Stock Deficit:</strong> {stockSummary.deficit}L shortage detected. Please verify records.</span>
             </div>
-          </div>
+          )}
+          {stockSummary.surplus > 0 && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-800">
+              <TrendingUp className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span><strong>Stock Surplus:</strong> {stockSummary.surplus}L excess stock available. Good inventory management.</span>
+            </div>
+          )}
 
-          {/* Tab Navigation for Additional Views */}
-          <div className="bg-white rounded-xl shadow-sm">
-            <div className="border-b border-gray-200">
-              <nav className="flex space-x-8 px-6">
-                {[
-                  { key: 'summary', label: 'Stock Summary', icon: Package },
-                  { key: 'daily', label: 'Daily Stock', icon: Calendar },
-                ].map(({ key, label, icon: Icon }) => (
-                  <button
-                    key={key}
-                    onClick={() => setActiveView(key as any)}
-                    className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${activeView === key
-                        ? 'border-blue-500 text-blue-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700'
-                      }`}
+          {/* Toolbar with Filters & View Switcher */}
+          <CompactToolbar
+            filters={
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs text-slate-500 font-medium">From:</span>
+                  <input
+                    type="date"
+                    value={dateRange.startDate}
+                    onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
+                    className="text-xs border border-slate-300 rounded-lg px-2 py-1.5 focus:ring-1 focus:ring-blue-500 bg-white"
+                  />
+                  <select
+                    value={dateRange.startTime}
+                    onChange={(e) => setDateRange(prev => ({ ...prev, startTime: e.target.value }))}
+                    className="text-xs border border-slate-300 rounded-lg px-2 py-1.5 focus:ring-1 focus:ring-blue-500 bg-white"
                   >
-                    <Icon className="w-4 h-4" />
-                    {label}
-                  </button>
-                ))}
-              </nav>
-            </div>
+                    <option value="">All Day</option>
+                    <option value="Morning">Morning</option>
+                    <option value="Evening">Evening</option>
+                  </select>
+                  <span className="text-xs text-slate-500 font-medium">To:</span>
+                  <input
+                    type="date"
+                    value={dateRange.endDate}
+                    onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
+                    className="text-xs border border-slate-300 rounded-lg px-2 py-1.5 focus:ring-1 focus:ring-blue-500 bg-white"
+                  />
+                  <select
+                    value={dateRange.endTime}
+                    onChange={(e) => setDateRange(prev => ({ ...prev, endTime: e.target.value }))}
+                    className="text-xs border border-slate-300 rounded-lg px-2 py-1.5 focus:ring-1 focus:ring-blue-500 bg-white"
+                  >
+                    <option value="">All Day</option>
+                    <option value="Morning">Morning</option>
+                    <option value="Evening">Evening</option>
+                  </select>
+                </div>
+                <button
+                  onClick={fetchStockData}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 transition-colors shadow-xs"
+                >
+                  <RefreshCw className="w-3 h-3" />
+                  Apply
+                </button>
+              </div>
+            }
+            rightActions={
+              <div className="inline-flex p-0.5 bg-slate-100 rounded-lg border border-slate-200">
+                <button
+                  onClick={() => setActiveView('summary')}
+                  className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
+                    activeView === 'summary' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Stock Flow
+                </button>
+                <button
+                  onClick={() => setActiveView('daily')}
+                  className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
+                    activeView === 'daily' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Daily Stock
+                </button>
+              </div>
+            }
+          />
 
-            <div className="p-6">
-              {/* Stock Summary View */}
-              {activeView === 'summary' && (
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Stock Movement Summary</h3>
-
-                  <div className="bg-gray-50 rounded-lg p-6">
-                    <div className="grid md:grid-cols-2 gap-6">
-                      <div className="space-y-4">
-                        <h4 className="font-medium text-gray-900">Stock Flow</h4>
-                        <div className="space-y-3">
-                          <div className="flex justify-between items-center">
-                            <span className="text-gray-600">Opening Stock:</span>
-                            <span className="font-medium text-gray-900">{stockSummary.previousStock}L</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-gray-600">+ Total Received:</span>
-                            <span className="font-medium text-blue-600">+{stockSummary.totalReceived}L</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-gray-600">- Total Sold:</span>
-                            <span className="font-medium text-green-600">-{stockSummary.totalSold}L</span>
-                          </div>
-                          <hr className="border-gray-300" />
-                          <div className="flex justify-between items-center text-lg">
-                            <span className="font-medium text-gray-900">Closing Stock:</span>
-                            <span className={`font-bold ${getStockStatusColor(stockSummary.currentStock)}`}>
-                              {stockSummary.currentStock}L
-                            </span>
-                          </div>
-                        </div>
+          {/* Stock Summary View */}
+          {activeView === 'summary' && (
+            <TableContainer title="Stock Movement Reconciliation">
+              <div className="p-4 bg-slate-50/50">
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-3 bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">Stock Flow</h4>
+                    <div className="space-y-2 text-xs">
+                      <div className="flex justify-between items-center py-1 border-b border-slate-100">
+                        <span className="text-slate-600">Opening Stock:</span>
+                        <span className="font-semibold text-slate-900">{stockSummary.previousStock} L</span>
                       </div>
+                      <div className="flex justify-between items-center py-1 border-b border-slate-100">
+                        <span className="text-slate-600">+ Total Received:</span>
+                        <span className="font-semibold text-blue-600">+{stockSummary.totalReceived} L</span>
+                      </div>
+                      <div className="flex justify-between items-center py-1 border-b border-slate-100">
+                        <span className="text-slate-600">- Total Sold:</span>
+                        <span className="font-semibold text-emerald-600">-{stockSummary.totalSold} L</span>
+                      </div>
+                      <div className="flex justify-between items-center pt-2 text-sm">
+                        <span className="font-bold text-slate-900">Closing Stock:</span>
+                        <span className={`font-bold ${getStockStatusColor(stockSummary.currentStock)}`}>
+                          {stockSummary.currentStock} L
+                        </span>
+                      </div>
+                    </div>
+                  </div>
 
-                      <div className="space-y-4">
-                        <h4 className="font-medium text-gray-900">Period Information</h4>
-                        <div className="space-y-3">
-                          <div className="flex justify-between items-center">
-                            <span className="text-gray-600">Start Date & Time:</span>
-                            <span className="font-medium text-gray-900">{dateRange.startDate}{dateRange.startTime ? ` (${dateRange.startTime})` : ''}</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-gray-600">End Date & Time:</span>
-                            <span className="font-medium text-gray-900">{dateRange.endDate}{dateRange.endTime ? ` (${dateRange.endTime})` : ''}</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-gray-600">Net Movement:</span>
-                            <span className={`font-medium ${stockSummary.totalReceived - stockSummary.totalSold >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                              {stockSummary.totalReceived - stockSummary.totalSold >= 0 ? '+' : ''}{stockSummary.totalReceived - stockSummary.totalSold}L
-                            </span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-gray-600">Data Status:</span>
-                            <span className="font-medium text-green-600">Real-time</span>
-                          </div>
-                        </div>
+                  <div className="space-y-3 bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">Period Information</h4>
+                    <div className="space-y-2 text-xs">
+                      <div className="flex justify-between items-center py-1 border-b border-slate-100">
+                        <span className="text-slate-600">Start Date & Time:</span>
+                        <span className="font-medium text-slate-900">{dateRange.startDate}{dateRange.startTime ? ` (${dateRange.startTime})` : ''}</span>
+                      </div>
+                      <div className="flex justify-between items-center py-1 border-b border-slate-100">
+                        <span className="text-slate-600">End Date & Time:</span>
+                        <span className="font-medium text-slate-900">{dateRange.endDate}{dateRange.endTime ? ` (${dateRange.endTime})` : ''}</span>
+                      </div>
+                      <div className="flex justify-between items-center py-1 border-b border-slate-100">
+                        <span className="text-slate-600">Net Movement:</span>
+                        <span className={`font-semibold ${stockSummary.totalReceived - stockSummary.totalSold >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                          {stockSummary.totalReceived - stockSummary.totalSold >= 0 ? '+' : ''}{stockSummary.totalReceived - stockSummary.totalSold} L
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center pt-1">
+                        <span className="text-slate-600">Data Status:</span>
+                        <span className="inline-flex items-center gap-1 font-semibold text-emerald-600">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                          Real-time
+                        </span>
                       </div>
                     </div>
                   </div>
                 </div>
-              )}
+              </div>
+            </TableContainer>
+          )}
 
-              {/* Daily Stock View */}
-              {activeView === 'daily' && (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold">Daily Stock Movement</h3>
-                    <span className="text-sm text-gray-500">Historical data (sample)</span>
-                  </div>
+          {/* Daily Stock View */}
+          {activeView === 'daily' && (
+            <>
+              {/* Desktop Table View */}
+              <div className="hidden md:block">
+                <TableContainer title="Daily Stock Movement (Historical)">
+                  <Table dense>
+                    <Table.Header>
+                      <Table.Row>
+                        <Table.Head>Date</Table.Head>
+                        <Table.Head className="text-right">Opening</Table.Head>
+                        <Table.Head className="text-right">Received</Table.Head>
+                        <Table.Head className="text-right">Sold</Table.Head>
+                        <Table.Head className="text-right">Closing</Table.Head>
+                        <Table.Head className="text-right">Status</Table.Head>
+                      </Table.Row>
+                    </Table.Header>
+                    <Table.Body>
+                      {additionalData.dailyStock.map((day) => (
+                        <Table.Row key={day.date}>
+                          <Table.Cell className="font-medium text-xs text-slate-900">
+                            {new Date(day.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                          </Table.Cell>
+                          <Table.Cell className="text-right text-xs text-slate-600">{day.openingStock}L</Table.Cell>
+                          <Table.Cell className="text-right text-xs font-semibold text-blue-600">+{day.received}L</Table.Cell>
+                          <Table.Cell className="text-right text-xs font-semibold text-emerald-600">-{day.sold}L</Table.Cell>
+                          <Table.Cell className="text-right text-xs font-bold text-slate-900">{day.closingStock}L</Table.Cell>
+                          <Table.Cell className="text-right text-xs">
+                            {day.deficit > 0 ? (
+                              <span className="text-rose-600 font-semibold">Deficit: {day.deficit}L</span>
+                            ) : day.surplus > 0 ? (
+                              <span className="text-emerald-600 font-semibold">Surplus: {day.surplus}L</span>
+                            ) : (
+                              <span className="text-slate-500">Balanced</span>
+                            )}
+                          </Table.Cell>
+                        </Table.Row>
+                      ))}
+                    </Table.Body>
+                  </Table>
+                </TableContainer>
+              </div>
 
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full bg-white border border-gray-200 rounded-lg">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Date</th>
-                          <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Opening</th>
-                          <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Received</th>
-                          <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Sold</th>
-                          <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Closing</th>
-                          <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Status</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200">
-                        {additionalData.dailyStock.map((day) => (
-                          <tr key={day.date} className="hover:bg-gray-50">
-                            <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                              {new Date(day.date).toLocaleDateString('en-IN')}
-                            </td>
-                            <td className="px-4 py-3 text-sm text-gray-600">{day.openingStock}L</td>
-                            <td className="px-4 py-3 text-sm text-blue-600">+{day.received}L</td>
-                            <td className="px-4 py-3 text-sm text-green-600">-{day.sold}L</td>
-                            <td className="px-4 py-3 text-sm font-medium text-gray-900">{day.closingStock}L</td>
-                            <td className="px-4 py-3 text-sm">
-                              {day.deficit > 0 ? (
-                                <span className="text-red-600 font-medium">Deficit: {day.deficit}L</span>
-                              ) : day.surplus > 0 ? (
-                                <span className="text-green-600 font-medium">Surplus: {day.surplus}L</span>
-                              ) : (
-                                <span className="text-blue-600">Balanced</span>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+              {/* Mobile Card List for Daily Stock */}
+              <div className="md:hidden space-y-2.5">
+                {additionalData.dailyStock.map((day) => (
+                  <div key={day.date} className="bg-white rounded-xl border border-slate-200/90 p-3 shadow-xs space-y-2">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                      <span className="font-bold text-xs text-slate-900">
+                        {new Date(day.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      </span>
+                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                        day.deficit > 0 ? 'bg-rose-50 text-rose-700 border border-rose-200' :
+                        day.surplus > 0 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                        'bg-slate-100 text-slate-700'
+                      }`}>
+                        {day.deficit > 0 ? `Deficit: ${day.deficit}L` : day.surplus > 0 ? `Surplus: ${day.surplus}L` : 'Balanced'}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className="bg-slate-50/80 p-2 rounded-lg border border-slate-100">
+                        <span className="text-[10px] uppercase font-semibold text-slate-500 block">Opening & Closing</span>
+                        <span className="text-slate-700 block">Open: {day.openingStock}L</span>
+                        <span className="font-bold text-slate-900 block">Close: {day.closingStock}L</span>
+                      </div>
+                      <div className="bg-slate-50/80 p-2 rounded-lg border border-slate-100">
+                        <span className="text-[10px] uppercase font-semibold text-slate-500 block">Movement</span>
+                        <span className="font-semibold text-blue-600 block">+{day.received}L rcvd</span>
+                        <span className="font-semibold text-emerald-600 block">-{day.sold}L sold</span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
-          </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </FieldStaffLayout>
     </ProtectedRoute>

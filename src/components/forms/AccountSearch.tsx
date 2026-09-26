@@ -38,7 +38,8 @@ export default function AccountSearch({
           // Apply filters if provided
           if (filter) {
             if (filter.codePrefix) {
-              results = results.filter(acc => acc.accountCode.startsWith(filter.codePrefix));
+              const prefix = filter.codePrefix;
+              results = results.filter(acc => acc.accountCode?.startsWith(prefix));
             }
             if (filter.type) {
               results = results.filter(acc => acc.type === filter.type);
@@ -71,7 +72,8 @@ export default function AccountSearch({
           // Apply filters if provided
           if (filter) {
             if (filter.codePrefix) {
-              results = results.filter(acc => acc.accountCode.startsWith(filter.codePrefix));
+              const prefix = filter.codePrefix;
+              results = results.filter(acc => acc.accountCode?.startsWith(prefix));
             }
             if (filter.type) {
               results = results.filter(acc => acc.type === filter.type);

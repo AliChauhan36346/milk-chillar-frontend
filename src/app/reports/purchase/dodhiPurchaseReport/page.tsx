@@ -443,7 +443,7 @@ import { useAuth } from '@/lib/auth/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoutes';
 import { DynamicLayout } from '@/components/layouts/DynamicLayout';
 import { BackButton } from '@/components/ui/BackButton';
-import SummaryCard from '@/components/ui/SummaryCard';
+import { StatStrip } from '@/components/ui/StatStrip';
 import { Table } from '@/components/ui/Table/Table';
 import { Select } from '@/components/ui/Select';
 import MilkLoader from '@/components/ui/Loader';
@@ -454,7 +454,6 @@ import {
   ReceiveRecord,
   DodhiDashboardRecords
 } from '@/lib/api/reports';
-import { getDodhis, Dodhi } from '@/lib/api/dodhi';
 import { getChillars, Chillar } from '@/lib/api/chillar';
 import { getEmployees, Employee } from '@/lib/api/employees';
 
@@ -930,80 +929,107 @@ export default function PurchaseReport() {
             </div>
           )}
 
-          {/* Summary Cards */}
+          {/* Summary Strip */}
           {(!isAdmin || selectedDodhiId) && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <SummaryCard
-                title="Total Purchased"
-                value={`${purchaseSummary.totalPurchased.toFixed(2)} Ltrs`}
-                icon={<Milk className="w-5 h-5" />}
-                color="blue"
-                subtitle={`${purchaseSummary.uniqueSuppliers} suppliers`}
-              />
-
-              <SummaryCard
-                title="Total Received"
-                value={`${purchaseSummary.totalReceived.toFixed(2)} Ltrs`}
-                icon={<Scale className="w-5 h-5" />}
-                color="green"
-                subtitle={`${receives.length} receive records`}
-              />
-
-              <SummaryCard
-                title="Difference"
-                value={`${purchaseSummary.difference >= 0 ? '+' : ''}${purchaseSummary.difference.toFixed(2)} Ltrs`}
-                icon={<Users className="w-5 h-5" />}
-                color={purchaseSummary.difference >= 0 ? 'yellow' : 'red'}
-                subtitle={`${purchases.length} purchase records`}
-              />
-            </div>
+            <StatStrip
+              items={[
+                {
+                  label: 'Total Purchased',
+                  value: `${purchaseSummary.totalPurchased.toFixed(2)} L`,
+                  subtext: `${purchaseSummary.uniqueSuppliers} suppliers`,
+                  color: 'info',
+                  icon: <Milk className="w-4 h-4 text-blue-600" />,
+                },
+                {
+                  label: 'Total Received',
+                  value: `${purchaseSummary.totalReceived.toFixed(2)} L`,
+                  subtext: `${receives.length} receive records`,
+                  color: 'success',
+                  icon: <Scale className="w-4 h-4 text-emerald-600" />,
+                },
+                {
+                  label: 'Difference',
+                  value: `${purchaseSummary.difference >= 0 ? '+' : ''}${purchaseSummary.difference.toFixed(2)} L`,
+                  subtext: `${purchases.length} purchases`,
+                  color: purchaseSummary.difference >= 0 ? 'warning' : 'danger',
+                  icon: <Users className="w-4 h-4 text-amber-600" />,
+                },
+              ]}
+            />
           )}
 
           {/* Purchase Records */}
           {(!isAdmin || selectedDodhiId) && (
-            <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
-              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2 text-blue-600">
-                <Milk className="w-5 h-5" />
-                Purchase Records
-              </h2>
+            <div className="bg-white rounded-xl shadow-xs border border-slate-200 p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-sm font-semibold flex items-center gap-2 text-blue-600">
+                  <Milk className="w-4 h-4" />
+                  Purchase Records
+                </h2>
+                <span className="text-xs text-slate-500">{purchases.length} records</span>
+              </div>
 
               {purchases.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <Table.Header>
-                      <Table.Row>
-                        <Table.Head>Date</Table.Head>
-                        <Table.Head>Account Code</Table.Head>
-                        <Table.Head>Account Name</Table.Head>
-                        <Table.Head>Time</Table.Head>
-                        <Table.Head>Liters</Table.Head>
-                      </Table.Row>
-                    </Table.Header>
-                    <Table.Body>
-                      {purchases.map((purchase) => (
-                        <Table.Row key={purchase.purchaseId}>
-                          <Table.Cell>
-                            {new Date(purchase.date).toLocaleDateString()}
-                          </Table.Cell>
-                          <Table.Cell className="font-mono text-sm">
-                            {purchase.accountCode}
-                          </Table.Cell>
-                          <Table.Cell>
-                            {purchase.accountName}
-                          </Table.Cell>
-                          <Table.Cell className="capitalize">
-                            {purchase.timeOfDay}
-                          </Table.Cell>
-                          <Table.Cell className="font-medium">
-                            {purchase.grossLiters.toFixed(2)}
-                          </Table.Cell>
+                <>
+                  {/* Desktop Table */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <Table dense>
+                      <Table.Header>
+                        <Table.Row>
+                          <Table.Head dense>Date</Table.Head>
+                          <Table.Head dense>Account Code</Table.Head>
+                          <Table.Head dense>Account Name</Table.Head>
+                          <Table.Head dense>Time</Table.Head>
+                          <Table.Head dense className="text-right">Liters</Table.Head>
                         </Table.Row>
-                      ))}
-                    </Table.Body>
-                  </Table>
-                </div>
+                      </Table.Header>
+                      <Table.Body>
+                        {purchases.map((purchase) => (
+                          <Table.Row key={purchase.purchaseId}>
+                            <Table.Cell dense>
+                              {new Date(purchase.date).toLocaleDateString()}
+                            </Table.Cell>
+                            <Table.Cell dense className="font-mono text-xs">
+                              {purchase.accountCode}
+                            </Table.Cell>
+                            <Table.Cell dense className="font-medium">
+                              {purchase.accountName}
+                            </Table.Cell>
+                            <Table.Cell dense className="capitalize">
+                              {purchase.timeOfDay}
+                            </Table.Cell>
+                            <Table.Cell dense className="text-right font-semibold text-blue-600">
+                              {purchase.grossLiters.toFixed(2)} L
+                            </Table.Cell>
+                          </Table.Row>
+                        ))}
+                      </Table.Body>
+                    </Table>
+                  </div>
+
+                  {/* Mobile Card List */}
+                  <div className="md:hidden space-y-2">
+                    {purchases.map((purchase) => (
+                      <div key={purchase.purchaseId} className="bg-slate-50/70 border border-slate-200 rounded-lg p-3 space-y-1.5 text-xs">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <span className="font-bold text-slate-800">{purchase.accountName}</span>
+                            <span className="text-[11px] text-slate-500 font-mono ml-1.5">#{purchase.accountCode}</span>
+                          </div>
+                          <span className="inline-flex px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-50 text-blue-700 capitalize">
+                            {purchase.timeOfDay}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between pt-1 border-t border-slate-200/60">
+                          <span className="text-slate-500 text-[11px]">{new Date(purchase.date).toLocaleDateString()}</span>
+                          <span className="font-bold text-blue-600 text-sm">{purchase.grossLiters.toFixed(2)} L</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
               ) : (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-xs text-slate-400">
                   No purchase records found for selected filters
                 </div>
               )}
@@ -1012,72 +1038,123 @@ export default function PurchaseReport() {
 
           {/* Receive Records */}
           {(!isAdmin || selectedDodhiId) && (
-            <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
-              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2 text-green-600">
-                <Scale className="w-5 h-5" />
-                Receive Records
-              </h2>
+            <div className="bg-white rounded-xl shadow-xs border border-slate-200 p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-sm font-semibold flex items-center gap-2 text-emerald-600">
+                  <Scale className="w-4 h-4" />
+                  Receive Records
+                </h2>
+                <span className="text-xs text-slate-500">{receives.length} records</span>
+              </div>
 
               {receives.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <Table.Header>
-                      <Table.Row>
-                        <Table.Head>Date</Table.Head>
-                        <Table.Head>Time</Table.Head>
-                        <Table.Head>Gross Ltrs</Table.Head>
-                        <Table.Head>LR</Table.Head>
-                        <Table.Head>Fat</Table.Head>
-                        <Table.Head>Net Ltrs</Table.Head>
-                        <Table.Head>Actions</Table.Head>
-                      </Table.Row>
-                    </Table.Header>
-                    <Table.Body>
-                      {receives.map((receive) => (
-                        <Table.Row key={receive.receiveId}>
-                          <Table.Cell>
-                            {new Date(receive.date).toLocaleDateString()}
-                          </Table.Cell>
-                          <Table.Cell className="capitalize">
-                            {receive.timeOfDay}
-                          </Table.Cell>
-                          <Table.Cell className="font-medium">
-                            {receive.grossLiters.toFixed(2)}
-                          </Table.Cell>
-                          <Table.Cell>
-                            {receive.lr.toFixed(2)}
-                          </Table.Cell>
-                          <Table.Cell>
-                            {receive.fat.toFixed(2)}
-                          </Table.Cell>
-                          <Table.Cell className="font-medium">
-                            {receive.netLiters.toFixed(2)}
-                          </Table.Cell>
-                          <Table.Cell>
-                            <div className="flex items-center gap-2">
-                              <button
-                                onClick={() => handleEditReceive(receive)}
-                                className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                                title="Edit record"
-                              >
-                                <Edit className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteReceive(receive.receiveId)}
-                                className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
-                                title="Delete record"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </Table.Cell>
+                <>
+                  {/* Desktop Table */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <Table dense>
+                      <Table.Header>
+                        <Table.Row>
+                          <Table.Head dense>Date</Table.Head>
+                          <Table.Head dense>Time</Table.Head>
+                          <Table.Head dense className="text-right">Gross Ltrs</Table.Head>
+                          <Table.Head dense className="text-right">LR</Table.Head>
+                          <Table.Head dense className="text-right">Fat</Table.Head>
+                          <Table.Head dense className="text-right">Net Ltrs</Table.Head>
+                          <Table.Head dense className="text-right">Actions</Table.Head>
                         </Table.Row>
-                      ))}
-                    </Table.Body>
-                  </Table>
-                </div>
+                      </Table.Header>
+                      <Table.Body>
+                        {receives.map((receive) => (
+                          <Table.Row key={receive.receiveId}>
+                            <Table.Cell dense>
+                              {new Date(receive.date).toLocaleDateString()}
+                            </Table.Cell>
+                            <Table.Cell dense className="capitalize">
+                              {receive.timeOfDay}
+                            </Table.Cell>
+                            <Table.Cell dense className="text-right font-medium">
+                              {receive.grossLiters.toFixed(2)}
+                            </Table.Cell>
+                            <Table.Cell dense className="text-right">
+                              {receive.lr.toFixed(2)}
+                            </Table.Cell>
+                            <Table.Cell dense className="text-right">
+                              {receive.fat.toFixed(2)}
+                            </Table.Cell>
+                            <Table.Cell dense className="text-right font-semibold text-emerald-600">
+                              {receive.netLiters.toFixed(2)}
+                            </Table.Cell>
+                            <Table.Cell dense className="text-right">
+                              <div className="flex items-center justify-end gap-1">
+                                <button
+                                  onClick={() => handleEditReceive(receive)}
+                                  className="p-1 text-slate-500 hover:text-blue-600 hover:bg-slate-100 rounded transition-colors"
+                                  title="Edit record"
+                                >
+                                  <Edit className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteReceive(receive.receiveId)}
+                                  className="p-1 text-slate-500 hover:text-rose-600 hover:bg-slate-100 rounded transition-colors"
+                                  title="Delete record"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </Table.Cell>
+                          </Table.Row>
+                        ))}
+                      </Table.Body>
+                    </Table>
+                  </div>
+
+                  {/* Mobile Card List */}
+                  <div className="md:hidden space-y-2">
+                    {receives.map((receive) => (
+                      <div key={receive.receiveId} className="bg-slate-50/70 border border-slate-200 rounded-lg p-3 space-y-2 text-xs">
+                        <div className="flex items-center justify-between border-b border-slate-200/60 pb-1.5">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-slate-800">{new Date(receive.date).toLocaleDateString()}</span>
+                            <span className="inline-flex px-1.5 py-0.2 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 capitalize">
+                              {receive.timeOfDay}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => handleEditReceive(receive)}
+                              className="p-1 text-slate-500 hover:text-blue-600 rounded"
+                              title="Edit"
+                            >
+                              <Edit className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteReceive(receive.receiveId)}
+                              className="p-1 text-slate-500 hover:text-rose-600 rounded"
+                              title="Delete"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <span className="text-[10px] text-slate-400 block uppercase font-medium">Gross / Net</span>
+                            <span className="text-slate-700">{receive.grossLiters.toFixed(2)} L gross</span>
+                            <span className="font-bold text-emerald-600 block">{receive.netLiters.toFixed(2)} L net</span>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-[10px] text-slate-400 block uppercase font-medium">Quality</span>
+                            <span className="text-slate-700 block">LR: {receive.lr.toFixed(2)}</span>
+                            <span className="text-slate-700 block">Fat: {receive.fat.toFixed(2)}%</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
               ) : (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-xs text-slate-400">
                   No receive records found for selected filters
                 </div>
               )}

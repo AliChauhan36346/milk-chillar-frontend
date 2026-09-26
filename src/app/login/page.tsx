@@ -73,8 +73,8 @@ export default function LoginPage() {
     const sanitizedUsername = username.trim(); // 🔥 Remove unwanted spaces
 
     try {
-      //const response = await fetch('https://localhost:7013/api/Auth/login', {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Auth/login`, {
+      const response = await fetch('https://localhost:7013/api/Auth/login', {
+        //const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: sanitizedUsername, password }),

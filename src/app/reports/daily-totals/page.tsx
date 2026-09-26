@@ -593,11 +593,11 @@ import {
 import { DynamicLayout } from '@/components/layouts/DynamicLayout';
 import { useAuth } from '@/lib/auth/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoutes';
-import SummaryCard from '@/components/ui/SummaryCard';
-import { BackButton } from '@/components/ui/BackButton';
-import { Table } from '@/components/ui/Table/Table';
+import { StatStrip, StatItem } from '@/components/ui/StatStrip';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { CompactToolbar } from '@/components/ui/CompactToolbar';
+import { Table, TableContainer } from '@/components/ui/Table/Table';
 import { Select } from '@/components/ui/Select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FullPageSpinner } from '@/components/ui/spinner';
 import { getDailyTotalsReport, DailyTotalsDto } from '@/lib/api/reports';
 import { getChillars, Chillar } from '@/lib/api/chillar';
@@ -817,176 +817,154 @@ function DailyTotalsContent() {
         window.URL.revokeObjectURL(url);
     };
 
+    const volumeStats: StatItem[] = [
+        {
+            label: "Total Purchase",
+            value: `${summary.totalPurchaseLiters.toFixed(2)}L`,
+            subValue: formatPKR(summary.totalPurchaseAmount),
+            icon: <ShoppingCart />,
+            color: "blue",
+            onClick: () => handleCardClick('purchase')
+        },
+        {
+            label: "Chillar Receive",
+            value: `${summary.totalChillarReceiveLiters.toFixed(2)}L`,
+            icon: <Scale />,
+            color: "purple",
+            onClick: () => handleCardClick('chillarReceive')
+        },
+        {
+            label: "Dodhi Loss",
+            value: `${formatDifference(summary.dodhiLoss)}L`,
+            icon: <TrendingDown />,
+            color: summary.dodhiLoss > 0 ? "amber" : "green"
+        },
+        {
+            label: "Gross Sales",
+            value: `${summary.totalSalesLiters.toFixed(2)}L`,
+            subValue: formatPKR(summary.salesAmount),
+            icon: <ShoppingBag />,
+            color: "green",
+            onClick: () => handleCardClick('sales')
+        }
+    ];
+
+    const qualityStats: StatItem[] = [
+        {
+            label: "Chillar Loss/Gain",
+            value: `${formatDifference(summary.chillarLoss)}L`,
+            icon: <TrendingDown />,
+            color: summary.chillarLoss >= 0 ? "slate" : "red"
+        },
+        {
+            label: "TS Sales",
+            value: `${summary.tsSalesLiters.toFixed(2)}L`,
+            subValue: summary.totalSalesLiters > 0
+                ? formatPKR((summary.salesAmount / summary.totalSalesLiters) * summary.tsSalesLiters)
+                : undefined,
+            icon: <ShoppingBag />,
+            color: "blue"
+        },
+        {
+            label: "TS Loss/Gain",
+            value: `${formatDifference(summary.tsLoss)}L`,
+            icon: <TrendingDown />,
+            color: summary.tsLoss >= 0 ? "slate" : "red"
+        },
+        {
+            label: "Gross Profit",
+            value: formatProfit(summary.grossProfit),
+            icon: <DollarSign />,
+            color: summary.grossProfit >= 0 ? "green" : "red"
+        }
+    ];
+
     if (loading && !dailyTotals.length) {
         return <FullPageSpinner message="Loading daily totals..." />;
     }
 
     return (
-        <div className="max-w-7xl mx-auto p-1 sm:p-1 space-y-6">
+        <div className="max-w-7xl mx-auto space-y-3.5">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div className="flex items-center gap-4">
-                    <BackButton />
-                    <div className="flex items-center gap-2">
-                        <BarChart2 className="w-6 sm:w-8 h-6 sm:h-8 text-blue-600" />
-                        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Daily Totals Report</h1>
-                    </div>
-                </div>
-                <button
-                    onClick={handleExportData}
-                    className="flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                >
-                    <Download className="w-4 h-4" />
-                    Export CSV
-                </button>
-            </div>
-
-            {/* Summary Cards */}
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 sm:gap-4">
-                {/* 1. Total Purchase */}
-                <div onClick={() => handleCardClick('purchase')} className="cursor-pointer transition-transform hover:scale-105">
-                    <SummaryCard
-                        title="Total Purchase"
-                        value={`${summary.totalPurchaseLiters.toFixed(2)}L`}
-                        subtitle={formatPKR(summary.totalPurchaseAmount)}
-                        icon={<ShoppingCart className="w-6 h-6" />}
-                        color="blue"
-                    />
-                </div>
-
-                {/* 2. Total Chillar Receive */}
-                <div onClick={() => handleCardClick('chillarReceive')} className="cursor-pointer transition-transform hover:scale-105">
-                    <SummaryCard
-                        title="Chillar Receive"
-                        value={`${summary.totalChillarReceiveLiters.toFixed(2)}L`}
-                        icon={<Scale className="w-6 h-6" />}
-                        color="purple"
-                    />
-                </div>
-
-                {/* 3. Dodhi Loss */}
-                <SummaryCard
-                    title="Dodhi Loss"
-                    value={formatDifference(summary.dodhiLoss)}
-                    icon={<TrendingDown className="w-6 h-6" />}
-                    color="orange"
-                />
-
-                {/* 4. Gross Sales */}
-                <div onClick={() => handleCardClick('sales')} className="cursor-pointer transition-transform hover:scale-105">
-                    <SummaryCard
-                        title="Gross Sales"
-                        value={`${summary.totalSalesLiters.toFixed(2)}L`}
-                        subtitle={formatPKR(summary.salesAmount)}
-                        icon={<ShoppingBag className="w-6 h-6" />}
-                        color="green"
-                    />
-                </div>
-
-                {/* 5. Chillar Loss/Gain */}
-                <SummaryCard
-                    title="Chillar Loss/Gain"
-                    value={<>{formatDifference(summary.chillarLoss)}L</>}
-                    icon={<TrendingDown className="w-6 h-6" />}
-                    color="gray"
-                />
-
-                {/* 6. TS Sales */}
-                <SummaryCard
-                    title="TS Sales"
-                    value={`${summary.tsSalesLiters.toFixed(2)}L`}
-                    subtitle={summary.totalSalesLiters > 0
-                        ? formatPKR((summary.salesAmount / summary.totalSalesLiters) * summary.tsSalesLiters)
-                        : 'N/A'
-                    }
-                    icon={<ShoppingBag className="w-6 h-6" />}
-                    color="blue"
-                />
-
-                {/* 7. TS Loss/Gain */}
-                <SummaryCard
-                    title="TS Loss/Gain"
-                    value={<>{formatDifference(summary.tsLoss)}L</>}
-                    icon={<TrendingDown className="w-6 h-6" />}
-                    color="gray"
-                />
-
-                {/* 8. Gross Profit */}
-                <SummaryCard
-                    title="Gross Profit"
-                    value={formatProfit(summary.grossProfit)}
-                    icon={<DollarSign className="w-6 h-6" />}
-                    color="gray"
-                />
-            </div>
-
-            {/* Filters */}
-            <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 space-y-4">
-                <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
+            <PageHeader
+                showBack
+                title="Daily Totals Report"
+                subtitle="Consolidated daily milk collection, reception, sales, and profit breakdown"
+                icon={<BarChart2 />}
+                actions={
                     <button
-                        onClick={() => setShowFilters(!showFilters)}
-                        className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
+                        onClick={handleExportData}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors shadow-xs"
                     >
-                        <Filter className="w-4 h-4" />
-                        {showFilters ? 'Hide' : 'Show'}
+                        <Download className="w-4 h-4" />
+                        Export CSV
                     </button>
-                </div>
+                }
+            />
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-                        <input
-                            type="date"
-                            value={dateRange.startDate}
-                            onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
-                            className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
-                        <input
-                            type="date"
-                            value={dateRange.endDate}
-                            onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
-                            className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                        />
-                    </div>
+            {/* Compact Metric Strips */}
+            <div className="space-y-2">
+                <StatStrip items={volumeStats} />
+                <StatStrip items={qualityStats} dense />
+            </div>
 
-                    {isAdmin && (
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Chillar</label>
-                            <Select
-                                value={selectedChillarId?.toString() || ''}
-                                onChange={(value) => setSelectedChillarId(value ? Number(value) : undefined)}
-                                options={[
-                                    { value: '', label: 'All Chillars' },
-                                    ...chillars.map(chillar => ({
-                                        value: chillar.chillarId.toString(),
-                                        label: chillar.name
-                                    }))
-                                ]}
+            {/* Compact Filter Toolbar */}
+            <CompactToolbar
+                left={
+                    <>
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">From</span>
+                            <input
+                                type="date"
+                                value={dateRange.startDate}
+                                onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
+                                className="px-2.5 py-1 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
                             />
                         </div>
-                    )}
-                </div>
-                {showFilters && (
-                    <div className="pt-4 border-t border-gray-200">
-                        <div className="text-sm text-gray-600">
-                            Showing <span className="font-semibold text-gray-900">{dailyTotals.length}</span> results
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">To</span>
+                            <input
+                                type="date"
+                                value={dateRange.endDate}
+                                onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
+                                className="px-2.5 py-1 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                            />
                         </div>
-                    </div>
-                )}
-            </div>
+                        {isAdmin && (
+                            <div className="min-w-[180px]">
+                                <Select
+                                    value={selectedChillarId?.toString() || ''}
+                                    onChange={(value) => setSelectedChillarId(value ? Number(value) : undefined)}
+                                    options={[
+                                        { value: '', label: 'All Chillars' },
+                                        ...chillars.map(chillar => ({
+                                            value: chillar.chillarId.toString(),
+                                            label: chillar.name
+                                        }))
+                                    ]}
+                                />
+                            </div>
+                        )}
+                    </>
+                }
+                right={
+                    <span className="text-xs text-slate-500 font-medium">
+                        Showing <strong className="text-slate-800">{dailyTotals.length}</strong> days
+                    </span>
+                }
+            />
 
-            {/* Table */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>Daily Details</CardTitle>
-                </CardHeader>
-                <CardContent>
+            {/* Desktop Table */}
+            <div className="hidden md:block">
+                <TableContainer>
+                    <div className="px-4 py-2.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                        <h3 className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Daily Details Breakdown</h3>
+                        <span className="text-xs text-slate-500">
+                            {dailyTotals.length} records
+                        </span>
+                    </div>
                     <div className="overflow-x-auto">
-                        <Table>
+                        <Table dense>
                             <Table.Header>
                                 <Table.Row>
                                     <Table.Head>Date</Table.Head>
@@ -1093,8 +1071,65 @@ function DailyTotalsContent() {
                             </Table.Body>
                         </Table>
                     </div>
-                </CardContent>
-            </Card>
+                </TableContainer>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-2.5">
+                {dailyTotals.length === 0 ? (
+                    <div className="bg-white rounded-xl border border-slate-200 p-8 text-center text-slate-500">
+                        <Calendar className="w-10 h-10 mx-auto mb-2 text-slate-400" />
+                        <p className="text-xs">No data found for the selected period</p>
+                    </div>
+                ) : (
+                    dailyTotals.map((item, index) => {
+                        const dateObj = new Date(item.date);
+                        const formattedDate = `${dateObj.getDate().toString().padStart(2, '0')}/${(dateObj.getMonth() + 1).toString().padStart(2, '0')}/${dateObj.getFullYear()}`;
+                        const chillarDiff = item.totalSalesLiters - item.totalChillarReceiveLiters;
+
+                        return (
+                            <div key={index} className="bg-white rounded-xl border border-slate-200/90 p-3 shadow-xs space-y-2">
+                                <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                                    <div className="flex items-center gap-1.5">
+                                        <Calendar className="w-3.5 h-3.5 text-blue-600" />
+                                        <span className="font-bold text-xs text-slate-900">{formattedDate}</span>
+                                    </div>
+                                    {isAdmin && (
+                                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${item.grossProfit >= 0 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'}`}>
+                                            {formatPKR(item.grossProfit)}
+                                        </span>
+                                    )}
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-2 text-xs">
+                                    <div className="bg-slate-50/80 p-2 rounded-lg border border-slate-100">
+                                        <span className="text-[10px] uppercase font-semibold text-slate-500 block">Purchase</span>
+                                        <span className="font-bold text-blue-600">{item.totalPurchaseLiters.toFixed(1)} L</span>
+                                        <span className="text-[11px] text-slate-500 block">{formatPKR(item.totalPurchaseAmount)}</span>
+                                    </div>
+                                    <div className="bg-slate-50/80 p-2 rounded-lg border border-slate-100">
+                                        <span className="text-[10px] uppercase font-semibold text-slate-500 block">Gross Sales</span>
+                                        <span className="font-bold text-emerald-600">{item.totalSalesLiters.toFixed(1)} L</span>
+                                        <span className="text-[11px] text-slate-500 block">{formatPKR(item.salesAmount)}</span>
+                                    </div>
+                                    <div className="bg-slate-50/80 p-2 rounded-lg border border-slate-100">
+                                        <span className="text-[10px] uppercase font-semibold text-slate-500 block">Chillar Receive</span>
+                                        <span className="font-bold text-purple-600">{item.totalChillarReceiveLiters.toFixed(1)} L</span>
+                                        <span className="text-[10px] text-slate-500 block">Loss: {item.dodhiLoss.toFixed(1)}L</span>
+                                    </div>
+                                    <div className="bg-slate-50/80 p-2 rounded-lg border border-slate-100">
+                                        <span className="text-[10px] uppercase font-semibold text-slate-500 block">Chillar Loss/Gain</span>
+                                        <span className={`font-bold ${chillarDiff >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                            {formatDifference(chillarDiff)} L
+                                        </span>
+                                        <span className="text-[10px] text-slate-500 block">TS: {item.tsSalesLiters.toFixed(1)}L</span>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })
+                )}
+            </div>
         </div>
     );
 }

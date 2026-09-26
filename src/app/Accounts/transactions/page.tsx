@@ -17,6 +17,10 @@ import { Select } from '@/components/ui/Select';
 import { CenteredSpinner } from '@/components/ui/spinner';
 import { useToast } from '@/hooks/useToast';
 import { DynamicLayout } from '@/components/layouts/DynamicLayout';
+import { StatStrip, StatItem } from '@/components/ui/StatStrip';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { CompactToolbar } from '@/components/ui/CompactToolbar';
+import { Table, TableContainer } from '@/components/ui/Table/Table';
 import {
   BookOpen,
   Download,
@@ -149,96 +153,61 @@ export default function RoznamchaPage() {
     (k) => !['page', 'limit', 'viewType', 'transactionType'].includes(k) && filters[k as keyof RoznamchaFilterRequest]
   ).length;
 
+  const roznamchaStats: StatItem[] = data?.summary
+    ? [
+        {
+          label: 'Payments',
+          value: formatCurrency(data.summary.totalPayments),
+          icon: <TrendingDown />,
+          color: 'red',
+          trend: 'down',
+        },
+        {
+          label: 'Receipts',
+          value: formatCurrency(data.summary.totalReceipts),
+          icon: <TrendingUp />,
+          color: 'green',
+          trend: 'up',
+        },
+        {
+          label: 'Net Balance',
+          value: formatCurrency(data.summary.netAmount),
+          icon: <DollarSign />,
+          color: data.summary.netAmount >= 0 ? 'blue' : 'amber',
+        },
+        {
+          label: 'Transactions',
+          value: data.summary.totalTransactions,
+          icon: <FileText />,
+          color: 'purple',
+        },
+      ]
+    : [];
+
   return (
     <DynamicLayout allowedRoles={['Admin', 'manager']}>
-      <div className="p-1 md:p-2 space-y-4 md:space-y-6">
+      <div className="max-w-7xl mx-auto space-y-3.5">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 flex items-center gap-2">
-              <BookOpen className="w-6 h-6 md:w-8 md:h-8" />
-              Roznamcha
-            </h1>
-            <p className="text-sm md:text-base text-gray-600 mt-1">
-              Cash & Bank Payments and Receipts
-            </p>
-          </div>
-          <div className="flex gap-2">
+        <PageHeader
+          title="Roznamcha"
+          subtitle="Cash & Bank Payments and Receipts Daily Register"
+          icon={<BookOpen />}
+          actions={
             <Button
               variant="outline"
               size="sm"
               onClick={() => handleExport('excel')}
               disabled={isExporting || !data}
-              className="flex-1 md:flex-none"
+              className="inline-flex items-center gap-1.5"
             >
-              <Download className="w-4 h-4 md:mr-2" />
-              <span className="hidden sm:inline">Export</span>
+              <Download className="w-4 h-4" />
+              <span>Export</span>
             </Button>
-          </div>
-        </div>
+          }
+        />
 
-        {/* Summary Cards */}
-        {data?.summary && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-            <Card className="bg-gradient-to-br from-red-50 to-red-100">
-              <CardContent className="pt-4 md:pt-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <p className="text-xs md:text-sm font-medium text-red-600">Payments</p>
-                    <p className="text-base md:text-2xl font-bold text-red-900 mt-1">
-                      {formatCurrency(data.summary.totalPayments)}
-                    </p>
-                  </div>
-                  <TrendingDown className="w-6 h-6 md:w-8 md:h-8 text-red-600 opacity-50" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-green-50 to-green-100">
-              <CardContent className="pt-4 md:pt-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <p className="text-xs md:text-sm font-medium text-green-600">Receipts</p>
-                    <p className="text-base md:text-2xl font-bold text-green-900 mt-1">
-                      {formatCurrency(data.summary.totalReceipts)}
-                    </p>
-                  </div>
-                  <TrendingUp className="w-6 h-6 md:w-8 md:h-8 text-green-600 opacity-50" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className={`bg-gradient-to-br ${data.summary.netAmount >= 0 ? 'from-blue-50 to-blue-100' : 'from-orange-50 to-orange-100'}`}>
-              <CardContent className="pt-4 md:pt-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <p className={`text-xs md:text-sm font-medium ${data.summary.netAmount >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>
-                      Net Amount
-                    </p>
-                    <p className={`text-base md:text-2xl font-bold mt-1 ${data.summary.netAmount >= 0 ? 'text-blue-900' : 'text-orange-900'}`}>
-                      {formatCurrency(data.summary.netAmount)}
-                    </p>
-                  </div>
-                  <DollarSign className={`w-6 h-6 md:w-8 md:h-8 opacity-50 ${data.summary.netAmount >= 0 ? 'text-blue-600' : 'text-orange-600'}`} />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-purple-50 to-purple-100">
-              <CardContent className="pt-4 md:pt-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <p className="text-xs md:text-sm font-medium text-purple-600">Transactions</p>
-                    <p className="text-base md:text-2xl font-bold text-purple-900 mt-1">
-                      {data.summary.totalTransactions}
-                    </p>
-                  </div>
-                  <FileText className="w-6 h-6 md:w-8 md:h-8 text-purple-600 opacity-50" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
+        {/* Compact Stat Strip */}
+        {data?.summary && <StatStrip items={roznamchaStats} />}
 
         {/* View Tabs */}
         <div className="flex flex-wrap gap-2">
@@ -390,55 +359,53 @@ export default function RoznamchaPage() {
         ) : data && data.entries.length > 0 ? (
           <>
             {/* Desktop View */}
-            <Card className="hidden md:block overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50 border-b">
-                    <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase">Date</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase">Voucher</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase">Account Code</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase">Account Name</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase">Description</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase">Cash/Bank Account</th>
-                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-600 uppercase">Amount</th>
-                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-600 uppercase">Type</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y">
-                    {data.entries.flatMap((entry) => 
-                      entry.lines.map((line, lineIdx) => (
-                        <tr key={`${entry.id}-${lineIdx}`} className="hover:bg-gray-50 transition">
-                          <td className="px-4 py-3 text-sm text-gray-900">{formatDate(entry.date)}</td>
-                          <td className="px-4 py-3">
-                            <div className="flex flex-col gap-1">
-                              <span className="text-sm font-medium">{entry.voucherNo}</span>
-                              {entry.jobDescription && (
-                                <span className="text-xs text-gray-500">{entry.jobDescription}</span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-900">{line.accountCode}</td>
-                          <td className="px-4 py-3 text-sm text-gray-900">{line.accountName}</td>
-                          <td className="px-4 py-3 text-sm text-gray-600">{line.description || '-'}</td>
-                          <td className="px-4 py-3 text-sm text-gray-900">{entry.cashOrBankAccount}</td>
-                          <td className="px-4 py-3 text-right">
-                            <span className={`text-sm font-semibold ${entry.voucherType.includes('RECEIPT') ? 'text-green-600' : 'text-red-600'}`}>
-                              {entry.voucherType.includes('RECEIPT') ? '+' : '-'}{formatCurrency(line.amount)}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-center">
-                            <span className={`text-xs px-2 py-1 rounded-full ${getVoucherBadgeColor(entry.voucherType)}`}>
-                              {getVoucherLabel(entry.voucherType)}
-                            </span>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </Card>
+            <TableContainer className="hidden md:block">
+              <Table dense>
+                <Table.Header>
+                  <Table.Row>
+                    <Table.Head dense>Date</Table.Head>
+                    <Table.Head dense>Voucher</Table.Head>
+                    <Table.Head dense>Account Code</Table.Head>
+                    <Table.Head dense>Account Name</Table.Head>
+                    <Table.Head dense>Description</Table.Head>
+                    <Table.Head dense>Cash / Bank Account</Table.Head>
+                    <Table.Head dense className="text-right">Amount</Table.Head>
+                    <Table.Head dense className="text-center">Type</Table.Head>
+                  </Table.Row>
+                </Table.Header>
+                <Table.Body>
+                  {data.entries.flatMap((entry) => 
+                    entry.lines.map((line, lineIdx) => (
+                      <Table.Row key={`${entry.id}-${lineIdx}`}>
+                        <Table.Cell dense className="font-medium text-slate-900">{formatDate(entry.date)}</Table.Cell>
+                        <Table.Cell dense>
+                          <div className="flex flex-col">
+                            <span className="font-semibold text-slate-800">{entry.voucherNo}</span>
+                            {entry.jobDescription && (
+                              <span className="text-[11px] text-slate-500">{entry.jobDescription}</span>
+                            )}
+                          </div>
+                        </Table.Cell>
+                        <Table.Cell dense className="font-mono text-xs text-slate-600">{line.accountCode}</Table.Cell>
+                        <Table.Cell dense className="font-medium text-slate-800">{line.accountName}</Table.Cell>
+                        <Table.Cell dense className="text-slate-600 max-w-xs truncate">{line.description || '-'}</Table.Cell>
+                        <Table.Cell dense className="text-slate-700">{entry.cashOrBankAccount}</Table.Cell>
+                        <Table.Cell dense className="text-right">
+                          <span className={`font-semibold ${entry.voucherType.includes('RECEIPT') ? 'text-emerald-600' : 'text-rose-600'}`}>
+                            {entry.voucherType.includes('RECEIPT') ? '+' : '-'}{formatCurrency(line.amount)}
+                          </span>
+                        </Table.Cell>
+                        <Table.Cell dense className="text-center">
+                          <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${getVoucherBadgeColor(entry.voucherType)}`}>
+                            {getVoucherLabel(entry.voucherType)}
+                          </span>
+                        </Table.Cell>
+                      </Table.Row>
+                    ))
+                  )}
+                </Table.Body>
+              </Table>
+            </TableContainer>
 
             {/* Mobile View */}
             <div className="md:hidden space-y-3">

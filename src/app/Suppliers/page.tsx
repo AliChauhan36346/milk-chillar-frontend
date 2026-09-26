@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import {
   Search,
   Plus,
-  Filter,
+  Truck,
   Eye,
   Edit,
   ChevronLeft,
@@ -13,6 +13,9 @@ import {
 } from 'lucide-react';
 import { DynamicLayout } from '@/components/layouts/DynamicLayout';
 import ProtectedRoute from '@/components/ProtectedRoutes';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { CompactToolbar } from '@/components/ui/CompactToolbar';
+import { Table, TableContainer } from '@/components/ui/Table/Table';
 import { getSuppliersPaged, Supplier } from '@/lib/api/suppliers';
 import { useToast } from '@/hooks/useToast';
 import MilkLoader from '@/components/ui/Loader';
@@ -103,206 +106,270 @@ export default function SupplierListPage() {
   return (
     <ProtectedRoute>
       <DynamicLayout>
-        <div className="p-6">
-          {/* Compact Header */}
-          <div className="flex justify-between items-center mb-6">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-800">Suppliers</h1>
-              <p className="text-sm text-gray-600">{totalItems} total suppliers</p>
-            </div>
-            <button
-              onClick={() => router.push('/Suppliers/createSupplier')}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              Add Supplier
-            </button>
-          </div>
-
-          {/* Compact Filters */}
-          <div className="bg-white rounded-lg shadow-sm border p-4 mb-4">
-            <div className="flex gap-4 items-center">
-              {/* Search */}
-              <div className="flex-1 relative">
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  placeholder="Search suppliers..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full px-3 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                />
-                <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
-                {isLoading && debouncedSearch !== searchQuery && (
-                  <RefreshCw className="absolute right-3 top-2.5 w-4 h-4 text-blue-500 animate-spin" />
-                )}
-              </div>
-
-              {/* Status Filter */}
-              <select
-                value={statusFilter}
-                onChange={(e) => {
-                  setStatusFilter(e.target.value as 'all' | 'active' | 'inactive');
-                  setPageNumber(1);
-                }}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
-              >
-                <option value="all">All Status</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
-
-              {/* Refresh */}
+        <div className="max-w-7xl mx-auto space-y-3.5">
+          {/* Header */}
+          <PageHeader
+            title="Suppliers"
+            subtitle={`${totalItems} total milk suppliers & farmers`}
+            icon={<Truck />}
+            actions={
               <button
-                onClick={handleRefresh}
-                disabled={isLoading}
-                className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+                onClick={() => router.push('/Suppliers/createSupplier')}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-xs"
               >
-                <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                <Plus className="w-4 h-4" />
+                Add Supplier
               </button>
-            </div>
+            }
+          />
+
+          {/* Compact Filters Toolbar */}
+          <CompactToolbar
+            left={
+              <>
+                <div className="relative flex-1 min-w-[240px]">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+                  <input
+                    ref={searchInputRef}
+                    type="text"
+                    placeholder="Search by name, khata, code..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-9 pr-8 py-1.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                  />
+                  {isLoading && debouncedSearch !== searchQuery && (
+                    <RefreshCw className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-blue-500 animate-spin" />
+                  )}
+                </div>
+
+                <select
+                  value={statusFilter}
+                  onChange={(e) => {
+                    setStatusFilter(e.target.value as 'all' | 'active' | 'inactive');
+                    setPageNumber(1);
+                  }}
+                  className="px-2.5 py-1.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white text-slate-700"
+                >
+                  <option value="all">All Status</option>
+                  <option value="active">Active Only</option>
+                  <option value="inactive">Inactive Only</option>
+                </select>
+
+                <button
+                  onClick={handleRefresh}
+                  disabled={isLoading}
+                  className="p-1.5 text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors disabled:opacity-50"
+                  title="Refresh"
+                >
+                  <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                </button>
+              </>
+            }
+            right={
+              <span className="text-xs text-slate-500 font-medium">
+                {totalItems > 0
+                  ? `${((pageNumber - 1) * pageSize) + 1}-${Math.min(pageNumber * pageSize, totalItems)} of ${totalItems}`
+                  : '0 suppliers'}
+              </span>
+            }
+          />
+
+          {/* Desktop Table View */}
+          <div className="hidden md:block">
+            <TableContainer>
+              {suppliers.length > 0 ? (
+                <Table dense>
+                  <Table.Header>
+                    <Table.Row>
+                      <Table.Head dense>Code</Table.Head>
+                      <Table.Head dense>Name</Table.Head>
+                      <Table.Head dense>Khata</Table.Head>
+                      <Table.Head dense className="text-right">Rate</Table.Head>
+                      <Table.Head dense className="text-right">Credit Limit</Table.Head>
+                      <Table.Head dense>Dodhi</Table.Head>
+                      <Table.Head dense className="text-center">Status</Table.Head>
+                      <Table.Head dense className="text-right">Actions</Table.Head>
+                    </Table.Row>
+                  </Table.Header>
+                  <Table.Body>
+                    {suppliers.map((supplier) => (
+                      <Table.Row key={supplier.supplierId}>
+                        <Table.Cell dense>
+                          <span className="font-mono text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded text-xs">
+                            {getAccountNumber(supplier.accountCode)}
+                          </span>
+                        </Table.Cell>
+
+                        <Table.Cell dense>
+                          <button
+                            onClick={() => router.push(`/Suppliers/supplierDetail?id=${supplier.supplierId}`)}
+                            className="font-semibold text-blue-600 hover:text-blue-800 transition-colors text-left"
+                            style={{
+                              fontFamily: supplier.nameUrdu
+                                ? 'Noto Nastaliq Urdu, sans-serif'
+                                : 'inherit'
+                            }}
+                          >
+                            {supplier.nameUrdu || supplier.accountName}
+                          </button>
+                        </Table.Cell>
+
+                        <Table.Cell dense className="text-slate-700">
+                          {supplier.khataNumber || '-'}
+                        </Table.Cell>
+                        <Table.Cell dense className="text-right font-medium text-slate-900">
+                          Rs {supplier.rate?.toFixed(2) || '0.00'}
+                        </Table.Cell>
+                        <Table.Cell dense className="text-right text-slate-700">
+                          {supplier.creditLimit ? `Rs ${supplier.creditLimit.toFixed(2)}` : '-'}
+                        </Table.Cell>
+                        <Table.Cell dense className="text-slate-700">
+                          {supplier.dodhiName || '-'}
+                        </Table.Cell>
+                        <Table.Cell dense className="text-center">
+                          <span
+                            className={`inline-flex px-2 py-0.5 text-[11px] font-semibold rounded-full ${
+                              supplier.isActive
+                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                : 'bg-rose-50 text-rose-700 border border-rose-200'
+                            }`}
+                          >
+                            {supplier.isActive ? 'Active' : 'Inactive'}
+                          </span>
+                        </Table.Cell>
+                        <Table.Cell dense className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <button
+                              onClick={() => router.push(`/Suppliers/supplierDetail?id=${supplier.supplierId}`)}
+                              className="p-1 text-slate-500 hover:text-blue-600 hover:bg-slate-100 rounded"
+                              title="View"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => router.push(`/Suppliers/createSupplier?id=${supplier.supplierId}`)}
+                              className="p-1 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded"
+                              title="Edit"
+                            >
+                              <Edit className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </Table.Cell>
+                      </Table.Row>
+                    ))}
+                  </Table.Body>
+                </Table>
+              ) : (
+                <div className="p-8 text-center">
+                  <h3 className="text-base font-semibold text-slate-800 mb-1">No suppliers found</h3>
+                  <p className="text-xs text-slate-500 mb-3">
+                    {searchQuery || statusFilter !== 'all'
+                      ? "Try adjusting your search or filter."
+                      : "Add your first supplier to get started."}
+                  </p>
+                  <button
+                    onClick={() => router.push('/Suppliers/createSupplier')}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors mx-auto"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Add Supplier
+                  </button>
+                </div>
+              )}
+            </TableContainer>
           </div>
 
-          {/* Compact Table */}
-          <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
-            {suppliers.length > 0 ? (
-              <>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50">
-                      <tr className="text-left text-xs font-medium text-gray-500 uppercase">
-                        <th className="px-4 py-3">Code</th>
-                        <th className="px-4 py-3">Name</th>
-                        <th className="px-4 py-3">Khata</th>
-                        <th className="px-4 py-3">Rate</th>
-                        <th className="px-4 py-3">Credit Limit</th>
-                        <th className="px-4 py-3">Dodhi</th>
-                        <th className="px-4 py-3">Status</th>
-                        <th className="px-4 py-3">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {suppliers.map((supplier) => (
-                        <tr key={supplier.supplierId} className="hover:bg-gray-50 text-sm">
-                          <td className="px-4 py-3">
-                            <span className="font-mono text-gray-800 bg-gray-100 px-2 py-1 rounded text-xs">
-                              {getAccountNumber(supplier.accountCode)}
-                            </span>
-                          </td>
-                          {/* <td className="px-4 py-3">
-                            <button
-                              onClick={() => router.push(`/Suppliers/supplierDetail?id=${supplier.supplierId}`)}
-                              className="font-medium text-blue-600 hover:text-blue-700 hover:underline"
-                            >
-                              {supplier.accountName}
-                            </button>
-                          </td> */}
-
-                          <td className="px-4 py-3">
-                            <button
-                              onClick={() => router.push(`/Suppliers/supplierDetail?id=${supplier.supplierId}`)}
-                              className="font-medium text-blue-600 hover:text-blue-700 hover:underline"
-                              style={{
-                                fontFamily: supplier.nameUrdu
-                                  ? 'Noto Nastaliq Urdu, sans-serif'
-                                  : 'inherit'
-                              }}
-                            >
-                              {supplier.nameUrdu || supplier.accountName}
-                            </button>
-                          </td>
-
-                          <td className="px-4 py-3 text-gray-700">
-                            {supplier.khataNumber || '-'}
-                          </td>
-                          <td className="px-4 py-3 text-gray-700">
-                            Rs {supplier.rate?.toFixed(2) || '0.00'}
-                          </td>
-                          <td className="px-4 py-3 text-gray-700">
-                            Rs {supplier.creditLimit?.toFixed(2) || '0.00'}
-                          </td>
-                          <td className="px-4 py-3 text-gray-700">
-                            {supplier.dodhiName || '-'}
-                          </td>
-                          <td className="px-4 py-3">
-                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${supplier.isActive
-                                ? 'bg-green-100 text-green-800'
-                                : 'bg-red-100 text-red-800'
-                              }`}>
-                              {supplier.isActive ? 'Active' : 'Inactive'}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="flex gap-1">
-                              <button
-                                onClick={() => router.push(`/Suppliers/supplierDetail?id=${supplier.supplierId}`)}
-                                className="p-1.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded"
-                                title="View"
-                              >
-                                <Eye className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => router.push(`/Suppliers/createSupplier?id=${supplier.supplierId}`)}
-                                className="p-1.5 text-gray-600 hover:text-gray-700 hover:bg-gray-100 rounded"
-                                title="Edit"
-                              >
-                                <Edit className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Compact Pagination */}
-                <div className="px-4 py-3 bg-gray-50 border-t flex items-center justify-between text-sm">
-                  <div className="text-gray-600">
-                    {((pageNumber - 1) * pageSize) + 1}-{Math.min(pageNumber * pageSize, totalItems)} of {totalItems}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setPageNumber(p => Math.max(1, p - 1))}
-                      disabled={pageNumber === 1}
-                      className="p-1 text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </button>
-
-                    <span className="px-2 py-1 text-gray-700">
-                      {pageNumber} / {totalPages}
-                    </span>
-
-                    <button
-                      onClick={() => setPageNumber(p => Math.min(totalPages, p + 1))}
-                      disabled={pageNumber === totalPages}
-                      className="p-1 text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div className="p-8 text-center">
-                <h3 className="text-lg font-medium text-gray-800 mb-2">No suppliers found</h3>
-                <p className="text-gray-600 mb-4">
-                  {searchQuery || statusFilter !== 'all'
-                    ? "Try adjusting your search or filter."
-                    : "Add your first supplier to get started."
-                  }
-                </p>
-                <button
-                  onClick={() => router.push('/Suppliers/createSupplier')}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors mx-auto"
-                >
-                  <Plus className="w-4 h-4" />
-                  Add Supplier
-                </button>
+          {/* Mobile Card List for Suppliers */}
+          <div className="md:hidden space-y-2.5">
+            {suppliers.length === 0 ? (
+              <div className="bg-white rounded-xl border border-slate-200 p-8 text-center text-xs text-slate-500">
+                {searchQuery || statusFilter !== 'all'
+                  ? "Try adjusting your search or filter."
+                  : "Add your first supplier to get started."}
               </div>
+            ) : (
+              suppliers.map((supplier) => (
+                <div key={supplier.supplierId} className="bg-white rounded-xl border border-slate-200/90 p-3 shadow-xs space-y-2">
+                  <div className="flex items-start justify-between border-b border-slate-100 pb-2">
+                    <div>
+                      <button
+                        onClick={() => router.push(`/Suppliers/supplierDetail?id=${supplier.supplierId}`)}
+                        className="font-bold text-xs text-blue-600 hover:text-blue-800 text-left block"
+                        style={{
+                          fontFamily: supplier.nameUrdu ? 'Noto Nastaliq Urdu, sans-serif' : 'inherit'
+                        }}
+                      >
+                        {supplier.nameUrdu || supplier.accountName}
+                      </button>
+                      <div className="text-[11px] text-slate-500 font-mono mt-0.5 flex items-center gap-1.5 flex-wrap">
+                        <span>#{getAccountNumber(supplier.accountCode)}</span>
+                        {supplier.khataNumber && <span>• Khata: {supplier.khataNumber}</span>}
+                        {supplier.dodhiName && <span className="text-slate-600 font-sans">• Dodhi: {supplier.dodhiName}</span>}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span
+                        className={`inline-flex px-1.5 py-0.5 text-[10px] font-semibold rounded-full ${
+                          supplier.isActive
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            : 'bg-rose-50 text-rose-700 border border-rose-200'
+                        }`}
+                      >
+                        {supplier.isActive ? 'Active' : 'Inactive'}
+                      </span>
+                      <button
+                        onClick={() => router.push(`/Suppliers/createSupplier?id=${supplier.supplierId}`)}
+                        className="px-2 py-0.5 bg-slate-50 hover:bg-slate-100 text-slate-700 text-[11px] font-semibold rounded border border-slate-200"
+                      >
+                        Edit
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs pt-0.5">
+                    <div className="text-slate-600">
+                      <span className="text-[10px] text-slate-400 block uppercase font-medium">Rate</span>
+                      <strong className="text-slate-900">Rs {supplier.rate?.toFixed(2) || '0.00'}/L</strong>
+                    </div>
+                    <div className="text-right text-slate-600">
+                      <span className="text-[10px] text-slate-400 block uppercase font-medium">Credit Limit</span>
+                      <span className="text-slate-700">{supplier.creditLimit ? `Rs ${supplier.creditLimit.toFixed(2)}` : '-'}</span>
+                    </div>
+                  </div>
+                </div>
+              ))
             )}
           </div>
+
+          {/* Shared Pagination Controls */}
+          {totalItems > 0 && totalPages > 1 && (
+            <div className="bg-white rounded-xl border border-slate-200 px-4 py-2.5 flex items-center justify-between text-xs shadow-xs">
+              <div className="text-slate-500 font-medium">
+                {((pageNumber - 1) * pageSize) + 1}-{Math.min(pageNumber * pageSize, totalItems)} of {totalItems} suppliers
+              </div>
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => setPageNumber(p => Math.max(1, p - 1))}
+                  disabled={pageNumber === 1}
+                  className="p-1 text-slate-600 hover:text-slate-900 border border-slate-200 rounded disabled:opacity-40"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                </button>
+
+                <span className="px-2 font-medium text-slate-700">
+                  {pageNumber} / {totalPages}
+                </span>
+
+                <button
+                  onClick={() => setPageNumber(p => Math.min(totalPages, p + 1))}
+                  disabled={pageNumber === totalPages}
+                  className="p-1 text-slate-600 hover:text-slate-900 border border-slate-200 rounded disabled:opacity-40"
+                >
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </DynamicLayout>
     </ProtectedRoute>

@@ -48,7 +48,7 @@ export default function EmployeeDetailsPage({ params }: PageProps) {
     };
 
     fetchEmployee();
-  }, [resolvedParams.id, router, toast]);
+  }, [resolvedParams.id]);
 
   const getDesignationBadgeColor = (designation: string) => {
     const colors: Record<string, string> = {

@@ -143,10 +143,11 @@
 //   );
 // }
 'use client';
-import { Menu, Bell } from 'lucide-react';
+import { Menu, Bell, Calendar, ChevronDown, Check, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/lib/auth/AuthContext';
+import { useFinancialYear } from '@/context/FinancialYearContext';
 import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 declare global {
   interface Window {
@@ -162,7 +163,20 @@ type HeaderProps = {
 
 export default function Header({ toggleSidebar, role }: HeaderProps) {
   const { user, logout } = useAuth();
+  const { financialYears, activeYear, selectedYear, isHistoricalMode, setSelectedYear } = useFinancialYear();
+  const [isFyDropdownOpen, setIsFyDropdownOpen] = useState(false);
+  const fyDropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (fyDropdownRef.current && !fyDropdownRef.current.contains(e.target as Node)) {
+        setIsFyDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
   
   const [language, setLanguage] = useState<'en' | 'ur'>(() => {
     if (typeof window !== 'undefined') {
@@ -285,16 +299,95 @@ export default function Header({ toggleSidebar, role }: HeaderProps) {
   return (
     <header className="bg-white border-b border-gray-200">
       <div className="flex items-center justify-between px-4 py-3">
-        {/* Left side - Menu button */}
-        <button
-          onClick={toggleSidebar}
-          className="p-2 rounded-lg hover:bg-gray-100 text-gray-500"
-          aria-label="Toggle sidebar"
-        >
-          <Menu size={20} />
-        </button>
+        {/* Left side - Menu button & Financial Year Selector */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={toggleSidebar}
+            className="p-2 rounded-lg hover:bg-gray-100 text-gray-500"
+            aria-label="Toggle sidebar"
+          >
+            <Menu size={20} />
+          </button>
 
-        {/* Right side - Notifications, Language Toggle, and User menu */}
+          {/* Financial Year Selector */}
+          <div className="relative" ref={fyDropdownRef}>
+            <button
+              type="button"
+              onClick={() => setIsFyDropdownOpen(!isFyDropdownOpen)}
+              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all ${
+                isHistoricalMode
+                  ? 'bg-amber-50 border-amber-300 text-amber-900 hover:bg-amber-100 shadow-2xs'
+                  : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+              }`}
+            >
+              <Calendar size={14} className={isHistoricalMode ? 'text-amber-600' : 'text-blue-600'} />
+              <span className="font-semibold text-slate-800">
+                {selectedYear?.name || activeYear?.name || 'Financial Year'}
+              </span>
+              <span
+                className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${
+                  selectedYear?.isActive
+                    ? 'bg-green-100 text-green-700 border border-green-200'
+                    : 'bg-amber-100 text-amber-700 border border-amber-200'
+                }`}
+              >
+                {selectedYear?.isActive ? 'Active' : 'Closed'}
+              </span>
+              <ChevronDown size={13} className="text-slate-400" />
+            </button>
+
+            {/* Dropdown Menu */}
+            {isFyDropdownOpen && (
+              <div className="absolute left-0 mt-1.5 w-64 bg-white border border-slate-200 rounded-xl shadow-lg z-50 py-1.5">
+                <div className="px-3 py-1.5 border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  Select Financial Year
+                </div>
+                <div className="max-h-60 overflow-y-auto py-1">
+                  {financialYears.length === 0 ? (
+                    <div className="px-3 py-2 text-xs text-slate-400">Loading periods...</div>
+                  ) : (
+                    financialYears.map((fy) => {
+                      const isSelected = selectedYear?.financialYearId === fy.financialYearId;
+                      return (
+                        <button
+                          key={fy.financialYearId}
+                          type="button"
+                          onClick={() => {
+                            setSelectedYear(fy);
+                            setIsFyDropdownOpen(false);
+                          }}
+                          className={`w-full flex items-center justify-between px-3 py-2 text-xs text-left hover:bg-slate-50 transition-colors ${
+                            isSelected ? 'bg-blue-50/70 text-blue-700 font-semibold' : 'text-slate-700'
+                          }`}
+                        >
+                          <div className="flex flex-col">
+                            <span className="font-medium flex items-center gap-1.5">
+                              {fy.name}
+                              {fy.isActive && (
+                                <span className="text-[9px] px-1.5 py-0.2 bg-green-100 text-green-700 rounded font-bold">
+                                  Current
+                                </span>
+                              )}
+                              {fy.isClosed && (
+                                <span className="text-[9px] px-1.5 py-0.2 bg-slate-100 text-slate-500 rounded">
+                                  Closed
+                                </span>
+                              )}
+                            </span>
+                            <span className="text-[10px] text-slate-400">
+                              {new Date(fy.startDate).toLocaleDateString()} - {new Date(fy.endDate).toLocaleDateString()}
+                            </span>
+                          </div>
+                          {isSelected && <Check size={14} className="text-blue-600" />}
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
         <div className="flex items-center gap-4">
           <button
             className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 relative"
@@ -347,6 +440,24 @@ export default function Header({ toggleSidebar, role }: HeaderProps) {
           </div>
         </div>
       </div>
+
+      {/* Historical Mode Read-Only Banner */}
+      {isHistoricalMode && activeYear && (
+        <div className="bg-gradient-to-r from-amber-500 to-amber-600 text-white px-4 py-2 flex items-center justify-between text-xs font-medium shadow-xs">
+          <div className="flex items-center gap-2">
+            <AlertCircle size={16} className="text-amber-100" />
+            <span>
+              You are browsing historical records for <strong>{selectedYear?.name}</strong> (Read-Only). Operations & data entry must be performed in the active year.
+            </span>
+          </div>
+          <button
+            onClick={() => setSelectedYear(activeYear)}
+            className="px-2.5 py-1 bg-white/20 hover:bg-white/30 rounded text-[11px] font-semibold transition-colors flex items-center gap-1.5"
+          >
+            <span>Return to Current FY ({activeYear.name})</span>
+          </button>
+        </div>
+      )}
     </header>
   );
 }

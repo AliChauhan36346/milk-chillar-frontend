@@ -21,6 +21,7 @@ import { CenteredSpinner, Spinner } from '@/components/ui/spinner';
 import { useToast } from '@/hooks/useToast';
 import { AdminLayout } from '@/components/layouts/AdminLayout';
 import ProtectedRoute from '@/components/ProtectedRoutes';
+import { StatStrip } from '@/components/ui/StatStrip';
 import {
   TrendingUp,
   TrendingDown,
@@ -288,78 +289,41 @@ function PLReportView({
 
   return (
     <div className="space-y-6">
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {formatCurrency(data.income.totalIncome)}
-                </p>
-              </div>
-              <div className="p-3 bg-blue-100 rounded-full">
-                <DollarSign className="w-6 h-6 text-blue-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Gross Profit</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {formatCurrency(data.grossProfit)}
-                </p>
-                <p className="text-sm text-gray-500">{formatPercentage(data.grossProfitMargin)}</p>
-              </div>
-              <div className="p-3 bg-green-100 rounded-full">
-                <TrendingUp className="w-6 h-6 text-green-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Expenses</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {formatCurrency(data.totalExpenses)}
-                </p>
-              </div>
-              <div className="p-3 bg-red-100 rounded-full">
-                <TrendingDown className="w-6 h-6 text-red-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Net Profit</p>
-                <p className={`text-2xl font-bold ${isProfitable ? 'text-green-600' : 'text-red-600'}`}>
-                  {formatCurrency(data.netProfit)}
-                </p>
-                <p className="text-sm text-gray-500">{formatPercentage(data.netProfitMargin)}</p>
-              </div>
-              <div className={`p-3 rounded-full ${isProfitable ? 'bg-green-100' : 'bg-red-100'}`}>
-                {isProfitable ? (
-                  <TrendingUp className="w-6 h-6 text-green-600" />
-                ) : (
-                  <TrendingDown className="w-6 h-6 text-red-600" />
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Summary Stat Strip */}
+      <StatStrip
+        items={[
+          {
+            label: 'Total Revenue',
+            value: formatCurrency(data.income.totalIncome),
+            color: 'info',
+            icon: <DollarSign className="w-4 h-4 text-blue-600" />,
+          },
+          {
+            label: 'Gross Profit',
+            value: formatCurrency(data.grossProfit),
+            subtext: `Margin: ${formatPercentage(data.grossProfitMargin)}`,
+            color: 'success',
+            icon: <TrendingUp className="w-4 h-4 text-emerald-600" />,
+          },
+          {
+            label: 'Total Expenses',
+            value: formatCurrency(data.totalExpenses),
+            color: 'danger',
+            icon: <TrendingDown className="w-4 h-4 text-rose-600" />,
+          },
+          {
+            label: 'Net Profit / Loss',
+            value: formatCurrency(Math.abs(data.netProfit)),
+            subtext: `${isProfitable ? 'Profit' : 'Loss'} (${formatPercentage(data.netProfitMargin)})`,
+            color: isProfitable ? 'purple' : 'warning',
+            icon: isProfitable ? (
+              <TrendingUp className="w-4 h-4 text-purple-600" />
+            ) : (
+              <TrendingDown className="w-4 h-4 text-amber-600" />
+            ),
+          },
+        ]}
+      />
 
       {/* Detailed Report */}
       <Card>

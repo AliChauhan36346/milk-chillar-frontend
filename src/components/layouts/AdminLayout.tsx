@@ -79,14 +79,26 @@ const adminNavigation = [
   {
     section: 'Reports',
     items: [
+      { label: 'Daily Totals', href: '/reports/daily-totals', icon: <BarChart2 size={18} /> },
+      {
+        label: 'Milk & Operations',
+        icon: <ClipboardList size={18} />,
+        href: '/reports/transactions',
+        subItems: [
+          { label: 'Purchase Report', href: '/reports/purchase/purchaseReport', icon: <ShoppingCart size={18} /> },
+          { label: 'Sales Report', href: '/reports/sale', icon: <ShoppingBag size={18} /> },
+          { label: 'Chillar Receive Report', href: '/reports/chillarReceive', icon: <Scale size={18} /> },
+          { label: 'Dodhi Report', href: '/reports/dodhiSummary', icon: <FileText size={18} /> }
+        ]
+      },
       {
         label: 'Financial Reports',
-        icon: <BarChart2 size={18} />,
+        icon: <Wallet size={18} />,
         href: '/reports/financial',
         subItems: [
-          { label: 'Trial Balance', href: '/reports/financial/trial-balance', icon: <Scale size={18} /> },
           { label: 'Account Balances', href: '/reports/financialReports/accountBalances', icon: <Wallet size={18} /> },
           { label: 'Profit & Loss', href: '/reports/financialReports/profitLoss', icon: <DollarSign size={18} /> },
+          { label: 'Trial Balance', href: '/reports/financial/trial-balance', icon: <Scale size={18} /> },
           { label: 'Balance Sheet', href: '/reports/financial/balance-sheet', icon: <FileText size={18} /> }
         ]
       },
@@ -97,19 +109,6 @@ const adminNavigation = [
         subItems: [
           { label: 'Stock Summary', href: '/reports/inventory/stock-summary', icon: <PackageOpen size={18} /> },
           { label: 'Stock Movement', href: '/reports/inventory/stock-movement', icon: <ClipboardList size={18} /> }
-        ]
-      },
-      // ✅ NEW REPORTS SECTION
-      {
-        label: 'Transaction Reports',
-        icon: <ClipboardList size={18} />,
-        href: '/reports/transactions',
-        subItems: [
-          { label: 'Sales Report', href: '/reports/sale', icon: <ShoppingBag size={18} /> },
-          { label: 'Purchase Report', href: '/reports/purchase/purchaseReport', icon: <ShoppingCart size={18} /> },
-          { label: 'Chillar Receive Report', href: '/reports/chillarReceive', icon: <Scale size={18} /> },
-          { label: 'Daily Totals', href: '/reports/daily-totals', icon: <BarChart2 size={18} /> },
-          { label: 'Dodhi Report', href: '/reports/dodhiSummary', icon: <FileText size={18} /> }
         ]
       }
     ]

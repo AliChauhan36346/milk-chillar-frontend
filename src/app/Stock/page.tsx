@@ -1,7 +1,9 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import { Milk, Warehouse, Plus, CheckCircle } from 'lucide-react';
-import SummaryCard from '@/components/ui/SummaryCard';
+import { Milk, Warehouse, Plus, CheckCircle, Edit2, Trash2 } from 'lucide-react';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { StatStrip, StatItem } from '@/components/ui/StatStrip';
+import { Table, TableContainer } from '@/components/ui/Table/Table';
 import MilkLoader from '@/components/ui/Loader';
 import { DynamicLayout } from '@/components/layouts/DynamicLayout';
 import ProtectedRoute from '@/components/ProtectedRoutes';
@@ -94,90 +96,88 @@ export default function StockPage() {
   return (
     <ProtectedRoute allowedRoles={['admin', 'chillarincharge']}>
       <DynamicLayout>
-        <div className="max-w-6xl mx-auto p-2 bg-gray-50 min-h-screen">
-          {/* Navigation Header */}
-          <div className="bg-white rounded-xl shadow-sm p-4 mb-6 mt-2">
-            <div className="flex items-center justify-between mb-6">
-              <h1 className="text-2xl font-semibold flex items-center gap-2 text-blue-600">
-                <Milk className="w-6 h-6" />
-                Stock Management
-              </h1>
-            </div>
-          </div>
+        <div className="max-w-7xl mx-auto space-y-4">
+          <PageHeader
+            title="Stock Management"
+            subtitle="Monitor and adjust milk inventory and batch records"
+            icon={<Warehouse className="w-5 h-5 text-blue-600" />}
+          />
 
-          {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <SummaryCard
-              title="Total Stock"
-              value={`${totalStock.toFixed(2)} Ltrs`}
-              icon={<Warehouse className="w-5 h-5" />}
-              color="blue"
-            />
-            <SummaryCard
-              title="Today's Entries"
-              value={stockEntries.filter(e => e.date === formData.date).length.toString()}
-              icon={<Milk className="w-5 h-5" />}
-              color="green"
-            />
-            <SummaryCard
-              title="Total Entries"
-              value={stockEntries.length.toString()}
-              icon={<CheckCircle className="w-5 h-5" />}
-              color="purple"
-            />
-          </div>
+          <StatStrip
+            items={[
+              {
+                label: 'Total Stock',
+                value: `${totalStock.toFixed(2)} L`,
+                color: 'primary',
+                icon: <Warehouse className="w-4 h-4 text-blue-600" />,
+              },
+              {
+                label: "Today's Entries",
+                value: stockEntries.filter(e => e.date === formData.date).length.toString(),
+                color: 'success',
+                icon: <Milk className="w-4 h-4 text-emerald-600" />,
+              },
+              {
+                label: 'Total Entries',
+                value: stockEntries.length.toString(),
+                color: 'info',
+                icon: <CheckCircle className="w-4 h-4 text-cyan-600" />,
+              },
+            ]}
+          />
 
           {/* Form Section */}
-          <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2 text-gray-800">
-              <Milk className="w-5 h-5" />
+          <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs">
+            <h3 className="text-sm font-semibold text-slate-800 mb-3 flex items-center gap-2">
+              <Milk className="w-4 h-4 text-blue-600" />
               {formData.isEditing ? 'Update Stock Entry' : 'Add New Stock Entry'}
-            </h2>
+            </h3>
 
-            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Date</label>
                 <input
                   type="date"
                   value={formData.date}
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full text-xs p-2 border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Liters</label>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Liters</label>
                 <input
                   type="number"
                   ref={litersRef}
                   value={formData.liters}
                   onChange={(e) => setFormData({ ...formData, liters: e.target.value })}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full text-xs p-2 border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500"
                   required
                   step="0.01"
                   min="0"
+                  placeholder="0.00"
                 />
               </div>
 
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Description</label>
                 <input
                   type="text"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g. Morning collection, Evening collection, etc."
+                  className="w-full text-xs p-2 border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500"
+                  placeholder="e.g. Morning collection"
                 />
               </div>
 
-              <div className="md:col-span-2 flex gap-4">
+              <div className="flex items-end gap-2">
                 <button
                   type="submit"
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium
-                           flex items-center justify-center gap-2"
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded-lg text-xs font-semibold
+                           flex items-center justify-center gap-1.5 transition-colors shadow-xs"
                 >
-                  {formData.isEditing ? <CheckCircle className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
+                  {formData.isEditing ? <CheckCircle className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
                   {formData.isEditing ? 'Update Entry' : 'Add Entry'}
                 </button>
 
@@ -185,7 +185,7 @@ export default function StockPage() {
                   <button
                     type="button"
                     onClick={resetForm}
-                    className="w-1/3 bg-gray-200 hover:bg-gray-300 text-gray-800 py-3 rounded-lg font-medium"
+                    className="bg-slate-100 hover:bg-slate-200 text-slate-700 py-2 px-3 rounded-lg text-xs font-medium transition-colors"
                   >
                     Cancel
                   </button>
@@ -194,50 +194,104 @@ export default function StockPage() {
             </form>
           </div>
 
-          {/* Stock Entries Table */}
-          <div className="bg-white rounded-xl shadow-sm">
-            <div className="p-4 border-b">
-              <h3 className="text-lg font-semibold flex items-center gap-2">
-                <Warehouse className="w-5 h-5" />
-                Stock Entries
-              </h3>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Liters</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {stockEntries.map((entry) => (
-                    <tr key={entry.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{entry.date}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{entry.liters} Ltrs</td>
-                      <td className="px-6 py-4 text-sm text-gray-900">{entry.description}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button
-                          onClick={() => handleEditClick(entry)}
-                          className="text-blue-600 hover:text-blue-900 mr-3"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDeleteClick(entry.id)}
-                          className="text-red-600 hover:text-red-900"
-                        >
-                          Delete
-                        </button>
+          {/* Stock Entries Desktop Table */}
+          <div className="hidden md:block">
+            <TableContainer title="Stock Entries">
+              <Table dense>
+                <Table.Header>
+                  <Table.Row>
+                    <Table.Head>Date</Table.Head>
+                    <Table.Head className="text-right">Liters</Table.Head>
+                    <Table.Head>Description</Table.Head>
+                    <Table.Head className="text-right">Actions</Table.Head>
+                  </Table.Row>
+                </Table.Header>
+                <Table.Body>
+                  {stockEntries.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="text-center py-8 text-xs text-slate-400">
+                        No stock entries recorded
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  ) : (
+                    stockEntries.map((entry) => (
+                      <Table.Row key={entry.id}>
+                        <Table.Cell className="font-medium text-xs text-slate-900">{entry.date}</Table.Cell>
+                        <Table.Cell className="text-right font-semibold text-xs text-blue-600">{entry.liters} L</Table.Cell>
+                        <Table.Cell className="text-xs text-slate-600">{entry.description || '-'}</Table.Cell>
+                        <Table.Cell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => handleEditClick(entry)}
+                              className="p-1 text-blue-600 hover:bg-blue-50 rounded"
+                              title="Edit"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteClick(entry.id)}
+                              className="p-1 text-rose-600 hover:bg-rose-50 rounded"
+                              title="Delete"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </Table.Cell>
+                      </Table.Row>
+                    ))
+                  )}
+                </Table.Body>
+              </Table>
+            </TableContainer>
+          </div>
+
+          {/* Mobile Card List for Stock Entries */}
+          <div className="md:hidden space-y-2.5">
+            <div className="flex items-center justify-between px-1">
+              <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Stock Entries</h3>
+              <span className="text-[11px] text-slate-400">{stockEntries.length} entries</span>
             </div>
+            {stockEntries.length === 0 ? (
+              <div className="bg-white rounded-xl border border-slate-200 p-8 text-center text-xs text-slate-400">
+                No stock entries recorded
+              </div>
+            ) : (
+              stockEntries.map((entry) => (
+                <div key={entry.id} className="bg-white rounded-xl border border-slate-200/90 p-3 shadow-xs space-y-2">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                    <span className="font-semibold text-xs text-slate-800">{entry.date}</span>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => handleEditClick(entry)}
+                        className="p-1.5 text-blue-600 hover:bg-blue-50 rounded border border-slate-100"
+                        title="Edit"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteClick(entry.id)}
+                        className="p-1.5 text-rose-600 hover:bg-rose-50 rounded border border-slate-100"
+                        title="Delete"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between text-xs pt-0.5">
+                    <div>
+                      <span className="text-[10px] text-slate-400 uppercase font-medium block">Quantity</span>
+                      <span className="font-bold text-blue-600 text-sm">{entry.liters} L</span>
+                    </div>
+                    {entry.description && (
+                      <div className="text-right max-w-[60%]">
+                        <span className="text-[10px] text-slate-400 uppercase font-medium block">Description</span>
+                        <span className="text-slate-600 text-xs truncate block">{entry.description}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </DynamicLayout>

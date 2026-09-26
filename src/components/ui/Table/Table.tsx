@@ -1,72 +1,36 @@
-// //src/components/ui/Table/Table.tsx
-// import { ReactNode } from 'react';
-// import { twMerge } from 'tailwind-merge';
-
-// interface TableProps {
-//   children: ReactNode;
-// }
-
-// export function Table({ children }: TableProps) {
-//   return (
-//     <div className="w-full overflow-x-auto -mx-4 sm:mx-0">
-//       <table className="w-full caption-bottom text-sm min-w-max sm:min-w-0">
-//         {children}
-//       </table>
-//     </div>
-//   );
-// }
-
-// Table.Header = function TableHeader({ children }: { children: ReactNode }) {
-//   return <thead className="[&_tr]:border-b">{children}</thead>;
-// };
-
-// Table.Body = function TableBody({ children }: { children: ReactNode }) {
-//   return <tbody className="[&_tr:last-child]:border-0">{children}</tbody>;
-// };
-
-// Table.Row = function TableRow({ children }: { children: ReactNode }) {
-//   return (
-//     <tr className="border-b transition-colors hover:bg-gray-50">
-//       {children}
-//     </tr>
-//   );
-// };
-
-// Table.Head = function TableHead({ children }: { children: ReactNode }) {
-//   return (
-//     <th className="h-10 sm:h-12 px-2 sm:px-4 text-left align-middle font-medium text-gray-500 text-xs sm:text-sm whitespace-nowrap">
-//       {children}
-//     </th>
-//   );
-// };
-
-// Table.Cell = function TableCell({ 
-//   children, 
-//   className 
-// }: { 
-//   children: ReactNode;
-//   className?: string;
-// }) {
-//   return (
-//     <td className={twMerge('p-2 sm:p-4 align-middle text-xs sm:text-sm whitespace-nowrap', className)}>
-//       {children}
-//     </td>
-//   );
-// };
-
-//src/components/ui/Table/Table.tsx
-import { ReactNode, TdHTMLAttributes } from 'react';
+import { ReactNode, TdHTMLAttributes, ThHTMLAttributes, HTMLAttributes } from 'react';
 import { twMerge } from 'tailwind-merge';
+
+interface TableContainerProps extends HTMLAttributes<HTMLDivElement> {
+  children: ReactNode;
+  className?: string;
+}
+
+export function TableContainer({ children, className, ...props }: TableContainerProps) {
+  return (
+    <div
+      className={twMerge(
+        'w-full bg-white rounded-xl border border-slate-200/90 shadow-xs overflow-hidden',
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </div>
+  );
+}
 
 interface TableProps {
   children: ReactNode;
+  className?: string;
+  dense?: boolean;
 }
 
-export function Table({ children }: TableProps) {
+export function Table({ children, className, dense }: TableProps) {
   return (
     <div className="w-full overflow-x-auto">
       <div className="inline-block min-w-full align-middle">
-        <table className="min-w-full divide-y divide-gray-200">
+        <table className={twMerge('min-w-full divide-y divide-slate-200 text-left', className)}>
           {children}
         </table>
       </div>
@@ -74,64 +38,82 @@ export function Table({ children }: TableProps) {
   );
 }
 
-Table.Header = function TableHeader({ children }: { children: ReactNode }) {
+Table.Container = TableContainer;
+
+Table.Header = function TableHeader({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
   return (
-    <thead className="bg-gray-50">
+    <thead className={twMerge('bg-slate-50/80 border-b border-slate-200', className)}>
       {children}
     </thead>
   );
 };
 
-Table.Body = function TableBody({ children }: { children: ReactNode }) {
+Table.Body = function TableBody({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
   return (
-    <tbody className="bg-white divide-y divide-gray-200">
+    <tbody className={twMerge('bg-white divide-y divide-slate-100', className)}>
       {children}
     </tbody>
   );
 };
 
-Table.Row = function TableRow({ 
-  children, 
-  className 
-}: { 
-  children: ReactNode;
-  className?: string;
-}) {
+Table.Row = function TableRow({
+  children,
+  className,
+  ...props
+}: HTMLAttributes<HTMLTableRowElement>) {
   return (
-    <tr className={twMerge('transition-colors hover:bg-gray-50', className)}>
+    <tr
+      className={twMerge('transition-colors hover:bg-slate-50/70', className)}
+      {...props}
+    >
       {children}
     </tr>
   );
 };
 
-Table.Head = function TableHead({ 
-  children, 
-  className 
-}: { 
-  children: ReactNode;
-  className?: string;
-}) {
+Table.Head = function TableHead({
+  children,
+  className,
+  dense = false,
+  ...props
+}: ThHTMLAttributes<HTMLTableCellElement> & { dense?: boolean }) {
   return (
-    <th className={twMerge(
-      'px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap',
-      'sm:px-4 sm:py-3',
-      className
-    )}>
+    <th
+      className={twMerge(
+        'text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap',
+        dense ? 'px-3 py-2 text-[11px]' : 'px-3.5 py-2.5 sm:px-4 sm:py-3',
+        className
+      )}
+      {...props}
+    >
       {children}
     </th>
   );
 };
 
-Table.Cell = function TableCell({ 
-  children, 
+Table.Cell = function TableCell({
+  children,
   className,
+  dense = false,
   ...props
-}: TdHTMLAttributes<HTMLTableCellElement>) {
+}: TdHTMLAttributes<HTMLTableCellElement> & { dense?: boolean }) {
   return (
-    <td 
+    <td
       className={twMerge(
-        'px-3 py-3 text-sm text-gray-900 whitespace-nowrap',
-        'sm:px-4 sm:py-4',
+        'text-sm text-slate-800 whitespace-nowrap',
+        dense ? 'px-3 py-1.5 sm:py-2 text-xs' : 'px-3.5 py-2.5 sm:px-4 sm:py-3',
         className
       )}
       {...props}

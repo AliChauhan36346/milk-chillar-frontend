@@ -72,3 +72,59 @@ export const updateBuyerRateForPeriod = async (
     );
     return response.data;
 };
+
+// Data Cleanup Interfaces
+export interface DataCleanupPreview {
+    purchasesCount: number;
+    salesCount: number;
+    chillarReceivesCount: number;
+    stockEntriesCount: number;
+    cashPaymentsCount: number;
+    cashReceiptsCount: number;
+    bankPaymentsCount: number;
+    bankReceiptsCount: number;
+    journalEntriesCount: number;
+    suppliersCount: number;
+    buyersCount: number;
+    employeesCount: number;
+    chillarsCount: number;
+    accountsCount: number;
+    totalTransactionalRecords: number;
+    totalMasterRecords: number;
+}
+
+export interface DataCleanupRequest {
+    preserveAccounts: boolean;
+    clearPurchases: boolean;
+    clearSales: boolean;
+    clearChillarReceives: boolean;
+    clearStockEntries: boolean;
+    clearPaymentsAndReceipts: boolean;
+    clearJournalEntries: boolean;
+    confirmationText?: string;
+    password?: string;
+}
+
+export interface DataCleanupResult {
+    success: boolean;
+    message: string;
+    deletedPurchases: number;
+    deletedSales: number;
+    deletedChillarReceives: number;
+    deletedStockEntries: number;
+    deletedPaymentsAndReceipts: number;
+    deletedJournalEntries: number;
+    deletedMasterEntities: number;
+    deletedAccounts: number;
+    totalDeleted: number;
+}
+
+export const getDataCleanupPreview = async (): Promise<DataCleanupPreview> => {
+    const response = await api.get('/Maintenance/cleanup-preview');
+    return response.data;
+};
+
+export const executeDataCleanup = async (request: DataCleanupRequest): Promise<DataCleanupResult> => {
+    const response = await api.post('/Maintenance/cleanup', request);
+    return response.data;
+};

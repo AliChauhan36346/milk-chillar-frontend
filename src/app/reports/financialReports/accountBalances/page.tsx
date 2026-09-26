@@ -8,8 +8,9 @@ import {
   PagedAccountBalances,
   AccountBalanceDetail
 } from '@/lib/api/reports';
-import { ChevronLeft, ChevronRight, Users, TrendingUp, TrendingDown } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Users, TrendingUp, TrendingDown, Wallet } from 'lucide-react';
 import { CenteredSpinner } from '@/components/ui/spinner';
+import { StatStrip } from '@/components/ui/StatStrip';
 
 type AccountType = 'Supplier' | 'Buyer';
 
@@ -101,70 +102,37 @@ export default function AccountBalancesPage() {
             </button>
           </div>
 
-          {/* Summary Cards */}
+          {/* Summary Stat Strip */}
           {data?.summary && (
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <Card className="bg-blue-50">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-600 mb-1">Total Accounts</p>
-                      <p className="text-2xl font-bold text-blue-600">
-                        {data.summary.accountCount}
-                      </p>
-                    </div>
-                    <Users className="w-8 h-8 text-blue-400" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-green-50">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-600 mb-1">Total Debit</p>
-                      <p className="text-2xl font-bold text-green-600">
-                        {formatCurrency(data.summary.totalDebit)}
-                      </p>
-                    </div>
-                    <TrendingUp className="w-8 h-8 text-green-400" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-red-50">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-600 mb-1">Total Credit</p>
-                      <p className="text-2xl font-bold text-red-600">
-                        {formatCurrency(data.summary.totalCredit)}
-                      </p>
-                    </div>
-                    <TrendingDown className="w-8 h-8 text-red-400" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className={`${data.summary.netBalance >= 0 ? 'bg-purple-50' : 'bg-orange-50'}`}>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-600 mb-1">Net Balance</p>
-                      <p className={`text-2xl font-bold ${data.summary.netBalance >= 0 ? 'text-purple-600' : 'text-orange-600'
-                        }`}>
-                        {formatCurrency(Math.abs(data.summary.netBalance))}
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {activeTab === 'Supplier'
-                          ? 'We owe suppliers'
-                          : 'Buyers owe us'}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            <StatStrip
+              items={[
+                {
+                  label: 'Total Accounts',
+                  value: data.summary.accountCount.toString(),
+                  color: 'info',
+                  icon: <Users className="w-4 h-4 text-blue-600" />,
+                },
+                {
+                  label: 'Total Debit',
+                  value: formatCurrency(data.summary.totalDebit),
+                  color: 'success',
+                  icon: <TrendingUp className="w-4 h-4 text-emerald-600" />,
+                },
+                {
+                  label: 'Total Credit',
+                  value: formatCurrency(data.summary.totalCredit),
+                  color: 'danger',
+                  icon: <TrendingDown className="w-4 h-4 text-rose-600" />,
+                },
+                {
+                  label: 'Net Balance',
+                  value: formatCurrency(Math.abs(data.summary.netBalance)),
+                  subtext: activeTab === 'Supplier' ? 'We owe suppliers' : 'Buyers owe us',
+                  color: data.summary.netBalance >= 0 ? 'purple' : 'warning',
+                  icon: <Wallet className="w-4 h-4 text-purple-600" />,
+                },
+              ]}
+            />
           )}
 
           {/* Loading State */}
@@ -179,40 +147,29 @@ export default function AccountBalancesPage() {
             </div>
           )}
 
-          {/* Table */}
+          {/* Table & Mobile Cards */}
           {!loading && !error && data && (
             <Card>
               <CardHeader>
                 <CardTitle>
                   {activeTab} Account Balances
-                  <span className="text-sm font-normal text-gray-600 ml-2">
+                  <span className="text-xs font-normal text-slate-500 ml-2">
                     (Page {currentPage} of {data.totalPages})
                   </span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-xs">
                     <thead>
-                      <tr className="border-b border-gray-200 bg-gray-50">
-                        <th className="text-left p-3 text-sm font-semibold text-gray-700">
-                          Code
-                        </th>
-                        <th className="text-left p-3 text-sm font-semibold text-gray-700">
-                          Account Name
-                        </th>
-                        <th className="text-right p-3 text-sm font-semibold text-gray-700">
-                          Debit
-                        </th>
-                        <th className="text-right p-3 text-sm font-semibold text-gray-700">
-                          Credit
-                        </th>
-                        <th className="text-right p-3 text-sm font-semibold text-gray-700">
-                          Balance
-                        </th>
-                        <th className="text-center p-3 text-sm font-semibold text-gray-700">
-                          Last Updated
-                        </th>
+                      <tr className="border-b border-gray-200 bg-gray-50 text-slate-700">
+                        <th className="text-left p-2.5 font-semibold">Code</th>
+                        <th className="text-left p-2.5 font-semibold">Account Name</th>
+                        <th className="text-right p-2.5 font-semibold">Debit</th>
+                        <th className="text-right p-2.5 font-semibold">Credit</th>
+                        <th className="text-right p-2.5 font-semibold">Balance</th>
+                        <th className="text-center p-2.5 font-semibold">Last Updated</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -228,32 +185,32 @@ export default function AccountBalancesPage() {
                             key={balance.accountId}
                             className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
                           >
-                            <td className="p-3 text-sm font-medium text-gray-900">
+                            <td className="p-2.5 font-mono text-slate-600">
                               {balance.accountCode}
                             </td>
-                            <td className="p-3 text-sm text-gray-700">
+                            <td className="p-2.5 font-medium text-slate-800">
                               {balance.accountName}
                             </td>
-                            <td className="p-3 text-sm text-right text-green-600 font-medium">
+                            <td className="p-2.5 text-right text-emerald-600 font-medium">
                               {formatCurrency(balance.debitTotal)}
                             </td>
-                            <td className="p-3 text-sm text-right text-red-600 font-medium">
+                            <td className="p-2.5 text-right text-rose-600 font-medium">
                               {formatCurrency(balance.creditTotal)}
                             </td>
-                            <td className="p-3 text-sm text-right font-bold">
+                            <td className="p-2.5 text-right font-bold">
                               <span
                                 className={
                                   balance.balance > 0
                                     ? 'text-blue-600'
                                     : balance.balance < 0
-                                      ? 'text-red-600'
-                                      : 'text-gray-600'
+                                      ? 'text-rose-600'
+                                      : 'text-slate-600'
                                 }
                               >
                                 {formatCurrency(Math.abs(balance.balance))}
                               </span>
                             </td>
-                            <td className="p-3 text-sm text-center text-gray-600">
+                            <td className="p-2.5 text-center text-slate-500">
                               {formatDate(balance.lastUpdated)}
                             </td>
                           </tr>
@@ -261,6 +218,49 @@ export default function AccountBalancesPage() {
                       )}
                     </tbody>
                   </table>
+                </div>
+
+                {/* Mobile Card List */}
+                <div className="md:hidden space-y-2.5">
+                  {data.balances.length === 0 ? (
+                    <div className="p-8 text-center text-xs text-slate-500">
+                      No account balances found
+                    </div>
+                  ) : (
+                    data.balances.map((balance: AccountBalanceDetail) => (
+                      <div key={balance.accountId} className="bg-slate-50/70 rounded-xl border border-slate-200/90 p-3 shadow-xs space-y-2">
+                        <div className="flex items-start justify-between border-b border-slate-200/60 pb-2">
+                          <div>
+                            <h4 className="font-bold text-xs text-slate-800">{balance.accountName}</h4>
+                            <span className="text-[11px] text-slate-500 font-mono">#{balance.accountCode}</span>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-[10px] text-slate-400 block uppercase font-medium">Balance</span>
+                            <span className={`font-bold text-xs ${
+                              balance.balance > 0 ? 'text-blue-600' : balance.balance < 0 ? 'text-rose-600' : 'text-slate-600'
+                            }`}>
+                              {formatCurrency(Math.abs(balance.balance))}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between text-xs pt-0.5">
+                          <div>
+                            <span className="text-[10px] text-slate-400 block uppercase font-medium">Debit</span>
+                            <span className="text-emerald-600 font-medium">{formatCurrency(balance.debitTotal)}</span>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-[10px] text-slate-400 block uppercase font-medium">Credit</span>
+                            <span className="text-rose-600 font-medium">{formatCurrency(balance.creditTotal)}</span>
+                          </div>
+                        </div>
+
+                        <div className="text-[11px] text-slate-400 pt-1 border-t border-slate-200/60">
+                          Last updated: {formatDate(balance.lastUpdated)}
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
 
                 {/* Pagination */}

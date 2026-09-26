@@ -37,6 +37,7 @@ import { useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from "sonner";
 import { AuthProvider } from "@/lib/auth/AuthContext";
+import { FinancialYearProvider } from "@/context/FinancialYearContext";
 
 export function ClientProviders({
   children
@@ -59,7 +60,9 @@ export function ClientProviders({
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        {children}
+        <FinancialYearProvider>
+          {children}
+        </FinancialYearProvider>
         <Toaster
           position="top-right"
           toastOptions={{

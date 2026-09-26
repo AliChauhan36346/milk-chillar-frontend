@@ -100,15 +100,43 @@ export interface DashboardRecordsParams {
   chillarId?: number;
 }
 
+export interface MonthlyFinancialTrend {
+  monthLabel: string;
+  year: number;
+  month: number;
+  revenue: number;
+  expense: number;
+  netProfit: number;
+}
+
+export interface RecentDashboardTransaction {
+  journalEntryId: number;
+  entryDate: string;
+  sourceTable: string;
+  description: string;
+  accountName: string;
+  accountCode: string;
+  amount: number;
+  transactionType: string;
+}
+
 export interface AdminDashboardStats {
   cashBalance: number;
   bankBalance: number;
+  totalLiquidity?: number;
   pendingPayments: number;
   pendingPaymentsCount: number;
   dueReceipts: number;
   dueReceiptsCount: number;
+  netWorkingPosition?: number;
   todayCashChange: number;
   todayBankChange: number;
+  todayPurchaseLiters?: number;
+  todayPurchaseAmount?: number;
+  todaySalesLiters?: number;
+  todaySalesAmount?: number;
+  monthlyTrends?: MonthlyFinancialTrend[];
+  recentTransactions?: RecentDashboardTransaction[];
 }
 
 export interface AccountBalanceDetail {

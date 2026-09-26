@@ -12,6 +12,7 @@ type BaseModalProps = {
     children: ReactNode;
     headerAction?: ReactNode;
     iconClassName?: string; // Optional custom wrapper style
+    maxWidth?: string;
 };
 
 export function BaseModal({
@@ -22,13 +23,14 @@ export function BaseModal({
     icon,
     children,
     headerAction,
-    iconClassName = "bg-gray-50 text-gray-600" // Default gray style
+    iconClassName = "bg-gray-50 text-gray-600", // Default gray style
+    maxWidth = "max-w-md",
 }: BaseModalProps) {
     if (!isOpen) return null;
 
     return (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-            <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100/50">
+            <div className={clsx("bg-white w-full rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100/50", maxWidth)}>
 
                 {/* Header */}
                 <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between bg-white">

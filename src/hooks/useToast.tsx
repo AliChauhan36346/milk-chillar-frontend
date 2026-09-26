@@ -1,3 +1,4 @@
+import { useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
 
 interface ToastProps {
@@ -7,7 +8,7 @@ interface ToastProps {
 }
 
 export function useToast() {
-  const showToast = ({ title, description, variant = 'default' }: ToastProps) => {
+  const showToast = useCallback(({ title, description, variant = 'default' }: ToastProps) => {
     switch (variant) {
       case 'success':
         toast.success(title, { description });
@@ -18,7 +19,7 @@ export function useToast() {
       default:
         toast(title, { description });
     }
-  };
+  }, []);
 
-  return { toast: showToast };
+  return useMemo(() => ({ toast: showToast }), [showToast]);
 }

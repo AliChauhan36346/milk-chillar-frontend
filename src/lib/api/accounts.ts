@@ -28,6 +28,8 @@ export interface SearchAccountResult {
   accountCode: string;
   name: string;
   balance: number;
+  type?: string;
+  accountName?: string;
 }
 
 export interface CreateMainAccountRequest {

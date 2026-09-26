@@ -99,7 +99,8 @@ export default function EmployeesPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow">
+        {/* Desktop Table View */}
+        <div className="hidden md:block bg-white rounded-lg shadow overflow-hidden">
           <Table>
             <Table.Header>
               <Table.Row>
@@ -198,6 +199,103 @@ export default function EmployeesPage() {
             </Table.Body>
           </Table>
         </div>
+
+        {/* Mobile Card List */}
+        <div className="md:hidden space-y-2.5">
+          {isLoading ? (
+            <div className="p-8 text-center text-xs text-slate-400">Loading employees...</div>
+          ) : employees.length === 0 ? (
+            <div className="bg-white rounded-xl border border-slate-200 p-8 text-center text-xs text-slate-500">
+              No employees found
+            </div>
+          ) : (
+            employees.map((employee) => (
+              <div key={employee.employeeId} className="bg-white rounded-xl border border-slate-200/90 p-3 shadow-xs space-y-2">
+                <div className="flex items-start justify-between border-b border-slate-100 pb-2">
+                  <div>
+                    <h3 className="font-bold text-xs text-slate-800">{employee.fullName}</h3>
+                    <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                      <Badge className={getDesignationBadgeColor(employee.designation)}>
+                        {employee.designation}
+                      </Badge>
+                      {employee.chillarName && (
+                        <Badge className="bg-blue-50 text-blue-700 border border-blue-200">
+                          {employee.chillarName}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                  <Badge
+                    className={
+                      employee.isActive
+                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                        : 'bg-rose-50 text-rose-700 border border-rose-200'
+                    }
+                  >
+                    {employee.isActive ? 'Active' : 'Inactive'}
+                  </Badge>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <span className="text-[10px] text-slate-400 block uppercase font-medium">Contact</span>
+                    <span className="text-slate-700">{employee.contactNumber || '-'}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] text-slate-400 block uppercase font-medium">Salary</span>
+                    <span className="font-bold text-slate-900">Rs. {employee.salary.toLocaleString()}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-1.5 pt-2 border-t border-slate-100">
+                  <Link
+                    href={`/Employees/${employee.employeeId}`}
+                    className="px-2.5 py-1 text-xs font-medium text-slate-700 bg-slate-50 hover:bg-slate-100 rounded border border-slate-200"
+                  >
+                    View
+                  </Link>
+                  <Link
+                    href={`/Employees/${employee.employeeId}/edit`}
+                    className="px-2.5 py-1 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded border border-blue-200"
+                  >
+                    Edit
+                  </Link>
+                  <button
+                    onClick={() => handleDelete(employee.employeeId)}
+                    className="px-2.5 py-1 text-xs font-medium text-rose-600 bg-rose-50 hover:bg-rose-100 rounded border border-rose-200"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="bg-white rounded-xl border border-slate-200 px-4 py-2.5 flex items-center justify-between text-xs shadow-xs">
+            <span className="text-slate-500 font-medium">Page {currentPage} of {totalPages}</span>
+            <div className="flex items-center gap-1.5">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+              >
+                Previous
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </DynamicLayout>
   );

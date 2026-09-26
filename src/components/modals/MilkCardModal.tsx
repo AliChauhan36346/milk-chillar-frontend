@@ -588,8 +588,13 @@ export default function MilkCardModal({
           date={salesModalData.initialDate}
           isAdmin={true}
           isFromAddedList={true}
-          revenueAccounts={revenueAccounts}
+          revenueAccounts={revenueAccounts.map(acc => ({
+            accountId: acc.accountId,
+            accountName: acc.accountName || acc.name || '',
+            accountCode: acc.accountCode || ''
+          }))}
           initialData={{
+            date: currentSale.date || salesModalData.initialDate,
             grossLiters: currentSale.grossLiters,
             lr: currentSale.lr,
             fat: currentSale.fat,
