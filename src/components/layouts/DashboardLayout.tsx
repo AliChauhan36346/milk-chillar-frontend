@@ -93,7 +93,7 @@ const managerNavigation = [
       },
       {
         label: 'Settings',
-        href: '/settings',
+        href: '/System',
         icon: <Settings size={20} />
       }
     ]

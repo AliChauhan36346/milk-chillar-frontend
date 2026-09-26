@@ -3,12 +3,15 @@ import { useState } from 'react';
 import {
   X,
   Settings,
-  Banknote,
+  Calendar,
   Users,
   Database,
   Calculator,
-  Briefcase
+  Trash2,
+  ShieldCheck,
+  ChevronRight
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { UpdateRateModal } from './UpdateRateModal';
 
 interface SettingsModalProps {
@@ -17,9 +20,15 @@ interface SettingsModalProps {
 }
 
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
+  const router = useRouter();
   const [activeModal, setActiveModal] = useState<'updateRate' | null>(null);
 
   if (!isOpen) return null;
+
+  const navigateTo = (path: string) => {
+    onClose();
+    router.push(path);
+  };
 
   return (
     <>
@@ -31,9 +40,11 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             <div>
               <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
                 <Settings className="w-6 h-6 text-blue-600" />
-                Settings & Maintenance
+                Settings & System Management
               </h2>
-              <p className="text-gray-500 text-sm mt-1">Manage system configurations and rates</p>
+              <p className="text-gray-500 text-sm mt-1">
+                Configure rates, fiscal years, data resets, and system users
+              </p>
             </div>
             <button
               onClick={onClose}
@@ -43,40 +54,94 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             </button>
           </div>
 
-          {/* Grid of Tools */}
-          <div className="p-8 bg-gray-50/50 flex-1 overflow-y-auto">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Grid of Working Tools */}
+          <div className="p-6 sm:p-8 bg-gray-50/50 flex-1 overflow-y-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
 
-              {/* Rate Update Tool */}
+              {/* 1. Rate Update Tool */}
               <button
                 onClick={() => setActiveModal('updateRate')}
-                className="group flex flex-col items-center text-center p-6 bg-white border border-gray-200 rounded-xl hover:shadow-lg hover:border-blue-300 hover:-translate-y-1 transition-all duration-300"
+                className="group flex flex-col items-start text-left p-5 bg-white border border-gray-200 rounded-xl hover:shadow-md hover:border-blue-300 hover:-translate-y-0.5 transition-all duration-200"
               >
-                <div className="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-green-100 transition-colors">
-                  <Calculator className="w-7 h-7 text-green-600" />
+                <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center mb-3 group-hover:bg-green-100 transition-colors">
+                  <Calculator className="w-6 h-6 text-green-600" />
                 </div>
-                <h3 className="font-bold text-gray-900 text-lg mb-2">Update Period Rates</h3>
-                <p className="text-sm text-gray-500 leading-relaxed">
-                  Update Supplier/Buyer rates for a specific time period. Calculates impact automatically.
+                <h3 className="font-bold text-gray-900 text-base mb-1.5 flex items-center justify-between w-full">
+                  Update Period Rates
+                  <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-all" />
+                </h3>
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  Update Supplier/Buyer rates for a specific time period. Automatically recalculates ledger balances.
                 </p>
               </button>
 
-              {/* Placeholders for future tools */}
-              <div className="opacity-60 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-300 group flex flex-col items-center text-center p-6 bg-white border border-gray-200 rounded-xl">
-                <div className="w-14 h-14 bg-purple-50 rounded-2xl flex items-center justify-center mb-4">
-                  <Briefcase className="w-7 h-7 text-purple-600" />
+              {/* 2. Bulk Data Cleanup & Reset */}
+              <button
+                onClick={() => navigateTo('/System?tab=cleanup')}
+                className="group flex flex-col items-start text-left p-5 bg-white border border-gray-200 rounded-xl hover:shadow-md hover:border-red-300 hover:-translate-y-0.5 transition-all duration-200"
+              >
+                <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center mb-3 group-hover:bg-red-100 transition-colors">
+                  <Trash2 className="w-6 h-6 text-red-600" />
                 </div>
-                <h3 className="font-bold text-gray-900 text-lg mb-2">Employee Roles</h3>
-                <p className="text-sm text-gray-500 leading-relaxed">Manage user permissions and roles (Coming Soon).</p>
-              </div>
+                <h3 className="font-bold text-gray-900 text-base mb-1.5 flex items-center justify-between w-full">
+                  Data Cleanup & Reset
+                  <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-red-600 group-hover:translate-x-0.5 transition-all" />
+                </h3>
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  Purge operational transactions and demo data safely while keeping Chart of Accounts and master parties intact.
+                </p>
+              </button>
 
-              <div className="opacity-60 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-300 group flex flex-col items-center text-center p-6 bg-white border border-gray-200 rounded-xl">
-                <div className="w-14 h-14 bg-orange-50 rounded-2xl flex items-center justify-center mb-4">
-                  <Database className="w-7 h-7 text-orange-600" />
+              {/* 3. Financial Years Management */}
+              <button
+                onClick={() => navigateTo('/System?tab=financial-years')}
+                className="group flex flex-col items-start text-left p-5 bg-white border border-gray-200 rounded-xl hover:shadow-md hover:border-blue-300 hover:-translate-y-0.5 transition-all duration-200"
+              >
+                <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center mb-3 group-hover:bg-blue-100 transition-colors">
+                  <Calendar className="w-6 h-6 text-blue-600" />
                 </div>
-                <h3 className="font-bold text-gray-900 text-lg mb-2">System Logs</h3>
-                <p className="text-sm text-gray-500 leading-relaxed">View audit trails and system activity (Coming Soon).</p>
-              </div>
+                <h3 className="font-bold text-gray-900 text-base mb-1.5 flex items-center justify-between w-full">
+                  Financial Years
+                  <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-all" />
+                </h3>
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  Manage active fiscal years, view audit dates, create new accounting periods, and manage annual closings.
+                </p>
+              </button>
+
+              {/* 4. User & Role Management */}
+              <button
+                onClick={() => navigateTo('/Users')}
+                className="group flex flex-col items-start text-left p-5 bg-white border border-gray-200 rounded-xl hover:shadow-md hover:border-purple-300 hover:-translate-y-0.5 transition-all duration-200"
+              >
+                <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center mb-3 group-hover:bg-purple-100 transition-colors">
+                  <Users className="w-6 h-6 text-purple-600" />
+                </div>
+                <h3 className="font-bold text-gray-900 text-base mb-1.5 flex items-center justify-between w-full">
+                  User Management
+                  <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-purple-600 group-hover:translate-x-0.5 transition-all" />
+                </h3>
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  Manage system users, login credentials, assigned roles, and granular staff access privileges.
+                </p>
+              </button>
+
+              {/* 5. System Architecture & Info */}
+              <button
+                onClick={() => navigateTo('/System?tab=info')}
+                className="group flex flex-col items-start text-left p-5 bg-white border border-gray-200 rounded-xl hover:shadow-md hover:border-amber-300 hover:-translate-y-0.5 transition-all duration-200"
+              >
+                <div className="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center mb-3 group-hover:bg-amber-100 transition-colors">
+                  <Database className="w-6 h-6 text-amber-600" />
+                </div>
+                <h3 className="font-bold text-gray-900 text-base mb-1.5 flex items-center justify-between w-full">
+                  System & Database Info
+                  <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-amber-600 group-hover:translate-x-0.5 transition-all" />
+                </h3>
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  Inspect cloud database engine status, tenant isolation, API framework versions, and security metadata.
+                </p>
+              </button>
 
             </div>
           </div>

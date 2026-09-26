@@ -243,3 +243,15 @@
   .thermal-receipt .border-gray-800,
   .thermal-receipt .border-gray-900 { border-color: #000 !important; }
 }
+
+/* Sidebar hover expansion indicator */
+@keyframes expandProgress {
+  0% {
+    width: 0%;
+    opacity: 0.6;
+  }
+  100% {
+    width: 100%;
+    opacity: 1;
+  }
+}

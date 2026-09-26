@@ -1,10 +1,8 @@
 'use client';
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import {
-  ChevronDown,
   ChevronRight,
   ChevronLeft,
-  Settings,
   Search,
   X,
   ChevronsUpDown,
@@ -12,7 +10,6 @@ import {
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
-import { SettingsModal } from '@/components/features/settings/SettingsModal';
 
 type NavigationItem = {
   label: string;
@@ -44,35 +41,59 @@ export default function Sidebar({
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [hoveredSection, setHoveredSection] = useState<string | null>(null);
+  const [hoverPendingSection, setHoverPendingSection] = useState<string | null>(null);
+  const enterTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const leaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const HOVER_DELAY_MS = 600; // 0.6 seconds delay as requested (0.5s - 0.7s)
 
   // Expanded sections for manual click / toggle all
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
 
   const handleMouseEnter = (sectionKey: string) => {
+    // Clear any pending leave timeout
     if (leaveTimeoutRef.current) {
       clearTimeout(leaveTimeoutRef.current);
       leaveTimeoutRef.current = null;
     }
-    setHoveredSection(sectionKey);
+
+    // If section is already open, do not re-trigger delay
+    if (hoveredSection === sectionKey) return;
+
+    // Trigger visual hint that expansion is in progress
+    setHoverPendingSection(sectionKey);
+
+    if (enterTimeoutRef.current) {
+      clearTimeout(enterTimeoutRef.current);
+    }
+
+    enterTimeoutRef.current = setTimeout(() => {
+      setHoveredSection(sectionKey);
+      setHoverPendingSection(null);
+    }, HOVER_DELAY_MS);
   };
 
   const handleMouseLeave = () => {
+    // Cancel expansion if user hovered away before 0.6s
+    if (enterTimeoutRef.current) {
+      clearTimeout(enterTimeoutRef.current);
+      enterTimeoutRef.current = null;
+    }
+    setHoverPendingSection(null);
+
+    // Buffer before closing submenus
     if (leaveTimeoutRef.current) {
       clearTimeout(leaveTimeoutRef.current);
     }
     leaveTimeoutRef.current = setTimeout(() => {
       setHoveredSection(null);
-    }, 150);
+    }, 250);
   };
 
   useEffect(() => {
     return () => {
-      if (leaveTimeoutRef.current) {
-        clearTimeout(leaveTimeoutRef.current);
-      }
+      if (enterTimeoutRef.current) clearTimeout(enterTimeoutRef.current);
+      if (leaveTimeoutRef.current) clearTimeout(leaveTimeoutRef.current);
     };
   }, []);
 
@@ -107,11 +128,24 @@ export default function Sidebar({
   }, []);
 
   const toggleSection = (sectionKey: string) => {
+    // If pending hover timer is active, clear it immediately on click
+    if (enterTimeoutRef.current) {
+      clearTimeout(enterTimeoutRef.current);
+      enterTimeoutRef.current = null;
+    }
+    setHoverPendingSection(null);
+
     setExpandedSections(prev => {
+      const isCurrentlyOpen = Boolean(prev[sectionKey] || hoveredSection === sectionKey);
       const updated = {
         ...prev,
-        [sectionKey]: !prev[sectionKey]
+        [sectionKey]: !isCurrentlyOpen
       };
+      if (isCurrentlyOpen) {
+        setHoveredSection(null);
+      } else {
+        setHoveredSection(sectionKey);
+      }
       try {
         sessionStorage.setItem('sidebar_expanded_sections', JSON.stringify(updated));
       } catch {}
@@ -286,7 +320,8 @@ export default function Sidebar({
                     const sectionKey = item.label.toLowerCase().replace(/\s+/g, '-');
                     const isExpanded = searchQuery
                       ? true
-                      : (hoveredSection === sectionKey);
+                      : Boolean(hoveredSection === sectionKey || expandedSections[sectionKey] || isSubItemActive);
+                    const isPending = hoverPendingSection === sectionKey && !isExpanded;
 
                     return (
                       <div
@@ -296,20 +331,22 @@ export default function Sidebar({
                         onMouseLeave={handleMouseLeave}
                       >
                         <button
-                          onClick={() => {
-                            setHoveredSection(prev => prev === sectionKey ? null : sectionKey);
-                          }}
+                          onClick={() => toggleSection(sectionKey)}
                           className={clsx(
-                            'w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all group',
+                            'relative w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all group overflow-hidden',
                             isSubItemActive
                               ? 'bg-blue-50/70 text-blue-700 font-semibold'
-                              : 'text-slate-700 hover:bg-slate-100/80 hover:text-slate-900'
+                              : isExpanded
+                                ? 'bg-slate-100/90 text-slate-900 font-medium'
+                                : isPending
+                                  ? 'bg-blue-50/40 text-blue-900'
+                                  : 'text-slate-700 hover:bg-slate-100/80 hover:text-slate-900'
                           )}
                           title={item.label}
                         >
                           <span className={clsx(
                             'flex items-center justify-center shrink-0 w-4 h-4 transition-colors',
-                            isSubItemActive ? 'text-blue-600' : 'text-slate-500 group-hover:text-slate-700'
+                            isSubItemActive || isExpanded ? 'text-blue-600' : 'text-slate-500 group-hover:text-slate-700'
                           )}>
                             {item.icon}
                           </span>
@@ -317,16 +354,38 @@ export default function Sidebar({
                           {!isCollapsed && (
                             <>
                               <span className="flex-1 text-left truncate">{item.label}</span>
-                              <span className="text-slate-400 group-hover:text-slate-600 transition-transform">
-                                {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                              <span className={clsx(
+                                "transition-transform duration-300 ease-in-out shrink-0",
+                                isExpanded ? "rotate-90 text-blue-600" : isPending ? "translate-x-0.5 text-blue-500" : "text-slate-400 group-hover:text-slate-600"
+                              )}>
+                                <ChevronRight size={14} />
                               </span>
                             </>
                           )}
+
+                          {/* Hover Expansion Visual Animation: Progress indicator bar filling across 0.6s */}
+                          {isPending && !isCollapsed && (
+                            <span className="absolute bottom-0 left-2 right-2 h-[2px] bg-blue-100 overflow-hidden rounded-full pointer-events-none">
+                              <span
+                                className="block h-full bg-blue-600 rounded-full"
+                                style={{
+                                  animation: 'expandProgress 600ms linear forwards'
+                                }}
+                              />
+                            </span>
+                          )}
                         </button>
 
-                        {/* Sub-items */}
-                        {isExpanded && !isCollapsed && (
-                          <div className="ml-4 pl-2 border-l border-slate-200/80 space-y-0.5 py-0.5 animate-in fade-in-50 duration-150">
+                        {/* Sub-items with smooth accordion animation */}
+                        {!isCollapsed && (
+                          <div
+                            className={clsx(
+                              'ml-4 pl-2 border-l border-slate-200/80 space-y-0.5 overflow-hidden transition-all duration-300 ease-in-out',
+                              isExpanded
+                                ? 'max-h-96 opacity-100 py-1 translate-y-0'
+                                : 'max-h-0 opacity-0 py-0 -translate-y-1 pointer-events-none'
+                            )}
+                          >
                             {item.subItems!.map((subItem) => {
                               const isChildActive = pathname === subItem.href;
 
@@ -388,32 +447,26 @@ export default function Sidebar({
         )}
       </nav>
 
-      {/* User Info & Settings Footer */}
-      <div className="p-2 border-t border-slate-100 bg-slate-50/50 flex flex-col gap-1 shrink-0">
-        {isCollapsed ? (
-          <button
-            onClick={toggleSidebar}
-            className="w-full flex items-center justify-center p-2 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors"
-            title="Expand sidebar"
-          >
+      {/* Sidebar Collapse / Expand Toggle Footer */}
+      <div className="p-2 border-t border-slate-100 bg-slate-50/50 shrink-0">
+        <button
+          onClick={toggleSidebar}
+          className={clsx(
+            "w-full flex items-center rounded-lg text-xs font-medium text-slate-500 hover:bg-white hover:text-slate-800 hover:shadow-2xs transition-all",
+            isCollapsed ? "justify-center p-2" : "justify-between px-2.5 py-1.5"
+          )}
+          title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {isCollapsed ? (
             <ChevronRight size={18} />
-          </button>
-        ) : (
-          <button
-            onClick={() => setIsSettingsOpen(true)}
-            className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:bg-white hover:text-blue-600 hover:shadow-2xs transition-all"
-          >
-            <Settings size={15} className="text-slate-500" />
-            <span>Settings</span>
-          </button>
-        )}
+          ) : (
+            <span className="flex items-center gap-2 text-slate-600">
+              <ChevronLeft size={16} />
+              <span>Collapse Sidebar</span>
+            </span>
+          )}
+        </button>
       </div>
-
-      {/* Settings Modal */}
-      <SettingsModal
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-      />
     </aside>
   );
 }

@@ -1,6 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { AdminLayout } from '@/components/layouts/AdminLayout';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Badge } from '@/components/ui/Badge';
@@ -34,13 +36,28 @@ import {
   Users,
   ChevronRight,
   Calculator,
-  Calendar
+  Calendar,
+  UserPlus,
+  ShieldCheck,
+  ExternalLink
 } from 'lucide-react';
 
-export default function SystemSettingsPage() {
+function SystemSettingsContent() {
   const { toast } = useToast();
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get('tab');
 
-  const [activeTab, setActiveTab] = useState<'financial-years' | 'cleanup' | 'rates' | 'info'>('financial-years');
+  const [activeTab, setActiveTab] = useState<'financial-years' | 'cleanup' | 'rates' | 'users' | 'info'>(
+    initialTab === 'cleanup' || initialTab === 'rates' || initialTab === 'info' || initialTab === 'users'
+      ? initialTab
+      : 'financial-years'
+  );
+
+  useEffect(() => {
+    if (initialTab && ['financial-years', 'cleanup', 'rates', 'users', 'info'].includes(initialTab)) {
+      setActiveTab(initialTab as any);
+    }
+  }, [initialTab]);
 
   // Preview Data
   const [preview, setPreview] = useState<DataCleanupPreview | null>(null);
@@ -188,6 +205,19 @@ export default function SystemSettingsPage() {
           >
             <TrendingUp className="w-4 h-4" />
             Rate Management
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('users')}
+            className={`px-4 py-2.5 text-xs font-semibold border-b-2 transition-all flex items-center gap-2 ${
+              activeTab === 'users'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-800'
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            Users & Roles
           </button>
 
           <button
@@ -623,6 +653,77 @@ export default function SystemSettingsPage() {
           </div>
         )}
 
+        {/* TAB 4: USERS & ROLES */}
+        {activeTab === 'users' && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Users Directory Card */}
+              <div className="p-5 bg-white rounded-xl border border-gray-200/90 shadow-xs space-y-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center">
+                      <Users className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-gray-900">User Logins & Accounts</h3>
+                      <p className="text-xs text-gray-500">Manage portal access, credentials, and user roles.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2 pt-2">
+                  <Link
+                    href="/Users"
+                    className="px-3.5 py-1.5 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1.5"
+                  >
+                    <Users className="w-3.5 h-3.5" />
+                    View All Users
+                  </Link>
+                  <Link
+                    href="/Users/create"
+                    className="px-3.5 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center gap-1.5"
+                  >
+                    <UserPlus className="w-3.5 h-3.5" />
+                    Create New User
+                  </Link>
+                </div>
+              </div>
+
+              {/* Staff & Employees Card */}
+              <div className="p-5 bg-white rounded-xl border border-gray-200/90 shadow-xs space-y-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
+                      <ShieldCheck className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-gray-900">Employees & Operations Staff</h3>
+                      <p className="text-xs text-gray-500">Manage dodhis, chilling center in-charges, and staff records.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2 pt-2">
+                  <Link
+                    href="/Employees"
+                    className="px-3.5 py-1.5 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1.5"
+                  >
+                    <Users className="w-3.5 h-3.5" />
+                    View Staff List
+                  </Link>
+                  <Link
+                    href="/Employees/create"
+                    className="px-3.5 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center gap-1.5"
+                  >
+                    <UserPlus className="w-3.5 h-3.5" />
+                    Add Staff Member
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Modal: Confirmation for Bulk Data Cleanup */}
         <DataCleanupModal
           isOpen={isCleanupModalOpen}
@@ -640,5 +741,13 @@ export default function SystemSettingsPage() {
         />
       </div>
     </AdminLayout>
+  );
+}
+
+export default function SystemSettingsPage() {
+  return (
+    <Suspense fallback={<div className="p-6 text-sm text-gray-500">Loading settings...</div>}>
+      <SystemSettingsContent />
+    </Suspense>
   );
 }
