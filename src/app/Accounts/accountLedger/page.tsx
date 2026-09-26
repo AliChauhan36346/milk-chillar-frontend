@@ -1,8 +1,8 @@
 
 // app/dashboard/admin/accounts/ledger/page.tsx
 'use client';
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { AdminLayout } from '@/components/layouts/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table } from '@/components/ui/Table/Table';
@@ -41,7 +41,8 @@ interface AccountOption extends SearchableOption {
     balance: number;
 }
 
-export default function AccountLedgerPage() {
+function AccountLedgerInner() {
+    const searchParams = useSearchParams();
     const [selectedAccount, setSelectedAccount] = useState<AccountOption | undefined>();
     const [ledgerData, setLedgerData] = useState<AccountLedger[]>([]);
     const [summaryData, setSummaryData] = useState<AccountLedgerSummary | null>(null);
@@ -88,6 +89,21 @@ export default function AccountLedgerPage() {
             setLoading(true);
             const accounts = await getAllAccountBalances();
             setAllAccounts(accounts);
+
+            // Auto-select account if accountId is passed in URL
+            const urlAccountId = searchParams.get('accountId');
+            if (urlAccountId) {
+                const target = accounts.find(a => a.accountId === parseInt(urlAccountId));
+                if (target) {
+                    setSelectedAccount({
+                        id: target.accountId,
+                        code: target.accountCode,
+                        label: target.accountName,
+                        secondaryLabel: formatCurrency(target.closingBalance),
+                        balance: target.closingBalance
+                    });
+                }
+            }
         } catch (error) {
             console.error('Failed to load accounts:', error);
         } finally {
@@ -620,5 +636,19 @@ export default function AccountLedgerPage() {
                 </div>
             </AdminLayout>
         </ProtectedRoute>
+    );
+}
+
+export default function AccountLedgerPage() {
+    return (
+        <Suspense
+            fallback={
+                <div className="flex items-center justify-center min-h-screen">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                </div>
+            }
+        >
+            <AccountLedgerInner />
+        </Suspense>
     );
 }

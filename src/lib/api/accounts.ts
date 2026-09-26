@@ -68,22 +68,38 @@ export interface UpdateAccountRequest {
   name: string;
 }
 
+export interface AccountNode {
+  accountId: number;
+  accountCode: string;
+  fullCode: string;
+  name: string;
+  debitTotal?: number;
+  creditTotal?: number;
+  balance?: number;
+  balanceType?: 'Dr' | 'Cr' | string;
+}
+
+export interface SubAccountNode {
+  subAccountId: number;
+  subAccountCode: string;
+  name: string;
+  debitTotal?: number;
+  creditTotal?: number;
+  balance?: number;
+  balanceType?: 'Dr' | 'Cr' | string;
+  accounts: AccountNode[];
+}
+
 export interface ChartAccount {
   mainAccountId: number;
   mainAccountCode: string;
   name: string;
   financialStatementComponent: string;
-  subAccounts: {
-    subAccountId: number;
-    subAccountCode: string;
-    name: string;
-    accounts: {
-      accountId: number;
-      accountCode: string;
-      fullCode: string;
-      name: string;
-    }[];
-  }[];
+  debitTotal?: number;
+  creditTotal?: number;
+  balance?: number;
+  balanceType?: 'Dr' | 'Cr' | string;
+  subAccounts: SubAccountNode[];
 }
 
 // Main Accounts API
