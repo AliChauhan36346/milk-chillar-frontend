@@ -34,8 +34,10 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   AlertCircle,
-  ExternalLink
+  ExternalLink,
+  Calendar
 } from 'lucide-react';
+import { useFinancialYear } from '@/context/FinancialYearContext';
 
 // Register required Chart.js components
 Chart.register(
@@ -49,6 +51,7 @@ Chart.register(
 );
 
 export default function AdminDashboard() {
+  const { activeYear, selectedYear, isHistoricalMode } = useFinancialYear();
   const [stats, setStats] = useState<AdminDashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -133,7 +136,20 @@ export default function AdminDashboard() {
           {/* HEADER & COMPACT QUICK-ACTION RIBBON */}
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-1 border-b border-slate-200/80">
             <div>
-              <h1 className="text-lg font-bold text-slate-900 tracking-tight">Executive Financial Cockpit</h1>
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-lg font-bold text-slate-900 tracking-tight">Executive Financial Cockpit</h1>
+                {(selectedYear || activeYear) && (
+                  <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold border ${
+                    isHistoricalMode ? 'bg-amber-50 text-amber-800 border-amber-300' : 'bg-blue-50 text-blue-700 border-blue-200'
+                  }`}>
+                    <Calendar size={11} className={isHistoricalMode ? "text-amber-600" : "text-blue-500"} />
+                    <span>FY: {(selectedYear || activeYear)?.name}</span>
+                    {selectedYear?.isActive && (
+                      <span className="text-[9px] px-1 bg-green-100 text-green-700 rounded font-bold">Active</span>
+                    )}
+                  </span>
+                )}
+              </div>
               <p className="text-xs text-slate-500">
                 Real-time liquidity, working capital, live P&L trends, and daily milk operations
               </p>

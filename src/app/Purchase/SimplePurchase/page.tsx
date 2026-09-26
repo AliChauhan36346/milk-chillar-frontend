@@ -2,7 +2,7 @@
 
 'use client';
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Milk, Sun, Moon, CheckCircle, User } from 'lucide-react';
+import { Milk, Sun, Moon, CheckCircle, User, Clock, Columns2 } from 'lucide-react';
 import { useAuth } from '@/lib/auth/AuthContext';
 import PurchaseModal from '@/components/modals/PurchaseModal';
 import { DynamicLayout } from '@/components/layouts/DynamicLayout';
@@ -44,6 +44,7 @@ export default function PurchasePage() {
   const [date, setDate] = useState(today);
   const [timeFilter, setTimeFilter] = useState<'morning' | 'evening' | 'both'>('both');
   const [searchCode, setSearchCode] = useState('');
+  const [activeListTab, setActiveListTab] = useState<'remaining' | 'added' | 'both'>('remaining');
 
   // Dodhi-related state
   const [selectedDodhiId, setSelectedDodhiId] = useState<number | null>(null);
@@ -534,40 +535,93 @@ export default function PurchasePage() {
                 </button>
               </div>
 
+              {/* Suppliers List Switcher Tabs */}
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-4 bg-white p-2 rounded-xl border border-slate-200 shadow-2xs">
+                <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-lg">
+                  <button
+                    type="button"
+                    onClick={() => setActiveListTab('remaining')}
+                    className={`flex items-center gap-2 px-3.5 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                      activeListTab === 'remaining'
+                        ? 'bg-white text-red-600 shadow-2xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    <Clock className="w-4 h-4 text-red-500" />
+                    <span>Remaining Suppliers</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveListTab('added')}
+                    className={`flex items-center gap-2 px-3.5 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                      activeListTab === 'added'
+                        ? 'bg-white text-green-600 shadow-2xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    <CheckCircle className="w-4 h-4 text-green-500" />
+                    <span>Added Suppliers</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveListTab('both')}
+                    className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                      activeListTab === 'both'
+                        ? 'bg-white text-blue-600 shadow-2xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                    title="View both lists side by side"
+                  >
+                    <Columns2 className="w-4 h-4 text-blue-500" />
+                    <span>Side-by-Side</span>
+                  </button>
+                </div>
+
+                <div className="text-xs text-slate-400 font-medium px-2">
+                  {activeListTab === 'remaining' && "Viewing pending suppliers"}
+                  {activeListTab === 'added' && "Viewing already recorded purchases"}
+                  {activeListTab === 'both' && "Viewing both lists side by side"}
+                </div>
+              </div>
+
               {/* Suppliers Lists */}
-              <div className="grid md:grid-cols-2 gap-6">
+              <div className={activeListTab === 'both' ? 'grid md:grid-cols-2 gap-6' : 'grid grid-cols-1'}>
                 {/* Remaining Suppliers */}
-                <InfiniteRemainingList
-                  title="Remaining Suppliers"
-                  dodhiId={selectedDodhiId}
-                  date={date}
-                  timeFilter={timeFilter}
-
-                  isAdmin={isAdmin}
-                  onItemClick={handleItemClick}
-                  icon={<CheckCircle className="w-5 h-5" />}
-                  colorClass="red"
-                />
-
-                {/* Added Suppliers */}
-                {loadingAddedList ? (
-                  <div className="bg-gray-50 rounded-xl p-6 border border-gray-100 flex justify-center items-center" style={{ maxHeight: '70vh' }}>
-                    <div className="flex flex-col items-center">
-                      <CenteredSpinner size="md" message="Loading added purchases..." />
-                    </div>
-                  </div>
-                ) : (
-                  <InfiniteAddedList
-                    title="Added Suppliers"
+                {(activeListTab === 'remaining' || activeListTab === 'both') && (
+                  <InfiniteRemainingList
+                    title="Remaining Suppliers"
                     dodhiId={selectedDodhiId}
                     date={date}
                     timeFilter={timeFilter}
-
                     isAdmin={isAdmin}
                     onItemClick={handleItemClick}
-                    icon={<CheckCircle className="w-5 h-5" />}
-                    colorClass="green"
+                    icon={<Clock className="w-5 h-5" />}
+                    colorClass="red"
                   />
+                )}
+
+                {/* Added Suppliers */}
+                {(activeListTab === 'added' || activeListTab === 'both') && (
+                  loadingAddedList ? (
+                    <div className="bg-gray-50 rounded-xl p-6 border border-gray-100 flex justify-center items-center" style={{ maxHeight: '70vh' }}>
+                      <div className="flex flex-col items-center">
+                        <CenteredSpinner size="md" message="Loading added purchases..." />
+                      </div>
+                    </div>
+                  ) : (
+                    <InfiniteAddedList
+                      title="Added Suppliers"
+                      dodhiId={selectedDodhiId}
+                      date={date}
+                      timeFilter={timeFilter}
+                      isAdmin={isAdmin}
+                      onItemClick={handleItemClick}
+                      icon={<CheckCircle className="w-5 h-5" />}
+                      colorClass="green"
+                    />
+                  )
                 )}
               </div>
             </>

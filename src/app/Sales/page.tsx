@@ -2,7 +2,7 @@
 // app/sales/page.tsx
 'use client';
 import { useState, useEffect } from 'react';
-import { Milk, Scale, ShoppingCart, CheckCircle, User, TrendingUp, Calculator } from 'lucide-react';
+import { Milk, Scale, ShoppingCart, CheckCircle, User, TrendingUp, Calculator, Clock, Columns2 } from 'lucide-react';
 import SummaryCard from '@/components/ui/SummaryCard';
 import MilkLoader from '@/components/ui/Loader';
 import { useAuth } from '@/lib/auth/AuthContext';
@@ -41,6 +41,7 @@ export default function SalesPage() {
   const [modalBuyer, setModalBuyer] = useState<Buyer | null>(null);
   const [chillarId, setChillarId] = useState<number | null>(null);
   const [revenueAccounts, setRevenueAccounts] = useState<{ accountId: number, accountName: string, accountCode: string }[]>([]);
+  const [activeListTab, setActiveListTab] = useState<'remaining' | 'added' | 'both'>('remaining');
 
   // Form state for live calculation
   const [formValues, setFormValues] = useState({
@@ -327,53 +328,127 @@ export default function SalesPage() {
             )}
           </div>
 
-          {/* Buyers Lists */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <RemainingList
-              title="Remaining Buyers"
-              items={buyers.filter(b => !b.added)}
-              getKey={b => String(b.id)}
-              getName={b => b.name}
-              getId={b => b.accountCode}
-              getStatusLabel={b => (
-                isAdmin ? (
-                  <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm">
-                    Rs{b.rate}/Ltr
-                  </span>
-                ) : (
-                  <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm">
-                    Pending
-                  </span>
-                )
-              )}
-              onItemClick={openForm}
-              icon={<User className="w-5 h-5" />}
-            />
+          {/* Buyers List Switcher Tabs */}
+          {(() => {
+            const remainingBuyers = buyers.filter(b => !b.added);
+            const addedBuyers = buyers.filter(b => b.added);
 
-            <AddedList
-              title="Added Buyers"
-              items={buyers.filter(b => b.added)}
-              getKey={b => String(b.id)}
-              getName={b => b.name}
-              getId={b => b.accountCode}
-              getDetails={b => (
-                <div className="text-right space-y-1">
-                  <p className="text-sm font-medium">{b.grossLiters.toFixed(2)} Ltrs</p>
-                  <div className="flex justify-between text-xs text-gray-600">
-                    <span>LR: {b.lr.toFixed(2)}</span>
-                    <span> Fat: {b.fat.toFixed(2)}</span>
-                    <span> Net: {b.netLiters.toFixed(2)}</span>
+            return (
+              <>
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-4 bg-white p-2 rounded-xl border border-slate-200 shadow-2xs">
+                  <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-lg">
+                    <button
+                      type="button"
+                      onClick={() => setActiveListTab('remaining')}
+                      className={`flex items-center gap-2 px-3.5 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                        activeListTab === 'remaining'
+                          ? 'bg-white text-red-600 shadow-2xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      <Clock className="w-4 h-4 text-red-500" />
+                      <span>Remaining Buyers</span>
+                      <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                        activeListTab === 'remaining' ? 'bg-red-100 text-red-700' : 'bg-slate-200 text-slate-600'
+                      }`}>
+                        {remainingBuyers.length}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setActiveListTab('added')}
+                      className={`flex items-center gap-2 px-3.5 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                        activeListTab === 'added'
+                          ? 'bg-white text-green-600 shadow-2xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      <CheckCircle className="w-4 h-4 text-green-500" />
+                      <span>Added Buyers</span>
+                      <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                        activeListTab === 'added' ? 'bg-green-100 text-green-700' : 'bg-slate-200 text-slate-600'
+                      }`}>
+                        {addedBuyers.length}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setActiveListTab('both')}
+                      className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                        activeListTab === 'both'
+                          ? 'bg-white text-blue-600 shadow-2xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                      title="View both lists side by side"
+                    >
+                      <Columns2 className="w-4 h-4 text-blue-500" />
+                      <span>Side-by-Side</span>
+                    </button>
                   </div>
-                  <p className="text-xs font-medium">Received: {b.amountReceived.toFixed(2)}</p>
-                  {isAdmin && (
-                    <p className="text-xs text-gray-600">Total: {b.amount.toFixed(2)}</p>
+
+                  <div className="text-xs text-slate-400 font-medium px-2">
+                    {activeListTab === 'remaining' && "Viewing pending buyers"}
+                    {activeListTab === 'added' && "Viewing already recorded sales"}
+                    {activeListTab === 'both' && "Viewing both lists side by side"}
+                  </div>
+                </div>
+
+                {/* Buyers Lists */}
+                <div className={activeListTab === 'both' ? 'grid grid-cols-1 md:grid-cols-2 gap-6' : 'grid grid-cols-1'}>
+                  {(activeListTab === 'remaining' || activeListTab === 'both') && (
+                    <RemainingList
+                      title="Remaining Buyers"
+                      items={remainingBuyers}
+                      getKey={b => String(b.id)}
+                      getName={b => b.name}
+                      getId={b => b.accountCode}
+                      getStatusLabel={b => (
+                        isAdmin ? (
+                          <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm">
+                            Rs{b.rate}/Ltr
+                          </span>
+                        ) : (
+                          <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm">
+                            Pending
+                          </span>
+                        )
+                      )}
+                      onItemClick={openForm}
+                      icon={<User className="w-5 h-5" />}
+                    />
+                  )}
+
+                  {(activeListTab === 'added' || activeListTab === 'both') && (
+                    <AddedList
+                      title="Added Buyers"
+                      items={addedBuyers}
+                      getKey={b => String(b.id)}
+                      getName={b => b.name}
+                      getId={b => b.accountCode}
+                      getDetails={b => (
+                        <div className="text-right space-y-1">
+                          <p className="text-sm font-medium">{b.grossLiters.toFixed(2)} Ltrs</p>
+                          <div className="flex justify-between text-xs text-gray-600">
+                            <span>LR: {b.lr.toFixed(2)}</span>
+                            <span> Fat: {b.fat.toFixed(2)}</span>
+                            <span> Net: {b.netLiters.toFixed(2)}</span>
+                          </div>
+                          <p className="text-xs font-medium">Received: {b.amountReceived.toFixed(2)}</p>
+                          {isAdmin && (
+                            <p className="text-xs text-gray-600">Total: {b.amount.toFixed(2)}</p>
+                          )}
+                        </div>
+                      )}
+                      onItemClick={openForm}
+                      icon={<CheckCircle className="w-5 h-5" />}
+                    />
                   )}
                 </div>
-              )}
-              onItemClick={openForm}
-              icon={<CheckCircle className="w-5 h-5" />}
-            />
-          </div>
+              </>
+            );
+          })()}
 
           {/* Modal */}
           <SalesFormModal

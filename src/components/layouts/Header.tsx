@@ -163,6 +163,7 @@ type HeaderProps = {
 
 export default function Header({ toggleSidebar, role }: HeaderProps) {
   const { user, logout } = useAuth();
+  const isAdmin = user?.role?.toLowerCase() === 'admin' || role?.toLowerCase() === 'admin';
   const { financialYears, activeYear, selectedYear, isHistoricalMode, setSelectedYear } = useFinancialYear();
   const [isFyDropdownOpen, setIsFyDropdownOpen] = useState(false);
   const fyDropdownRef = useRef<HTMLDivElement>(null);
@@ -309,84 +310,86 @@ export default function Header({ toggleSidebar, role }: HeaderProps) {
             <Menu size={20} />
           </button>
 
-          {/* Financial Year Selector */}
-          <div className="relative" ref={fyDropdownRef}>
-            <button
-              type="button"
-              onClick={() => setIsFyDropdownOpen(!isFyDropdownOpen)}
-              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all ${
-                isHistoricalMode
-                  ? 'bg-amber-50 border-amber-300 text-amber-900 hover:bg-amber-100 shadow-2xs'
-                  : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
-              }`}
-            >
-              <Calendar size={14} className={isHistoricalMode ? 'text-amber-600' : 'text-blue-600'} />
-              <span className="font-semibold text-slate-800">
-                {selectedYear?.name || activeYear?.name || 'Financial Year'}
-              </span>
-              <span
-                className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${
-                  selectedYear?.isActive
-                    ? 'bg-green-100 text-green-700 border border-green-200'
-                    : 'bg-amber-100 text-amber-700 border border-amber-200'
+          {/* Financial Year Selector - Only visible for Admin */}
+          {isAdmin && (
+            <div className="relative" ref={fyDropdownRef}>
+              <button
+                type="button"
+                onClick={() => setIsFyDropdownOpen(!isFyDropdownOpen)}
+                className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all ${
+                  isHistoricalMode
+                    ? 'bg-amber-50 border-amber-300 text-amber-900 hover:bg-amber-100 shadow-2xs'
+                    : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
                 }`}
               >
-                {selectedYear?.isActive ? 'Active' : 'Closed'}
-              </span>
-              <ChevronDown size={13} className="text-slate-400" />
-            </button>
+                <Calendar size={14} className={isHistoricalMode ? 'text-amber-600' : 'text-blue-600'} />
+                <span className="font-semibold text-slate-800">
+                  {selectedYear?.name || activeYear?.name || 'Financial Year'}
+                </span>
+                <span
+                  className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${
+                    selectedYear?.isActive
+                      ? 'bg-green-100 text-green-700 border border-green-200'
+                      : 'bg-amber-100 text-amber-700 border border-amber-200'
+                  }`}
+                >
+                  {selectedYear?.isActive ? 'Active' : 'Closed'}
+                </span>
+                <ChevronDown size={13} className="text-slate-400" />
+              </button>
 
-            {/* Dropdown Menu */}
-            {isFyDropdownOpen && (
-              <div className="absolute left-0 mt-1.5 w-64 bg-white border border-slate-200 rounded-xl shadow-lg z-50 py-1.5">
-                <div className="px-3 py-1.5 border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                  Select Financial Year
+              {/* Dropdown Menu */}
+              {isFyDropdownOpen && (
+                <div className="absolute left-0 mt-1.5 w-64 bg-white border border-slate-200 rounded-xl shadow-lg z-50 py-1.5">
+                  <div className="px-3 py-1.5 border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    Select Financial Year
+                  </div>
+                  <div className="max-h-60 overflow-y-auto py-1">
+                    {financialYears.length === 0 ? (
+                      <div className="px-3 py-2 text-xs text-slate-400">Loading periods...</div>
+                    ) : (
+                      financialYears.map((fy) => {
+                        const isSelected = selectedYear?.financialYearId === fy.financialYearId;
+                        return (
+                          <button
+                            key={fy.financialYearId}
+                            type="button"
+                            onClick={() => {
+                              setSelectedYear(fy);
+                              setIsFyDropdownOpen(false);
+                            }}
+                            className={`w-full flex items-center justify-between px-3 py-2 text-xs text-left hover:bg-slate-50 transition-colors ${
+                              isSelected ? 'bg-blue-50/70 text-blue-700 font-semibold' : 'text-slate-700'
+                            }`}
+                          >
+                            <div className="flex flex-col">
+                              <span className="font-medium flex items-center gap-1.5">
+                                {fy.name}
+                                {fy.isActive && (
+                                  <span className="text-[9px] px-1.5 py-0.2 bg-green-100 text-green-700 rounded font-bold">
+                                    Current
+                                  </span>
+                                )}
+                                {fy.isClosed && (
+                                  <span className="text-[9px] px-1.5 py-0.2 bg-slate-100 text-slate-500 rounded">
+                                    Closed
+                                  </span>
+                                )}
+                              </span>
+                              <span className="text-[10px] text-slate-400">
+                                {new Date(fy.startDate).toLocaleDateString()} - {new Date(fy.endDate).toLocaleDateString()}
+                              </span>
+                            </div>
+                            {isSelected && <Check size={14} className="text-blue-600" />}
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
                 </div>
-                <div className="max-h-60 overflow-y-auto py-1">
-                  {financialYears.length === 0 ? (
-                    <div className="px-3 py-2 text-xs text-slate-400">Loading periods...</div>
-                  ) : (
-                    financialYears.map((fy) => {
-                      const isSelected = selectedYear?.financialYearId === fy.financialYearId;
-                      return (
-                        <button
-                          key={fy.financialYearId}
-                          type="button"
-                          onClick={() => {
-                            setSelectedYear(fy);
-                            setIsFyDropdownOpen(false);
-                          }}
-                          className={`w-full flex items-center justify-between px-3 py-2 text-xs text-left hover:bg-slate-50 transition-colors ${
-                            isSelected ? 'bg-blue-50/70 text-blue-700 font-semibold' : 'text-slate-700'
-                          }`}
-                        >
-                          <div className="flex flex-col">
-                            <span className="font-medium flex items-center gap-1.5">
-                              {fy.name}
-                              {fy.isActive && (
-                                <span className="text-[9px] px-1.5 py-0.2 bg-green-100 text-green-700 rounded font-bold">
-                                  Current
-                                </span>
-                              )}
-                              {fy.isClosed && (
-                                <span className="text-[9px] px-1.5 py-0.2 bg-slate-100 text-slate-500 rounded">
-                                  Closed
-                                </span>
-                              )}
-                            </span>
-                            <span className="text-[10px] text-slate-400">
-                              {new Date(fy.startDate).toLocaleDateString()} - {new Date(fy.endDate).toLocaleDateString()}
-                            </span>
-                          </div>
-                          {isSelected && <Check size={14} className="text-blue-600" />}
-                        </button>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-4">
           <button

@@ -1,7 +1,7 @@
 //app/chillarReceive/page.tsx
 'use client';
 import { useEffect, useState } from 'react';
-import { Milk, Scale, User, CheckCircle } from 'lucide-react';
+import { Milk, Scale, User, CheckCircle, Clock, Columns2 } from 'lucide-react';
 import SummaryCard from '@/components/ui/SummaryCard';
 import MilkLoader from '@/components/ui/Loader';
 import { DynamicLayout } from '@/components/layouts/DynamicLayout';
@@ -39,6 +39,7 @@ export default function ChillarReceivePage() {
 
   const [chillarId, setChillarId] = useState<number | null>(null);
   const [chillarInchargeId, setChillarInchargeId] = useState<number | null>(null);
+  const [activeListTab, setActiveListTab] = useState<'remaining' | 'added' | 'both'>('remaining');
 
   // Form state for live calculation
   const [formValues, setFormValues] = useState({
@@ -251,39 +252,113 @@ export default function ChillarReceivePage() {
             />
           </div>
 
-          {/* Dodhis Lists */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <RemainingList
-              title="Remaining Dodhis"
-              items={dodhis.filter(d => !d.added)}
-              getKey={d => String(d.dodhiId)}
-              getName={d => d.fullName}
-              getId={d => String(d.dodhiId)}
-              getStatusLabel={() => (
-                <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm">
-                  Pending
-                </span>
-              )}
-              onItemClick={openForm}
-              icon={<User className="w-5 h-5" />}
-            />
+          {/* Dodhis List Switcher Tabs */}
+          {(() => {
+            const remainingDodhis = dodhis.filter(d => !d.added);
+            const addedDodhis = dodhis.filter(d => d.added);
 
-            <AddedList
-              title="Added Dodhis"
-              items={dodhis.filter(d => d.added)}
-              getKey={d => String(d.dodhiId)}
-              getName={d => d.fullName}
-              getId={d => String(d.dodhiId)}
-              getDetails={d => (
-                <div className="text-right">
-                  <p className="text-sm font-medium">{d.grossLiters} Ltrs</p>
-                  <p className="text-xs text-gray-600">Net: {d.netLiters} Ltrs</p>
+            return (
+              <>
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-4 bg-white p-2 rounded-xl border border-slate-200 shadow-2xs">
+                  <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-lg">
+                    <button
+                      type="button"
+                      onClick={() => setActiveListTab('remaining')}
+                      className={`flex items-center gap-2 px-3.5 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                        activeListTab === 'remaining'
+                          ? 'bg-white text-red-600 shadow-2xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      <Clock className="w-4 h-4 text-red-500" />
+                      <span>Remaining Dodhis</span>
+                      <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                        activeListTab === 'remaining' ? 'bg-red-100 text-red-700' : 'bg-slate-200 text-slate-600'
+                      }`}>
+                        {remainingDodhis.length}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setActiveListTab('added')}
+                      className={`flex items-center gap-2 px-3.5 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                        activeListTab === 'added'
+                          ? 'bg-white text-green-600 shadow-2xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      <CheckCircle className="w-4 h-4 text-green-500" />
+                      <span>Added Dodhis</span>
+                      <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                        activeListTab === 'added' ? 'bg-green-100 text-green-700' : 'bg-slate-200 text-slate-600'
+                      }`}>
+                        {addedDodhis.length}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setActiveListTab('both')}
+                      className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                        activeListTab === 'both'
+                          ? 'bg-white text-blue-600 shadow-2xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                      title="View both lists side by side"
+                    >
+                      <Columns2 className="w-4 h-4 text-blue-500" />
+                      <span>Side-by-Side</span>
+                    </button>
+                  </div>
+
+                  <div className="text-xs text-slate-400 font-medium px-2">
+                    {activeListTab === 'remaining' && "Viewing pending dodhis"}
+                    {activeListTab === 'added' && "Viewing already received milk"}
+                    {activeListTab === 'both' && "Viewing both lists side by side"}
+                  </div>
                 </div>
-              )}
-              onItemClick={openForm}
-              icon={<CheckCircle className="w-5 h-5" />}
-            />
-          </div>
+
+                {/* Dodhis Lists */}
+                <div className={activeListTab === 'both' ? 'grid grid-cols-1 md:grid-cols-2 gap-6' : 'grid grid-cols-1'}>
+                  {(activeListTab === 'remaining' || activeListTab === 'both') && (
+                    <RemainingList
+                      title="Remaining Dodhis"
+                      items={remainingDodhis}
+                      getKey={d => String(d.dodhiId)}
+                      getName={d => d.fullName}
+                      getId={d => String(d.dodhiId)}
+                      getStatusLabel={() => (
+                        <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm">
+                          Pending
+                        </span>
+                      )}
+                      onItemClick={openForm}
+                      icon={<User className="w-5 h-5" />}
+                    />
+                  )}
+
+                  {(activeListTab === 'added' || activeListTab === 'both') && (
+                    <AddedList
+                      title="Added Dodhis"
+                      items={addedDodhis}
+                      getKey={d => String(d.dodhiId)}
+                      getName={d => d.fullName}
+                      getId={d => String(d.dodhiId)}
+                      getDetails={d => (
+                        <div className="text-right">
+                          <p className="text-sm font-medium">{d.grossLiters} Ltrs</p>
+                          <p className="text-xs text-gray-600">Net: {d.netLiters} Ltrs</p>
+                        </div>
+                      )}
+                      onItemClick={openForm}
+                      icon={<CheckCircle className="w-5 h-5" />}
+                    />
+                  )}
+                </div>
+              </>
+            );
+          })()}
 
           {/* Modal */}
           <DodhiFormModal
