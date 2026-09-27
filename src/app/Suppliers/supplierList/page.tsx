@@ -27,7 +27,8 @@ import { useToast } from '@/hooks/useToast';
 export default function SupplierListPage() {
   const router = useRouter();
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isFetching, setIsFetching] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
@@ -42,23 +43,22 @@ export default function SupplierListPage() {
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(searchQuery);
-    }, 500);
+    }, 300);
     return () => clearTimeout(handler);
   }, [searchQuery]);
 
-  // Fetch suppliers when debounced search, filters, or pagination changes
+  // Reset to first page when search or status filter changes
+  const isFirstMount = useRef(true);
   useEffect(() => {
-    if (debouncedSearch !== searchQuery) return; // Wait for debounce
-    setPageNumber(1); // Reset to first page when search changes
-    fetchSuppliers();
-  }, [debouncedSearch]);
-
-  useEffect(() => {
-    fetchSuppliers();
-  }, [statusFilter, pageNumber, pageSize]);
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      return;
+    }
+    setPageNumber(1);
+  }, [debouncedSearch, statusFilter]);
 
   const fetchSuppliers = useCallback(async () => {
-    setIsLoading(true);
+    setIsFetching(true);
     try {
       const isActive = statusFilter === 'all' ? undefined : statusFilter === 'active';
       const data = await getSuppliersPaged({
@@ -68,9 +68,9 @@ export default function SupplierListPage() {
         isActive,
         mainAccountCode: '202',
       });
-      setSuppliers(data.items);
-      setTotalPages(data.totalPages);
-      setTotalItems(data.items.length);
+      setSuppliers(data.items || []);
+      setTotalPages(data.totalPages || 1);
+      setTotalItems(data.totalCount || data.items?.length || 0);
     } catch (error) {
       toast({ 
         title: 'Error fetching suppliers', 
@@ -79,9 +79,14 @@ export default function SupplierListPage() {
       });
       console.error('Error fetching suppliers:', error);
     } finally {
-      setIsLoading(false);
+      setIsFetching(false);
+      setIsInitialLoading(false);
     }
   }, [pageNumber, pageSize, debouncedSearch, statusFilter, toast]);
+
+  useEffect(() => {
+    fetchSuppliers();
+  }, [fetchSuppliers]);
 
   const handleRefresh = () => {
     fetchSuppliers();
@@ -92,21 +97,6 @@ export default function SupplierListPage() {
       ? 'bg-emerald-100 text-emerald-800 border-emerald-200' 
       : 'bg-red-100 text-red-800 border-red-200';
   };
-
-  if (isLoading && suppliers.length === 0) {
-    return (
-      <ProtectedRoute>
-        <DynamicLayout>
-          <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-slate-600 font-medium">Loading suppliers...</p>
-            </div>
-          </div>
-        </DynamicLayout>
-      </ProtectedRoute>
-    );
-  }
 
   return (
     <ProtectedRoute>
@@ -122,10 +112,10 @@ export default function SupplierListPage() {
               <div className="flex items-center gap-3">
                 <button
                   onClick={handleRefresh}
-                  disabled={isLoading}
+                  disabled={isFetching}
                   className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:text-slate-800 hover:bg-white rounded-lg transition-colors duration-200 border border-slate-200 disabled:opacity-50"
                 >
-                  <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} />
                   Refresh
                 </button>
                 <button
@@ -193,10 +183,10 @@ export default function SupplierListPage() {
                       placeholder="Search suppliers by name, account code, or khata number..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full px-4 py-3 pl-12 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                      className="w-full px-4 py-3 pl-12 pr-10 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     />
                     <Search className="absolute left-4 top-3.5 w-5 h-5 text-slate-400" />
-                    {isLoading && debouncedSearch !== searchQuery && (
+                    {(isFetching || debouncedSearch !== searchQuery) && (
                       <div className="absolute right-4 top-3.5">
                         <RefreshCw className="w-5 h-5 text-blue-500 animate-spin" />
                       </div>
@@ -252,8 +242,13 @@ export default function SupplierListPage() {
             </div>
 
             {/* Suppliers Table */}
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-              {suppliers.length > 0 ? (
+            <div className={`bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden transition-opacity duration-150 ${isFetching ? 'opacity-60 pointer-events-none' : 'opacity-100'}`}>
+              {isInitialLoading ? (
+                <div className="p-12 text-center">
+                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto mb-3"></div>
+                  <p className="text-sm text-slate-500 font-medium">Loading suppliers...</p>
+                </div>
+              ) : suppliers.length > 0 ? (
                 <>
                   <div className="overflow-x-auto">
                     <table className="w-full">

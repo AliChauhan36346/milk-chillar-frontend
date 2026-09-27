@@ -2,7 +2,7 @@
 'use client';
 import { useState, useEffect, useRef, Suspense} from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, Building2, Plus } from 'lucide-react';
+import { Search, Building2, Plus, RefreshCw } from 'lucide-react';
 import { DynamicLayout } from '@/components/layouts/DynamicLayout';
 import ProtectedRoute from '@/components/ProtectedRoutes';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -25,64 +25,76 @@ function BuyerListPage() {
   const router = useRouter();
   const { user } = useAuth?.() || {};
   const [buyers, setBuyers] = useState<Buyer[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isFetching, setIsFetching] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [pageNumber, setPageNumber] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
   const { toast } = useToast();
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const [currentStep, setCurrentStep] = useState<'account' | 'supplier'>('account');
 
   // Debounce search
   useEffect(() => {
     const handler = setTimeout(() => {
-      setPageNumber(1);
-      fetchBuyers();
+      setDebouncedSearch(searchQuery);
     }, 300);
     return () => clearTimeout(handler);
-    // eslint-disable-next-line
   }, [searchQuery]);
 
+  // Reset to first page when search or status filter changes
+  const isFirstMount = useRef(true);
   useEffect(() => {
-    fetchBuyers();
-    // eslint-disable-next-line
-  }, [statusFilter, pageNumber, pageSize]);
-
-  const fetchBuyers = async () => {
-    setIsLoading(true);
-    try {
-      const tenantId = user?.tenantId || 3;
-      const isActive = statusFilter === 'all' ? undefined : statusFilter === 'active';
-      const data = await getBuyersPaged({
-        tenantId,
-        pageNumber,
-        pageSize,
-        search: searchQuery,
-        isActive,
-      });
-      setBuyers(data.items);
-      setTotalPages(data.totalPages);
-    } catch (error) {
-      toast({ title: 'Error fetching buyers', description: (error as Error)?.message || 'An error occurred', variant: 'error' });
-      console.error('Error fetching buyers:', error);
-    } finally {
-      setIsLoading(false);
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      return;
     }
-  };
+    setPageNumber(1);
+  }, [debouncedSearch, statusFilter]);
 
-  if (isLoading) {
-    return (
-      <ProtectedRoute>
-        <DynamicLayout>
-          <div className="flex items-center justify-center min-h-screen">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          </div>
-        </DynamicLayout>
-      </ProtectedRoute>
-    );
-  }
+  // Fetch buyers
+  useEffect(() => {
+    let isCancelled = false;
+
+    const fetchBuyers = async () => {
+      setIsFetching(true);
+      try {
+        const tenantId = user?.tenantId || 3;
+        const isActive = statusFilter === 'all' ? undefined : statusFilter === 'active';
+        const data = await getBuyersPaged({
+          tenantId,
+          pageNumber,
+          pageSize,
+          search: debouncedSearch,
+          isActive,
+        });
+        if (!isCancelled) {
+          setBuyers(data.items || []);
+          setTotalPages(data.totalPages || 1);
+          setTotalCount(data.totalCount || data.items?.length || 0);
+        }
+      } catch (error) {
+        if (!isCancelled) {
+          toast({ title: 'Error fetching buyers', description: (error as Error)?.message || 'An error occurred', variant: 'error' });
+          console.error('Error fetching buyers:', error);
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsFetching(false);
+          setIsInitialLoading(false);
+        }
+      }
+    };
+
+    fetchBuyers();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [debouncedSearch, statusFilter, pageNumber, pageSize, user?.tenantId, toast]);
 
   return (
     <ProtectedRoute>
@@ -116,8 +128,11 @@ function BuyerListPage() {
                     placeholder="Search by name, khata, code..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                    className="w-full pl-9 pr-8 py-1.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
                   />
+                  {(isFetching || searchQuery !== debouncedSearch) && (
+                    <RefreshCw className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-blue-500 animate-spin" />
+                  )}
                 </div>
                 <select
                   value={statusFilter}
@@ -135,13 +150,15 @@ function BuyerListPage() {
             }
             right={
               <span className="text-xs text-slate-500 font-medium">
-                {buyers.length} buyers on this page
+                {totalCount > 0
+                  ? `${((pageNumber - 1) * pageSize) + 1}-${Math.min(pageNumber * pageSize, totalCount)} of ${totalCount} buyers`
+                  : `${buyers.length} buyers`}
               </span>
             }
           />
 
           {/* Desktop Table View */}
-          <div className="hidden md:block">
+          <div className={`hidden md:block transition-opacity duration-150 ${isFetching ? 'opacity-60 pointer-events-none' : 'opacity-100'}`}>
             <TableContainer>
               <Table dense>
                 <Table.Header>
@@ -156,7 +173,16 @@ function BuyerListPage() {
                   </Table.Row>
                 </Table.Header>
                 <Table.Body>
-                  {buyers.length === 0 ? (
+                  {isInitialLoading ? (
+                    <Table.Row>
+                      <Table.Cell colSpan={7} className="text-center py-12 text-slate-500">
+                        <div className="flex flex-col items-center justify-center gap-2">
+                          <div className="animate-spin rounded-full h-7 w-7 border-b-2 border-blue-600"></div>
+                          <span className="text-xs text-slate-500">Loading buyers...</span>
+                        </div>
+                      </Table.Cell>
+                    </Table.Row>
+                  ) : buyers.length === 0 ? (
                     <Table.Row>
                       <Table.Cell colSpan={7} className="text-center py-8 text-slate-500">
                         No buyers found matching your criteria.
@@ -213,8 +239,13 @@ function BuyerListPage() {
           </div>
 
           {/* Mobile Card List for Buyers */}
-          <div className="md:hidden space-y-2.5">
-            {buyers.length === 0 ? (
+          <div className={`md:hidden space-y-2.5 transition-opacity duration-150 ${isFetching ? 'opacity-60 pointer-events-none' : 'opacity-100'}`}>
+            {isInitialLoading ? (
+              <div className="bg-white rounded-xl border border-slate-200 p-8 text-center text-xs text-slate-500 flex flex-col items-center gap-2">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                <span>Loading buyers...</span>
+              </div>
+            ) : buyers.length === 0 ? (
               <div className="bg-white rounded-xl border border-slate-200 p-8 text-center text-xs text-slate-500">
                 No buyers found matching your criteria.
               </div>

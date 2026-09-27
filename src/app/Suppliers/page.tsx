@@ -23,7 +23,8 @@ import MilkLoader from '@/components/ui/Loader';
 export default function SupplierListPage() {
   const router = useRouter();
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isFetching, setIsFetching] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
@@ -38,23 +39,22 @@ export default function SupplierListPage() {
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(searchQuery);
-    }, 500);
+    }, 300);
     return () => clearTimeout(handler);
   }, [searchQuery]);
 
-  // Fetch suppliers when debounced search, filters, or pagination changes
+  // Reset to first page when search or status filter changes
+  const isFirstMount = useRef(true);
   useEffect(() => {
-    if (debouncedSearch !== searchQuery) return; // Wait for debounce
-    setPageNumber(1); // Reset to first page when search changes
-    fetchSuppliers();
-  }, [debouncedSearch]);
-
-  useEffect(() => {
-    fetchSuppliers();
-  }, [statusFilter, pageNumber, pageSize]);
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      return;
+    }
+    setPageNumber(1);
+  }, [debouncedSearch, statusFilter]);
 
   const fetchSuppliers = useCallback(async () => {
-    setIsLoading(true);
+    setIsFetching(true);
     try {
       const isActive = statusFilter === 'all' ? undefined : statusFilter === 'active';
       const data = await getSuppliersPaged({
@@ -64,9 +64,9 @@ export default function SupplierListPage() {
         isActive,
         mainAccountCode: '202',
       });
-      setSuppliers(data.items);
-      setTotalPages(data.totalPages);
-      setTotalItems(data.totalCount);
+      setSuppliers(data.items || []);
+      setTotalPages(data.totalPages || 1);
+      setTotalItems(data.totalCount || data.items?.length || 0);
     } catch (error) {
       toast({
         title: 'Error fetching suppliers',
@@ -75,9 +75,14 @@ export default function SupplierListPage() {
       });
       console.error('Error fetching suppliers:', error);
     } finally {
-      setIsLoading(false);
+      setIsFetching(false);
+      setIsInitialLoading(false);
     }
   }, [pageNumber, pageSize, debouncedSearch, statusFilter, toast]);
+
+  useEffect(() => {
+    fetchSuppliers();
+  }, [fetchSuppliers]);
 
   const handleRefresh = () => {
     fetchSuppliers();
@@ -90,18 +95,6 @@ export default function SupplierListPage() {
     const parts = accountCode.split('-');
     return parts.length > 1 ? parts[parts.length - 1] : accountCode;
   };
-
-  if (isLoading && suppliers.length === 0) {
-    return (
-      <ProtectedRoute>
-        <DynamicLayout>
-          <div className="flex items-center justify-center min-h-screen">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          </div>
-        </DynamicLayout>
-      </ProtectedRoute>
-    );
-  }
 
   return (
     <ProtectedRoute>
@@ -137,7 +130,7 @@ export default function SupplierListPage() {
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full pl-9 pr-8 py-1.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
                   />
-                  {isLoading && debouncedSearch !== searchQuery && (
+                  {(isFetching || searchQuery !== debouncedSearch) && (
                     <RefreshCw className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-blue-500 animate-spin" />
                   )}
                 </div>
@@ -157,11 +150,11 @@ export default function SupplierListPage() {
 
                 <button
                   onClick={handleRefresh}
-                  disabled={isLoading}
+                  disabled={isFetching}
                   className="p-1.5 text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors disabled:opacity-50"
                   title="Refresh"
                 >
-                  <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} />
                 </button>
               </>
             }
@@ -175,9 +168,14 @@ export default function SupplierListPage() {
           />
 
           {/* Desktop Table View */}
-          <div className="hidden md:block">
+          <div className={`hidden md:block transition-opacity duration-150 ${isFetching ? 'opacity-60 pointer-events-none' : 'opacity-100'}`}>
             <TableContainer>
-              {suppliers.length > 0 ? (
+              {isInitialLoading ? (
+                <div className="py-12 flex flex-col items-center justify-center gap-2">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  <span className="text-xs text-slate-500">Loading suppliers...</span>
+                </div>
+              ) : suppliers.length > 0 ? (
                 <Table dense>
                   <Table.Header>
                     <Table.Row>
@@ -280,8 +278,13 @@ export default function SupplierListPage() {
           </div>
 
           {/* Mobile Card List for Suppliers */}
-          <div className="md:hidden space-y-2.5">
-            {suppliers.length === 0 ? (
+          <div className={`md:hidden space-y-2.5 transition-opacity duration-150 ${isFetching ? 'opacity-60 pointer-events-none' : 'opacity-100'}`}>
+            {isInitialLoading ? (
+              <div className="bg-white rounded-xl border border-slate-200 p-8 text-center text-xs text-slate-500 flex flex-col items-center gap-2">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                <span>Loading suppliers...</span>
+              </div>
+            ) : suppliers.length === 0 ? (
               <div className="bg-white rounded-xl border border-slate-200 p-8 text-center text-xs text-slate-500">
                 {searchQuery || statusFilter !== 'all'
                   ? "Try adjusting your search or filter."

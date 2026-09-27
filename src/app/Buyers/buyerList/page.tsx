@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, Filter } from 'lucide-react';
+import { Search, Filter, RefreshCw } from 'lucide-react';
 import { DynamicLayout } from '@/components/layouts/DynamicLayout';
 import ProtectedRoute from '@/components/ProtectedRoutes';
 import { getBuyersPaged, Buyer } from '@/lib/api/buyers';
@@ -22,64 +22,74 @@ function BuyerListPage() {
   const router = useRouter();
   const { user } = useAuth?.() || {};
   const [buyers, setBuyers] = useState<Buyer[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isFetching, setIsFetching] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [pageNumber, setPageNumber] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
   const { toast } = useToast();
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const [currentStep, setCurrentStep] = useState<'account' | 'supplier'>('account');
 
   // Debounce search
   useEffect(() => {
     const handler = setTimeout(() => {
-      setPageNumber(1);
-      fetchBuyers();
+      setDebouncedSearch(searchQuery);
     }, 300);
     return () => clearTimeout(handler);
-    // eslint-disable-next-line
   }, [searchQuery]);
 
+  // Reset to first page when search or status filter changes
+  const isFirstMount = useRef(true);
   useEffect(() => {
-    fetchBuyers();
-    // eslint-disable-next-line
-  }, [statusFilter, pageNumber, pageSize]);
-
-  const fetchBuyers = async () => {
-    setIsLoading(true);
-    try {
-      const tenantId = user?.tenantId || 3;
-      const isActive = statusFilter === 'all' ? undefined : statusFilter === 'active';
-      const data = await getBuyersPaged({
-        tenantId,
-        pageNumber,
-        pageSize,
-        search: searchQuery,
-        isActive,
-      });
-      setBuyers(data.items);
-      setTotalPages(data.totalPages);
-    } catch (error) {
-      toast({ title: 'Error fetching buyers', description: (error as Error)?.message || 'An error occurred', variant: 'error' });
-      console.error('Error fetching buyers:', error);
-    } finally {
-      setIsLoading(false);
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      return;
     }
-  };
+    setPageNumber(1);
+  }, [debouncedSearch, statusFilter]);
 
-  if (isLoading) {
-    return (
-      <ProtectedRoute>
-        <DynamicLayout>
-          <div className="flex items-center justify-center min-h-screen">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          </div>
-        </DynamicLayout>
-      </ProtectedRoute>
-    );
-  }
+  // Fetch buyers
+  useEffect(() => {
+    let isCancelled = false;
+
+    const fetchBuyers = async () => {
+      setIsFetching(true);
+      try {
+        const tenantId = user?.tenantId || 3;
+        const isActive = statusFilter === 'all' ? undefined : statusFilter === 'active';
+        const data = await getBuyersPaged({
+          tenantId,
+          pageNumber,
+          pageSize,
+          search: debouncedSearch,
+          isActive,
+        });
+        if (!isCancelled) {
+          setBuyers(data.items || []);
+          setTotalPages(data.totalPages || 1);
+        }
+      } catch (error) {
+        if (!isCancelled) {
+          toast({ title: 'Error fetching buyers', description: (error as Error)?.message || 'An error occurred', variant: 'error' });
+          console.error('Error fetching buyers:', error);
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsFetching(false);
+          setIsInitialLoading(false);
+        }
+      }
+    };
+
+    fetchBuyers();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [debouncedSearch, statusFilter, pageNumber, pageSize, user?.tenantId, toast]);
 
   return (
     <ProtectedRoute>
@@ -109,8 +119,11 @@ function BuyerListPage() {
                   onChange={(e) => {
                     setSearchQuery(e.target.value);
                   }}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
+                {(isFetching || searchQuery !== debouncedSearch) && (
+                  <RefreshCw className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500 animate-spin" />
+                )}
               </div>
             </div>
             <select
@@ -125,7 +138,7 @@ function BuyerListPage() {
           </div>
 
           {/* Table */}
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className={`bg-white rounded-xl shadow-sm overflow-hidden transition-opacity duration-150 ${isFetching ? 'opacity-60 pointer-events-none' : 'opacity-100'}`}>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
@@ -140,47 +153,64 @@ function BuyerListPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {buyers.map((buyer) => (
-                    <tr key={buyer.buyerId} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {buyer.accountCode}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <button
-                          onClick={() => router.push(`/Buyers/buyerDetail?id=${buyer.buyerId}`)}
-                          className="text-sm font-medium text-blue-600 hover:text-blue-700"
-                        >
-                          {buyer.accountName}
-                        </button>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {buyer.khataNumber}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {buyer.rate?.toFixed(2)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {buyer.creditLimit?.toFixed(2)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          buyer.isActive 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-red-100 text-red-800'
-                        }`}>
-                          {buyer.isActive ? 'Active' : 'Inactive'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <button
-                          onClick={() => router.push(`/Buyers/createBuyer?id=${buyer.buyerId}`)}
-                          className="text-blue-600 hover:text-blue-700"
-                        >
-                          Edit
-                        </button>
+                  {isInitialLoading ? (
+                    <tr>
+                      <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
+                        <div className="flex flex-col items-center justify-center gap-2">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                          <span className="text-xs text-gray-500">Loading buyers...</span>
+                        </div>
                       </td>
                     </tr>
-                  ))}
+                  ) : buyers.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
+                        No buyers found matching your criteria.
+                      </td>
+                    </tr>
+                  ) : (
+                    buyers.map((buyer) => (
+                      <tr key={buyer.buyerId} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {buyer.accountCode}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <button
+                            onClick={() => router.push(`/Buyers/buyerDetail?id=${buyer.buyerId}`)}
+                            className="text-sm font-medium text-blue-600 hover:text-blue-700"
+                          >
+                            {buyer.accountName}
+                          </button>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {buyer.khataNumber}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {buyer.rate?.toFixed(2)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {buyer.creditLimit?.toFixed(2)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            buyer.isActive 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {buyer.isActive ? 'Active' : 'Inactive'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <button
+                            onClick={() => router.push(`/Buyers/createBuyer?id=${buyer.buyerId}`)}
+                            className="text-blue-600 hover:text-blue-700"
+                          >
+                            Edit
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
