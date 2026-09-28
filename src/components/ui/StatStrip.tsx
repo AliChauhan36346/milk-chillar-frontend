@@ -89,7 +89,7 @@ export function StatStrip({ items, className, dense = false, loading = false }: 
               isOddLast && 'col-span-2',
               // Desktop reset
               'md:bg-transparent md:border-0 md:rounded-none md:shadow-none md:flex-1 md:min-w-[130px]',
-              dense ? 'md:px-3 md:py-2' : 'md:px-4 md:py-2.5 sm:py-3',
+              dense ? 'md:px-2.5 md:py-1.5' : 'md:px-3.5 md:py-2',
               isClickable && 'cursor-pointer hover:bg-slate-50 active:bg-slate-100',
               item.active && 'ring-2 ring-inset ring-blue-500 bg-blue-50/40'
             )}
@@ -131,15 +131,15 @@ export function StatStrip({ items, className, dense = false, loading = false }: 
                 ) : (
                   <span
                     className={cn(
-                      'font-bold text-slate-900 tracking-tight truncate',
-                      dense ? 'text-sm sm:text-base md:text-lg' : 'text-base sm:text-lg md:text-xl'
+                      'font-semibold text-slate-900 tracking-tight tabular-nums truncate',
+                      dense ? 'text-xs sm:text-sm md:text-base' : 'text-sm sm:text-base md:text-lg'
                     )}
                   >
                     {item.value}
                   </span>
                 )}
                 {secondaryText && !loading && (
-                  <span className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">
+                  <span className="text-[10px] sm:text-[11px] font-medium text-slate-400 truncate">
                     {secondaryText}
                   </span>
                 )}

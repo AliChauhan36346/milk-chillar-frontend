@@ -729,23 +729,23 @@ function SalesReportContent() {
           <div className="hidden md:block">
             <TableContainer title="Sales Transactions">
               <Table dense>
-                <Table.Header>
+                <Table.Header sticky>
                   <Table.Row>
                     <Table.Head>Date</Table.Head>
                     <Table.Head>Buyer Details</Table.Head>
                     <Table.Head>Chillar & Added By</Table.Head>
-                    <Table.Head>Gross Liters</Table.Head>
-                    <Table.Head>LR & Fat</Table.Head>
-                    <Table.Head>Net Liters</Table.Head>
+                    <Table.Head className="text-right">Gross Liters</Table.Head>
+                    <Table.Head className="text-right">LR & Fat</Table.Head>
+                    <Table.Head className="text-right">Net Liters</Table.Head>
                     {isAdmin && (
                       <>
-                        <Table.Head>Rate</Table.Head>
-                        <Table.Head>Total Amount</Table.Head>
-                        <Table.Head>Received</Table.Head>
-                        <Table.Head>Balance</Table.Head>
+                        <Table.Head className="text-right">Rate</Table.Head>
+                        <Table.Head className="text-right">Total Amount</Table.Head>
+                        <Table.Head className="text-right">Received</Table.Head>
+                        <Table.Head className="text-right">Balance</Table.Head>
                       </>
                     )}
-                    <Table.Head>Actions</Table.Head>
+                    <Table.Head className="text-center">Actions</Table.Head>
                   </Table.Row>
                 </Table.Header>
                 <Table.Body>
@@ -781,9 +781,9 @@ function SalesReportContent() {
                             <div className="text-[11px] text-slate-500">By: {transaction.addedByName}</div>
                           </div>
                         </Table.Cell>
-                        <Table.Cell>
+                        <Table.Cell className="text-right">
                           <span
-                            className="font-semibold text-emerald-600 text-xs cursor-pointer hover:underline"
+                            className="font-medium text-blue-600 text-xs cursor-pointer hover:underline tabular-nums"
                             onClick={() => handleSaleClick(
                               transaction.saleId,
                               transaction.accountId,
@@ -796,33 +796,35 @@ function SalesReportContent() {
                             {transaction.grossLiters.toFixed(2)}L
                           </span>
                         </Table.Cell>
-                        <Table.Cell>
+                        <Table.Cell className="text-right tabular-nums">
                           <div className="space-y-0.5 text-[11px] text-slate-600">
                             <div>LR: <span className="font-medium">{transaction.lr.toFixed(1)}</span></div>
                             <div>Fat: <span className="font-medium">{transaction.fat.toFixed(1)}</span></div>
                           </div>
                         </Table.Cell>
-                        <Table.Cell>
-                          <span className="font-semibold text-blue-600 text-xs">{transaction.netLiters.toFixed(2)}L</span>
+                        <Table.Cell className="text-right">
+                          <span className="font-medium text-slate-800 text-xs tabular-nums">{transaction.netLiters.toFixed(2)}L</span>
                         </Table.Cell>
                         {isAdmin && (
                           <>
-                            <Table.Cell>
-                              <span className="font-medium text-xs text-slate-700">{formatPKR(transaction.rate)}/L</span>
+                            <Table.Cell className="text-right">
+                              <span className="text-xs text-slate-700 tabular-nums">{formatPKR(transaction.rate)}/L</span>
                             </Table.Cell>
-                            <Table.Cell>
-                              <span className="font-semibold text-purple-700 text-xs">{formatPKR(transaction.totalAmount)}</span>
+                            <Table.Cell className="text-right">
+                              <span className="font-medium text-slate-900 text-xs tabular-nums">{formatPKR(transaction.totalAmount)}</span>
                             </Table.Cell>
-                            <Table.Cell>
-                              <span className="font-medium text-emerald-600 text-xs">{formatPKR(transaction.amountReceived)}</span>
+                            <Table.Cell className="text-right">
+                              <span className="font-medium text-emerald-600 text-xs tabular-nums">{formatPKR(transaction.amountReceived)}</span>
                             </Table.Cell>
-                            <Table.Cell>
-                              <span className="font-medium text-rose-600 text-xs">{formatPKR(transaction.balance)}</span>
+                            <Table.Cell className="text-right">
+                              <span className={`font-medium text-xs tabular-nums ${transaction.balance > 0 ? 'text-rose-600' : 'text-slate-600'}`}>
+                                {formatPKR(transaction.balance)}
+                              </span>
                             </Table.Cell>
                           </>
                         )}
-                        <Table.Cell>
-                          <div className="flex gap-1">
+                        <Table.Cell className="text-center">
+                          <div className="flex justify-center gap-1">
                             <button
                               className="p-1 text-blue-600 hover:bg-blue-50 rounded"
                               title="View Details"
@@ -921,7 +923,7 @@ function SalesReportContent() {
           <div className="hidden md:block">
             <TableContainer title="Buyer-wise Summary">
               <Table dense>
-                <Table.Header>
+                <Table.Header sticky>
                   <Table.Row>
                     <Table.Head>Buyer Code</Table.Head>
                     <Table.Head>Buyer Name</Table.Head>
@@ -957,37 +959,37 @@ function SalesReportContent() {
                         <Table.Cell className="font-medium text-xs text-slate-900">{buyer.accountName}</Table.Cell>
                         <Table.Cell className="text-right">
                           <span
-                            className="font-semibold text-xs text-emerald-600 cursor-pointer hover:underline"
+                            className="font-medium text-blue-600 text-xs cursor-pointer hover:underline tabular-nums"
                             onClick={() => handleBuyerClick(buyer.accountId, buyer.accountName)}
                             title="Click to view milk card"
                           >
                             {buyer.totalGrossLiters.toFixed(2)}L
                           </span>
                         </Table.Cell>
-                        <Table.Cell className="text-right font-semibold text-xs text-blue-600">
+                        <Table.Cell className="text-right font-medium text-xs text-slate-800 tabular-nums">
                           {buyer.totalNetLiters.toFixed(2)}L
                         </Table.Cell>
                         {isAdmin && (
                           <>
-                            <Table.Cell className="text-right font-semibold text-xs text-purple-700">
+                            <Table.Cell className="text-right font-medium text-xs text-slate-900 tabular-nums">
                               {formatPKR(buyer.totalAmount)}
                             </Table.Cell>
-                            <Table.Cell className="text-right font-medium text-xs text-emerald-600">
+                            <Table.Cell className="text-right font-medium text-xs text-emerald-600 tabular-nums">
                               {formatPKR(buyer.totalAmountReceived)}
                             </Table.Cell>
-                            <Table.Cell className="text-right text-xs text-slate-700">
+                            <Table.Cell className="text-right text-xs text-slate-700 tabular-nums">
                               {formatPKR(buyer.averageRate)}/L
                             </Table.Cell>
                           </>
                         )}
-                        <Table.Cell className="text-right text-xs text-slate-600">
+                        <Table.Cell className="text-right text-xs text-slate-600 tabular-nums">
                           <span className="font-medium">{buyer.averageLR.toFixed(1)}</span> / <span className="font-medium">{buyer.averageFat.toFixed(1)}</span>
                         </Table.Cell>
-                        <Table.Cell className="text-right text-xs text-slate-700 font-mono">
+                        <Table.Cell className="text-right text-xs text-slate-700 font-mono tabular-nums">
                           {buyer.transactionCount}
                         </Table.Cell>
                         {isAdmin && (
-                          <Table.Cell className="text-right font-semibold text-xs text-rose-600">
+                          <Table.Cell className={`text-right font-medium text-xs tabular-nums ${buyer.balance > 0 ? 'text-rose-600' : 'text-slate-600'}`}>
                             {formatPKR(buyer.balance)}
                           </Table.Cell>
                         )}

@@ -1,441 +1,3 @@
-
-// 'use client';
-// import { useState, useEffect } from 'react';
-// import { Calendar, Milk, Scale, Filter, ChevronDown, AlertCircle, Edit, Trash2 } from 'lucide-react';
-// import ProtectedRoute from '@/components/ProtectedRoutes';
-// import { FieldStaffLayout } from '@/components/layouts/FieldStaffLayout';
-// import { BackButton } from '@/components/ui/BackButton';
-// import SummaryCard from '@/components/ui/SummaryCard';
-// import { Table } from '@/components/ui/Table/Table';
-// import PurchaseModal from '@/components/modals/PurchaseModal';
-// import MilkLoader from '@/components/ui/Loader';
-// import { 
-//   fetchMyDodhiId, 
-//   fetchDodhiDashboardRecords, 
-//   PurchaseRecord, 
-//   ReceiveRecord,
-//   DodhiDashboardRecords
-// } from '@/lib/api/reports';
-
-// export default function DailyReport() {
-//     const today = new Date().toISOString().split('T')[0];
-//     const [dateRange, setDateRange] = useState<string>('today');
-//     const [startDate, setStartDate] = useState<string>(today);
-//     const [endDate, setEndDate] = useState<string>(today);  
-//     const [showDatePicker, setShowDatePicker] = useState(false);
-    
-//     // API State
-//     const [dodhiId, setDodhiId] = useState<number | null>(null);
-//     const [purchases, setPurchases] = useState<PurchaseRecord[]>([]);
-//     const [receives, setReceives] = useState<ReceiveRecord[]>([]);
-//     const [loading, setLoading] = useState<boolean>(true);
-//     const [error, setError] = useState<string | null>(null);
-
-//     // Modal State for editing receives
-//     const [isReceiveModalOpen, setIsReceiveModalOpen] = useState(false);
-//     const [editingReceive, setEditingReceive] = useState<ReceiveRecord | null>(null);
-
-//     // Fetch dodhi ID on component mount
-//     useEffect(() => {
-//         const fetchDodhiId = async () => {
-//             try {
-//                 const id = await fetchMyDodhiId();
-//                 setDodhiId(id);
-//             } catch (error) {
-//                 console.error('Error fetching dodhi ID:', error);
-//                 setError('Failed to fetch dodhi information');
-//                 setLoading(false);
-//             }
-//         };
-
-//         fetchDodhiId();
-//     }, []);
-
-//     // Calculate date ranges
-//     useEffect(() => {
-//         const today = new Date();
-//         const newEndDate = today.toISOString().split('T')[0];
-
-//         if (dateRange === 'today') {
-//             setStartDate(newEndDate);
-//             setEndDate(newEndDate);
-//         } else if (dateRange === '7days') {
-//             const sevenDaysAgo = new Date();
-//             sevenDaysAgo.setDate(today.getDate() - 7);
-//             setStartDate(sevenDaysAgo.toISOString().split('T')[0]);
-//             setEndDate(newEndDate);
-//         } else if (dateRange === '15days') {
-//             const fifteenDaysAgo = new Date();
-//             fifteenDaysAgo.setDate(today.getDate() - 15);
-//             setStartDate(fifteenDaysAgo.toISOString().split('T')[0]);
-//             setEndDate(newEndDate);
-//         }
-//     }, [dateRange]);
-
-//     // Fetch records when dodhiId or date range changes
-//     useEffect(() => {
-//         const fetchRecords = async () => {
-//             if (!dodhiId) return;
-
-//             setLoading(true);
-//             setError(null);
-
-//             try {
-//                 const data: DodhiDashboardRecords = await fetchDodhiDashboardRecords({
-//                     startDate,
-//                     endDate,
-//                     dodhiId
-//                 });
-
-//                 setPurchases(data.purchases || []);
-//                 setReceives(data.receives || []);
-//             } catch (error) {
-//                 console.error('Error fetching dashboard records:', error);
-//                 setError('Failed to fetch dashboard records');
-//                 setPurchases([]);
-//                 setReceives([]);
-//             } finally {
-//                 setLoading(false);
-//             }
-//         };
-
-//         fetchRecords();
-//     }, [dodhiId, startDate, endDate]);
-
-//     // Calculate totals
-//     const purchaseTotal = purchases.reduce((sum, p) => sum + p.grossLiters, 0);
-//     const receiveTotal = receives.reduce((sum, r) => sum + r.grossLiters, 0);
-//     const differenceTotal = receiveTotal - purchaseTotal;
-
-//     // Handle receive edit
-//     const handleEditReceive = (receive: ReceiveRecord) => {
-//         setEditingReceive(receive);
-//         setIsReceiveModalOpen(true);
-//     };
-
-//     // Handle receive delete (placeholder - you'll need to implement the delete API)
-//     const handleDeleteReceive = (receiveId: number) => {
-//         if (window.confirm('Are you sure you want to delete this receive record?')) {
-//             // Implement delete functionality
-//             console.log('Delete receive:', receiveId);
-//             // After successful delete, refresh the records
-//         }
-//     };
-
-//     // Handle receive modal submit (placeholder - you'll need to implement the update API)
-//     const handleReceiveModalSubmit = (data: any) => {
-//         console.log('Update receive data:', data);
-//         // Implement update functionality
-//         setIsReceiveModalOpen(false);
-//         setEditingReceive(null);
-//         // After successful update, refresh the records
-//     };
-
-//     if (loading && !dodhiId) {
-//         return (
-//             <ProtectedRoute requiredRole="dodhi">
-//                 <FieldStaffLayout role="dodhi">
-//                     <div className="max-w-6xl mx-auto p-1 bg-gray-50 min-h-screen flex items-center justify-center">
-//                         <MilkLoader />
-//                     </div>
-//                 </FieldStaffLayout>
-//             </ProtectedRoute>
-//         );
-//     }
-
-//     if (error && !dodhiId) {
-//         return (
-//             <ProtectedRoute requiredRole="dodhi">
-//                 <FieldStaffLayout role="dodhi">
-//                     <div className="max-w-6xl mx-auto p-1 bg-gray-50 min-h-screen flex items-center justify-center">
-//                         <div className="text-center">
-//                             <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-//                             <p className="text-red-600 mb-4">{error}</p>
-//                             <button 
-//                                 onClick={() => window.location.reload()} 
-//                                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-//                             >
-//                                 Retry
-//                             </button>
-//                         </div>
-//                     </div>
-//                 </FieldStaffLayout>
-//             </ProtectedRoute>
-//         );
-//     }
-
-//     return (
-//         <ProtectedRoute requiredRole="dodhi">
-//             <FieldStaffLayout role="dodhi">
-//                 <div className="max-w-6xl mx-auto p-1 bg-gray-50 min-h-screen">
-//                     {/* Header */}
-//                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-//                         <div className="flex items-center gap-4">
-//                             <BackButton />
-//                             <h1 className="text-2xl font-bold flex items-center gap-2 text-blue-600">
-//                                 <Calendar className="w-6 h-6" />
-//                                 Daily Milk Report
-//                             </h1>
-//                         </div>
-
-//                         {/* Date Filter */}
-//                         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-//                             <div className="relative">
-//                                 <button
-//                                     onClick={() => setShowDatePicker(!showDatePicker)}
-//                                     className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg border border-gray-300 shadow-sm"
-//                                 >
-//                                     <Filter className="w-4 h-4" />
-//                                     {dateRange === 'today' && 'Today'}
-//                                     {dateRange === '7days' && 'Last 7 Days'}
-//                                     {dateRange === '15days' && 'Last 15 Days'}
-//                                     {dateRange === 'custom' && 'Custom Range'}
-//                                     <ChevronDown className="w-4 h-4" />
-//                                 </button>
-
-//                                 {showDatePicker && (
-//                                     <div className="absolute z-10 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 p-2 w-48">
-//                                         <button
-//                                             onClick={() => { setDateRange('today'); setShowDatePicker(false); }}
-//                                             className={`w-full text-left px-3 py-2 rounded-md ${dateRange === 'today' ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-100'}`}
-//                                         >
-//                                             Today
-//                                         </button>
-//                                         <button
-//                                             onClick={() => { setDateRange('7days'); setShowDatePicker(false); }}
-//                                             className={`w-full text-left px-3 py-2 rounded-md ${dateRange === '7days' ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-100'}`}
-//                                         >
-//                                             Last 7 Days
-//                                         </button>
-//                                         <button
-//                                             onClick={() => { setDateRange('15days'); setShowDatePicker(false); }}
-//                                             className={`w-full text-left px-3 py-2 rounded-md ${dateRange === '15days' ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-100'}`}
-//                                         >
-//                                             Last 15 Days
-//                                         </button>
-//                                         <div className="border-t border-gray-200 mt-1 pt-1">
-//                                             <div className="px-3 py-2 text-sm text-gray-500">Custom Range</div>
-//                                             <div className="px-3 pb-2 flex flex-col gap-2">
-//                                                 <input
-//                                                     type="date"
-//                                                     value={startDate}
-//                                                     onChange={(e) => { setStartDate(e.target.value); setDateRange('custom'); }}
-//                                                     className="border border-gray-300 rounded-md p-1 text-sm"
-//                                                 />
-//                                                 <input
-//                                                     type="date"
-//                                                     value={endDate}
-//                                                     onChange={(e) => { setEndDate(e.target.value); setDateRange('custom'); }}
-//                                                     className="border border-gray-300 rounded-md p-1 text-sm"
-//                                                 />
-//                                             </div>
-//                                         </div>
-//                                     </div>
-//                                 )}
-//                             </div>
-
-//                             <div className="text-sm bg-white px-4 py-2 rounded-lg border border-gray-200 flex items-center justify-center">
-//                                 {startDate === endDate ? (
-//                                     <span>{new Date(startDate).toLocaleDateString()}</span>
-//                                 ) : (
-//                                     <span>
-//                                         {new Date(startDate).toLocaleDateString()} - {new Date(endDate).toLocaleDateString()}
-//                                     </span>
-//                                 )}
-//                             </div>
-//                         </div>
-//                     </div>
-
-//                     {/* Loading indicator for data refresh */}
-//                     {loading && dodhiId && (
-//                         <div className="flex items-center justify-center py-4 mb-4">
-//                             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mr-3"></div>
-//                             <span className="text-gray-600">Loading records...</span>
-//                         </div>
-//                     )}
-
-//                     {/* Error message */}
-//                     {error && dodhiId && (
-//                         <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-//                             <div className="flex items-center">
-//                                 <AlertCircle className="h-5 w-5 text-red-500 mr-2" />
-//                                 <span className="text-red-700">{error}</span>
-//                             </div>
-//                         </div>
-//                     )}
-
-//                     {/* Summary Cards */}
-//                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-//                         <SummaryCard
-//                             title="Total Purchased"
-//                             value={`${purchaseTotal.toFixed(2)} Ltrs`}
-//                             icon={<Milk className="w-5 h-5" />}
-//                             color="blue"
-//                         />
-
-//                         <SummaryCard
-//                             title="Total Received"
-//                             value={`${receiveTotal.toFixed(2)} Ltrs`}
-//                             icon={<Scale className="w-5 h-5" />}
-//                             color="green"
-//                         />
-
-//                         <SummaryCard
-//                             title="Difference"
-//                             value={`${differenceTotal >= 0 ? '+' : ''}${differenceTotal.toFixed(2)} Ltrs`}
-//                             icon={<Scale className="w-5 h-5" />}
-//                             color={differenceTotal >= 0 ? 'yellow' : 'red'}
-//                         />
-//                     </div>
-
-//                     {/* Purchase Records */}
-//                     <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-//                         <h2 className="text-xl font-semibold mb-4 flex items-center gap-2 text-blue-600">
-//                             <Milk className="w-5 h-5" />
-//                             Purchase Records
-//                         </h2>
-
-//                         {purchases.length > 0 ? (
-//                             <Table>
-//                                 <Table.Header>
-//                                     <Table.Row>
-//                                         <Table.Head>Date</Table.Head>
-//                                         <Table.Head>Account Code</Table.Head>
-//                                         <Table.Head>Account Name</Table.Head>
-//                                         <Table.Head>Time</Table.Head>
-//                                         <Table.Head>Liters</Table.Head>
-//                                     </Table.Row>
-//                                 </Table.Header>
-//                                 <Table.Body>
-//                                     {purchases.map((purchase) => (
-//                                         <Table.Row key={purchase.purchaseId}>
-//                                             <Table.Cell>
-//                                                 {new Date(purchase.date).toLocaleDateString()}
-//                                             </Table.Cell>
-//                                             <Table.Cell className="font-mono text-sm">
-//                                                 {purchase.accountCode}
-//                                             </Table.Cell>
-//                                             <Table.Cell>
-//                                                 {purchase.accountName}
-//                                             </Table.Cell>
-//                                             <Table.Cell className="capitalize">
-//                                                 {purchase.timeOfDay}
-//                                             </Table.Cell>
-//                                             <Table.Cell className="font-medium">
-//                                                 {purchase.grossLiters.toFixed(2)}
-//                                             </Table.Cell>
-//                                         </Table.Row>
-//                                     ))}
-//                                 </Table.Body>
-//                             </Table>
-//                         ) : (
-//                             <div className="text-center py-8 text-gray-500">
-//                                 No purchase records found for selected date range
-//                             </div>
-//                         )}
-//                     </div>
-
-//                     {/* Receive Records */}
-//                     <div className="bg-white rounded-xl shadow-sm p-6">
-//                         <h2 className="text-xl font-semibold mb-4 flex items-center gap-2 text-green-600">
-//                             <Scale className="w-5 h-5" />
-//                             Receive Records
-//                         </h2>
-
-//                         {receives.length > 0 ? (
-//                             <Table>
-//                                 <Table.Header>
-//                                     <Table.Row>
-//                                         <Table.Head>Date</Table.Head>
-//                                         <Table.Head>Time</Table.Head>
-//                                         <Table.Head>Gross Ltrs</Table.Head>
-//                                         <Table.Head>LR</Table.Head>
-//                                         <Table.Head>Fat</Table.Head>
-//                                         <Table.Head>Net Ltrs</Table.Head>
-//                                         <Table.Head>Actions</Table.Head>
-//                                     </Table.Row>
-//                                 </Table.Header>
-//                                 <Table.Body>
-//                                     {receives.map((receive) => (
-//                                         <Table.Row key={receive.receiveId}>
-//                                             <Table.Cell>
-//                                                 {new Date(receive.date).toLocaleDateString()}
-//                                             </Table.Cell>
-//                                             <Table.Cell className="capitalize">
-//                                                 {receive.timeOfDay}
-//                                             </Table.Cell>
-//                                             <Table.Cell className="font-medium">
-//                                                 {receive.grossLiters.toFixed(2)}
-//                                             </Table.Cell>
-//                                             <Table.Cell>
-//                                                 {receive.lr.toFixed(2)}
-//                                             </Table.Cell>
-//                                             <Table.Cell>
-//                                                 {receive.fat.toFixed(2)}
-//                                             </Table.Cell>
-//                                             <Table.Cell className="font-medium">
-//                                                 {receive.netLiters.toFixed(2)}
-//                                             </Table.Cell>
-//                                             <Table.Cell>
-//                                                 <div className="flex items-center gap-2">
-//                                                     <button
-//                                                         onClick={() => handleEditReceive(receive)}
-//                                                         className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors"
-//                                                         title="Edit record"
-//                                                     >
-//                                                         <Edit className="w-4 h-4" />
-//                                                     </button>
-//                                                     <button
-//                                                         onClick={() => handleDeleteReceive(receive.receiveId)}
-//                                                         className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
-//                                                         title="Delete record"
-//                                                     >
-//                                                         <Trash2 className="w-4 h-4" />
-//                                                     </button>
-//                                                 </div>
-//                                             </Table.Cell>
-//                                         </Table.Row>
-//                                     ))}
-//                                 </Table.Body>
-//                             </Table>
-//                         ) : (
-//                             <div className="text-center py-8 text-gray-500">
-//                                 No receive records found for selected date range
-//                             </div>
-//                         )}
-//                     </div>
-
-//                     {/* Receive Edit Modal - Placeholder */}
-//                     {/* Note: You'll need to create a proper ReceiveModal component similar to PurchaseModal */}
-//                     {isReceiveModalOpen && editingReceive && (
-//                         <div className="fixed inset-0 bg-black bg-opacity-30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-//                             <div className="bg-white rounded-xl shadow-lg w-full max-w-md p-6">
-//                                 <h2 className="text-xl font-semibold mb-4">Edit Receive Record</h2>
-//                                 <p className="text-gray-600 mb-4">
-//                                     Editing receive record for {new Date(editingReceive.date).toLocaleDateString()} - {editingReceive.timeOfDay}
-//                                 </p>
-//                                 <div className="flex gap-3">
-//                                     <button
-//                                         onClick={() => {
-//                                             setIsReceiveModalOpen(false);
-//                                             setEditingReceive(null);
-//                                         }}
-//                                         className="flex-1 py-2 px-4 bg-gray-200 text-gray-800 rounded-lg font-medium hover:bg-gray-300"
-//                                     >
-//                                         Close
-//                                     </button>
-//                                 </div>
-//                             </div>
-//                         </div>
-//                     )}
-//                 </div>
-//             </FieldStaffLayout>
-//         </ProtectedRoute>
-//     );
-// }
-
-
-
 'use client';
 import { useState, useEffect, useMemo } from 'react';
 import { Calendar, Milk, Scale, Filter, ChevronDown, AlertCircle, Edit, Trash2, Download, Users } from 'lucide-react';
@@ -974,7 +536,7 @@ export default function PurchaseReport() {
                   {/* Desktop Table */}
                   <div className="hidden md:block overflow-x-auto">
                     <Table dense>
-                      <Table.Header>
+                      <Table.Header sticky>
                         <Table.Row>
                           <Table.Head dense>Date</Table.Head>
                           <Table.Head dense>Account Code</Table.Head>
@@ -992,13 +554,13 @@ export default function PurchaseReport() {
                             <Table.Cell dense className="font-mono text-xs">
                               {purchase.accountCode}
                             </Table.Cell>
-                            <Table.Cell dense className="font-medium">
+                            <Table.Cell dense className="font-medium text-slate-900">
                               {purchase.accountName}
                             </Table.Cell>
                             <Table.Cell dense className="capitalize">
                               {purchase.timeOfDay}
                             </Table.Cell>
-                            <Table.Cell dense className="text-right font-semibold text-blue-600">
+                            <Table.Cell dense className="text-right font-medium text-slate-900 tabular-nums">
                               {purchase.grossLiters.toFixed(2)} L
                             </Table.Cell>
                           </Table.Row>
@@ -1013,7 +575,7 @@ export default function PurchaseReport() {
                       <div key={purchase.purchaseId} className="bg-slate-50/70 border border-slate-200 rounded-lg p-3 space-y-1.5 text-xs">
                         <div className="flex items-center justify-between">
                           <div>
-                            <span className="font-bold text-slate-800">{purchase.accountName}</span>
+                            <span className="font-semibold text-slate-800">{purchase.accountName}</span>
                             <span className="text-[11px] text-slate-500 font-mono ml-1.5">#{purchase.accountCode}</span>
                           </div>
                           <span className="inline-flex px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-50 text-blue-700 capitalize">
@@ -1022,7 +584,7 @@ export default function PurchaseReport() {
                         </div>
                         <div className="flex items-center justify-between pt-1 border-t border-slate-200/60">
                           <span className="text-slate-500 text-[11px]">{new Date(purchase.date).toLocaleDateString()}</span>
-                          <span className="font-bold text-blue-600 text-sm">{purchase.grossLiters.toFixed(2)} L</span>
+                          <span className="font-medium text-slate-900 tabular-nums text-sm">{purchase.grossLiters.toFixed(2)} L</span>
                         </div>
                       </div>
                     ))}
@@ -1052,7 +614,7 @@ export default function PurchaseReport() {
                   {/* Desktop Table */}
                   <div className="hidden md:block overflow-x-auto">
                     <Table dense>
-                      <Table.Header>
+                      <Table.Header sticky>
                         <Table.Row>
                           <Table.Head dense>Date</Table.Head>
                           <Table.Head dense>Time</Table.Head>
@@ -1072,16 +634,16 @@ export default function PurchaseReport() {
                             <Table.Cell dense className="capitalize">
                               {receive.timeOfDay}
                             </Table.Cell>
-                            <Table.Cell dense className="text-right font-medium">
+                            <Table.Cell dense className="text-right font-medium text-slate-800 tabular-nums">
                               {receive.grossLiters.toFixed(2)}
                             </Table.Cell>
-                            <Table.Cell dense className="text-right">
+                            <Table.Cell dense className="text-right tabular-nums text-slate-600">
                               {receive.lr.toFixed(2)}
                             </Table.Cell>
-                            <Table.Cell dense className="text-right">
+                            <Table.Cell dense className="text-right tabular-nums text-slate-600">
                               {receive.fat.toFixed(2)}
                             </Table.Cell>
-                            <Table.Cell dense className="text-right font-semibold text-emerald-600">
+                            <Table.Cell dense className="text-right font-medium text-slate-900 tabular-nums">
                               {receive.netLiters.toFixed(2)}
                             </Table.Cell>
                             <Table.Cell dense className="text-right">

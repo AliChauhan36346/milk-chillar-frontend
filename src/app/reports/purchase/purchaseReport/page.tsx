@@ -392,7 +392,7 @@ function PurchaseReportContent() {
               }
             >
               <Table dense>
-                <Table.Header>
+                <Table.Header sticky>
                   <Table.Row>
                     <Table.Head>Date</Table.Head>
                     <Table.Head>Time</Table.Head>
@@ -431,7 +431,7 @@ function PurchaseReportContent() {
                         <Table.Cell className="text-xs text-slate-700">{purchase.chillarName}</Table.Cell>
                         <Table.Cell className="text-right">
                           <span
-                            className="font-semibold text-xs text-blue-600 cursor-pointer hover:underline"
+                            className="font-medium text-xs text-blue-600 cursor-pointer hover:underline tabular-nums"
                             onClick={() => handlePurchaseClick(
                               purchase.purchaseId,
                               purchase.accountId,
@@ -445,13 +445,13 @@ function PurchaseReportContent() {
                             {purchase.grossLiters.toFixed(2)}L
                           </span>
                         </Table.Cell>
-                        <Table.Cell className="text-right text-xs text-slate-700">
+                        <Table.Cell className="text-right text-xs text-slate-700 tabular-nums">
                           {formatCurrency(purchase.rate)}
                         </Table.Cell>
-                        <Table.Cell className="text-right font-semibold text-xs text-emerald-600">
+                        <Table.Cell className="text-right font-medium text-xs text-slate-900 tabular-nums">
                           {formatCurrency(purchase.totalAmount)}
                         </Table.Cell>
-                        <Table.Cell className="text-right font-semibold text-xs text-rose-600">
+                        <Table.Cell className={`text-right font-medium text-xs tabular-nums ${purchase.balance > 0 ? 'text-rose-600' : 'text-slate-600'}`}>
                           {formatCurrency(purchase.balance)}
                         </Table.Cell>
                       </Table.Row>
@@ -594,7 +594,7 @@ function PurchaseReportContent() {
           <div className="hidden md:block">
             <TableContainer title="Supplier-wise Summary">
               <Table dense>
-                <Table.Header>
+                <Table.Header sticky>
                   <Table.Row>
                     <Table.Head>Supplier Code</Table.Head>
                     <Table.Head>Supplier Name</Table.Head>
@@ -621,23 +621,23 @@ function PurchaseReportContent() {
                         <Table.Cell className="font-medium text-xs text-slate-900">{supplier.accountName}</Table.Cell>
                         <Table.Cell className="text-right">
                           <span
-                            className="font-semibold text-xs text-blue-600 cursor-pointer hover:underline"
+                            className="font-medium text-xs text-blue-600 cursor-pointer hover:underline tabular-nums"
                             onClick={() => handleSupplierClick(supplier.accountId, supplier.accountName)}
                             title="Click to view milk card"
                           >
                             {supplier.totalLiters.toFixed(2)}L
                           </span>
                         </Table.Cell>
-                        <Table.Cell className="text-right font-semibold text-xs text-emerald-600">
+                        <Table.Cell className="text-right font-medium text-xs text-slate-900 tabular-nums">
                           {formatCurrency(supplier.totalAmount)}
                         </Table.Cell>
-                        <Table.Cell className="text-right text-xs text-slate-700">
+                        <Table.Cell className="text-right text-xs text-slate-700 tabular-nums">
                           {formatCurrency(supplier.averageRate)}/L
                         </Table.Cell>
-                        <Table.Cell className="text-right text-xs text-slate-700 font-mono">
+                        <Table.Cell className="text-right text-xs text-slate-700 font-mono tabular-nums">
                           {supplier.transactionCount}
                         </Table.Cell>
-                        <Table.Cell className="text-right font-semibold text-xs text-rose-600">
+                        <Table.Cell className={`text-right font-medium text-xs tabular-nums ${supplier.balance > 0 ? 'text-rose-600' : 'text-slate-600'}`}>
                           {formatCurrency(supplier.balance)}
                         </Table.Cell>
                       </Table.Row>

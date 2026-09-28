@@ -5,7 +5,8 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { AdminLayout } from '@/components/layouts/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table } from '@/components/ui/Table/Table';
+import { Table, TableContainer } from '@/components/ui/Table/Table';
+import { PageHeader } from '@/components/ui/PageHeader';
 import SummaryCard from '@/components/ui/SummaryCard';
 import { SearchableSelect, SearchableOption } from '@/components/ui/SearchableSelect';
 import ProtectedRoute from '@/components/ProtectedRoutes';
@@ -337,87 +338,81 @@ function AccountLedgerInner() {
             <AdminLayout>
                 <div className="space-y-6">
                     {/* Header */}
-                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                        <div>
-                            <h1 className="text-3xl font-bold text-gray-900">Account Ledger</h1>
-                            <p className="text-gray-600">Track all transactions and account movements</p>
-                        </div>
-                        <div className="flex gap-2">
-                            <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
-                                <Download className="w-4 h-4" />
-                                Export
-                            </button>
-                            <button
-                                onClick={loadAllAccounts}
-                                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2"
-                            >
-                                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                                Refresh
-                            </button>
-                        </div>
-                    </div>
+                    <PageHeader
+                        title="Account Ledger"
+                        subtitle="Track all transactions and account movements"
+                        icon={<FileText className="w-5 h-5 text-blue-600" />}
+                        actions={
+                            <div className="flex items-center gap-2">
+                                <button className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1.5 text-xs font-semibold shadow-xs">
+                                    <Download className="w-3.5 h-3.5" />
+                                    Export
+                                </button>
+                                <button
+                                    onClick={loadAllAccounts}
+                                    className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors flex items-center gap-1.5 text-xs font-semibold border border-slate-200"
+                                >
+                                    <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+                                    Refresh
+                                </button>
+                            </div>
+                        }
+                    />
 
-                    {/* Account Selector and Filters */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Account Selection & Filters</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                <div className="lg:col-span-2">
-                                    <SearchableSelect<AccountOption>
-                                        value={selectedAccount}
-                                        onSearch={searchAccounts}
-                                        onChange={handleAccountChange}
-                                        placeholder="Search accounts..."
-                                        label="Select Account"
-                                        clearable
-                                        showBalanceInline={true}
-                                    />
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            From Date
-                                        </label>
-                                        <input
-                                            type="date"
-                                            value={filters.fromDate}
-                                            onChange={(e) => handleFilterChange('fromDate', e.target.value)}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            To Date
-                                        </label>
-                                        <input
-                                            type="date"
-                                            value={filters.toDate}
-                                            onChange={(e) => handleFilterChange('toDate', e.target.value)}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                        />
-                                    </div>
-                                </div>
+                    {/* Account Selector and Filters Toolbar */}
+                    <div className="bg-white rounded-xl border border-slate-200/90 p-3 shadow-xs space-y-2.5">
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                            <div className="lg:col-span-2">
+                                <SearchableSelect<AccountOption>
+                                    value={selectedAccount}
+                                    onSearch={searchAccounts}
+                                    onChange={handleAccountChange}
+                                    placeholder="Search accounts by name or code..."
+                                    label="Select Account"
+                                    clearable
+                                    showBalanceInline={true}
+                                />
                             </div>
 
-                            {/* Search and Source Filter */}
-                            <div className="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
-                                <div className="relative">
-                                    <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                            <div className="flex items-center gap-2">
+                                <div className="flex-1">
+                                    <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block mb-1">From</span>
                                     <input
-                                        type="text"
-                                        placeholder="Search transactions..."
-                                        value={filters.search}
-                                        onChange={(e) => handleFilterChange('search', e.target.value)}
-                                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        type="date"
+                                        value={filters.fromDate}
+                                        onChange={(e) => handleFilterChange('fromDate', e.target.value)}
+                                        className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 bg-white"
                                     />
                                 </div>
+                                <div className="flex-1">
+                                    <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block mb-1">To</span>
+                                    <input
+                                        type="date"
+                                        value={filters.toDate}
+                                        onChange={(e) => handleFilterChange('toDate', e.target.value)}
+                                        className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 bg-white"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Search and Source Filter */}
+                        <div className="flex flex-wrap items-center gap-2.5 pt-2 border-t border-slate-100">
+                            <div className="relative min-w-[200px] flex-1">
+                                <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 transform -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                <input
+                                    type="text"
+                                    placeholder="Search transactions..."
+                                    value={filters.search}
+                                    onChange={(e) => handleFilterChange('search', e.target.value)}
+                                    className="w-full pl-8 pr-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 bg-white placeholder:text-slate-400"
+                                />
+                            </div>
+                            <div className="min-w-[150px]">
                                 <select
                                     value={filters.sourceTable}
                                     onChange={(e) => handleFilterChange('sourceTable', e.target.value)}
-                                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 bg-white text-slate-700"
                                 >
                                     <option value="">All Sources</option>
                                     <option value="Sales">Sales</option>
@@ -427,28 +422,28 @@ function AccountLedgerInner() {
                                     <option value="Cash_Receipts">Cash Receipts</option>
                                     <option value="Bank_Receipts">Bank Receipts</option>
                                 </select>
-                                <div className="flex items-center">
-                                    <label className="flex items-center gap-2 cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            checked={filters.groupPurchasesByPeriod}
-                                            onChange={(e) => handleFilterChange('groupPurchasesByPeriod', e.target.checked)}
-                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                        />
-                                        <span className="text-sm text-gray-700">Group by 15-day periods</span>
-                                    </label>
-                                </div>
                             </div>
-                        </CardContent>
-                    </Card>
+                            <div className="flex items-center">
+                                <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                                    <input
+                                        type="checkbox"
+                                        checked={filters.groupPurchasesByPeriod}
+                                        onChange={(e) => handleFilterChange('groupPurchasesByPeriod', e.target.checked)}
+                                        className="w-3.5 h-3.5 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
+                                    />
+                                    <span className="text-xs text-slate-600 font-medium">Group 15-day periods</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
 
                     {/* Summary Cards */}
                     {summaryData && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-3">
                             <SummaryCard
                                 title="Opening Balance"
                                 value={formatCurrency(summaryData.openingBalance)}
-                                icon={<Wallet className="w-6 h-6" />}
+                                icon={<Wallet className="w-4 h-4 text-blue-600" />}
                                 color="blue"
                                 subtitle={`${summaryData.accountCode} - ${summaryData.accountName}`}
                             />
@@ -456,21 +451,21 @@ function AccountLedgerInner() {
                             <SummaryCard
                                 title="Total Debits"
                                 value={formatCurrency(summaryData.totalDebits)}
-                                icon={<TrendingUp className="w-6 h-6" />}
+                                icon={<TrendingUp className="w-4 h-4 text-emerald-600" />}
                                 color="green"
                             />
 
                             <SummaryCard
                                 title="Total Credits"
                                 value={formatCurrency(summaryData.totalCredits)}
-                                icon={<TrendingDown className="w-6 h-6" />}
+                                icon={<TrendingDown className="w-4 h-4 text-rose-600" />}
                                 color="red"
                             />
 
                             <SummaryCard
                                 title="Closing Balance"
                                 value={formatCurrency(summaryData.closingBalance)}
-                                icon={<FileText className="w-6 h-6" />}
+                                icon={<FileText className="w-4 h-4 text-indigo-600" />}
                                 color="purple"
                                 subtitle={`${summaryData.transactionCount} transactions`}
                             />
@@ -478,16 +473,11 @@ function AccountLedgerInner() {
                     )}
 
                     {/* Ledger Table */}
-                    {/* Ledger Table - Make it responsive */}
                     {selectedAccount && (
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Transaction History</CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-0">
-                                <div className="overflow-x-auto">
-                                    <Table className="min-w-full">
-                                    <Table.Header>
+                        <TableContainer title="Transaction History">
+                            <div className="overflow-x-auto">
+                                <Table dense className="min-w-full">
+                                    <Table.Header sticky>
                                         <Table.Row>
                                             <Table.Head>Date</Table.Head>
                                             <Table.Head>Trans No.</Table.Head>
@@ -502,70 +492,70 @@ function AccountLedgerInner() {
                                     <Table.Body>
                                         {loading ? (
                                             <Table.Row>
-                                                <Table.Cell colSpan={8} className="text-center py-12">
-                                                    <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-gray-400" />
-                                                    <p className="text-gray-500">Loading transactions...</p>
+                                                <Table.Cell colSpan={8} className="text-center py-10">
+                                                    <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-slate-400" />
+                                                    <p className="text-xs text-slate-500">Loading transactions...</p>
                                                 </Table.Cell>
                                             </Table.Row>
                                         ) : ledgerData.length === 0 ? (
                                             <Table.Row>
-                                                <Table.Cell colSpan={8} className="text-center py-12">
-                                                    <p className="text-gray-500">No transactions found for the selected criteria.</p>
+                                                <Table.Cell colSpan={8} className="text-center py-10">
+                                                    <p className="text-xs text-slate-500">No transactions found for the selected criteria.</p>
                                                 </Table.Cell>
                                             </Table.Row>
                                         ) : (
                                             ledgerData.map((transaction, index) => (
                                                 <Table.Row
                                                     key={`${transaction.journalLineId}-${index}`}
-                                                    className={transaction.isGrouped ? 'bg-blue-50 font-medium' : ''}
+                                                    className={transaction.isGrouped ? 'bg-blue-50/50 font-medium' : ''}
                                                 >
-                                                    <Table.Cell>
+                                                    <Table.Cell className="text-xs text-slate-700">
                                                         {formatDate(transaction.entryDate)}
                                                     </Table.Cell>
                                                     <Table.Cell>
                                                         <button
                                                             onClick={() => handleViewTransaction(transaction)}
-                                                            className="text-blue-600 hover:text-blue-800 font-medium hover:underline"
+                                                            className="text-blue-600 hover:text-blue-800 text-xs font-medium hover:underline font-mono"
                                                         >
                                                             {generateTransactionNo(transaction)}
                                                         </button>
                                                     </Table.Cell>
                                                     <Table.Cell>
-                                                        <div className="font-medium">
+                                                        <div className="text-xs font-medium text-slate-900">
                                                             {getSourceInfo(transaction).sourceType}
                                                         </div>
                                                         {transaction.isGrouped && (
-                                                            <div className="text-xs text-blue-600">
+                                                            <div className="text-[11px] text-blue-600">
                                                                 {transaction.groupedTransactionCount} trans
                                                             </div>
                                                         )}
                                                     </Table.Cell>
                                                     <Table.Cell>
-                                                        <div className="max-w-[150px] sm:max-w-xs truncate" title={transaction.description || ''}>
+                                                        <div className="max-w-[150px] sm:max-w-xs truncate text-xs text-slate-800" title={transaction.description || ''}>
                                                             {transaction.description || '-'}
                                                         </div>
                                                         {transaction.narration && (
-                                                            <div className="text-xs text-gray-500 truncate max-w-[150px] sm:max-w-xs">
+                                                            <div className="text-[11px] text-slate-500 truncate max-w-[150px] sm:max-w-xs">
                                                                 {transaction.narration}
                                                             </div>
                                                         )}
                                                     </Table.Cell>
                                                     <Table.Cell className="text-right">
                                                         {transaction.debit > 0 ? (
-                                                            <span className="text-green-600 font-medium">
+                                                            <span className="text-emerald-700 font-medium text-xs tabular-nums">
                                                                 {formatCurrency(transaction.debit)}
                                                             </span>
-                                                        ) : '-'}
+                                                        ) : <span className="text-slate-400 text-xs">-</span>}
                                                     </Table.Cell>
                                                     <Table.Cell className="text-right">
                                                         {transaction.credit > 0 ? (
-                                                            <span className="text-red-600 font-medium">
+                                                            <span className="text-rose-600 font-medium text-xs tabular-nums">
                                                                 {formatCurrency(transaction.credit)}
                                                             </span>
-                                                        ) : '-'}
+                                                        ) : <span className="text-slate-400 text-xs">-</span>}
                                                     </Table.Cell>
-                                                    <Table.Cell className="text-right font-medium">
-                                                        <span className={transaction.runningBalance >= 0 ? 'text-green-600' : 'text-red-600'}>
+                                                    <Table.Cell className="text-right">
+                                                        <span className={`font-medium text-xs tabular-nums ${transaction.runningBalance >= 0 ? 'text-slate-900' : 'text-rose-600'}`}>
                                                             {formatCurrency(transaction.runningBalance)}
                                                         </span>
                                                     </Table.Cell>
@@ -575,7 +565,7 @@ function AccountLedgerInner() {
                                                             className="text-blue-600 hover:text-blue-800 transition-colors p-1 hover:bg-blue-50 rounded"
                                                             title={transaction.isGrouped ? "View Milk Card" : "View Transaction"}
                                                         >
-                                                            <Eye className="w-4 h-4" />
+                                                            <Eye className="w-3.5 h-3.5" />
                                                         </button>
                                                     </Table.Cell>
                                                 </Table.Row>
@@ -583,40 +573,38 @@ function AccountLedgerInner() {
                                         )}
                                     </Table.Body>
                                 </Table>
-                                </div>
-                            </CardContent>
+                            </div>
 
                             {/* Pagination - Mobile optimized */}
                             {totalCount > pageSize && (
-                                <div className="px-3 sm:px-6 py-3 sm:py-4 border-t bg-gray-50 flex flex-col sm:flex-row items-center justify-between gap-3">
-                                    <div className="text-xs sm:text-sm text-gray-700 text-center sm:text-left">
+                                <div className="px-3 sm:px-6 py-3 sm:py-4 border-t border-slate-200/80 bg-slate-50/50 flex flex-col sm:flex-row items-center justify-between gap-3">
+                                    <div className="text-xs text-slate-500 text-center sm:text-left">
                                         Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, totalCount)} of {totalCount}
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <button
                                             onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                                             disabled={currentPage === 1}
-                                            className="px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors flex items-center gap-1"
+                                            className="px-2.5 py-1 text-xs border border-slate-200 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100 transition-colors flex items-center gap-1 font-medium text-slate-700"
                                         >
-                                            <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                            <ChevronLeft className="w-3.5 h-3.5" />
                                             <span className="hidden sm:inline">Previous</span>
                                         </button>
-                                        <span className="px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium whitespace-nowrap">
+                                        <span className="px-2 text-xs font-semibold text-slate-700 whitespace-nowrap">
                                             Page {currentPage} of {totalPages}
                                         </span>
                                         <button
                                             onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                                             disabled={currentPage === totalPages}
-                                            className="px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors flex items-center gap-1"
+                                            className="px-2.5 py-1 text-xs border border-slate-200 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100 transition-colors flex items-center gap-1 font-medium text-slate-700"
                                         >
                                             <span className="hidden sm:inline">Next</span>
-                                            <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                            <ChevronRight className="w-3.5 h-3.5" />
                                         </button>
                                     </div>
                                 </div>
                             )}
-
-                        </Card>
+                        </TableContainer>
                     )}
 
                     {/* Milk Card Modal */}

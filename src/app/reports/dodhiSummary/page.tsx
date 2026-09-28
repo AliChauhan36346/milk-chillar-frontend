@@ -12,6 +12,8 @@ import {
 } from '@/lib/api/reports';
 import { getChillars, Chillar } from '@/lib/api/chillar';
 import { StatStrip } from '@/components/ui/StatStrip';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { Table, TableContainer } from '@/components/ui/Table/Table';
 import { getCurrentMonthHalfDateRange } from '@/lib/utils/dateRange';
 import {
     Building2,
@@ -21,7 +23,8 @@ import {
     Scale,
     Calendar,
     Filter,
-    Clock
+    Clock,
+    UserCheck
 } from 'lucide-react';
 
 export default function DodhiSummaryReportPage() {
@@ -117,111 +120,93 @@ export default function DodhiSummaryReportPage() {
         <ProtectedRoute>
             <DynamicLayout allowedRoles={['admin', 'chillarincharge']}>
                 <div className="min-h-screen bg-slate-50 p-2">
-                    <div className="max-w-7xl mx-auto space-y-6">
+                    <div className="max-w-7xl mx-auto space-y-4">
+                        {/* Header */}
+                        <PageHeader
+                            title="Dodhi Summary Report"
+                            subtitle="Overview of dodhi collection, performance and variance"
+                            icon={<UserCheck className="w-5 h-5 text-blue-600" />}
+                        />
 
-                        {/* Header & Filters */}
-                        <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
-                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-                                <div>
-                                    <h1 className="text-2xl font-bold text-slate-800">Dodhi Summary Report</h1>
-                                    <p className="text-slate-500 text-sm">Overview of dodhi performance and transactions</p>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        {/* Compact Filters Toolbar */}
+                        <div className="bg-white rounded-xl border border-slate-200/90 p-2.5 sm:p-3 shadow-xs">
+                            <div className="flex flex-wrap items-center gap-2.5">
                                 {/* Start Date */}
-                                <div className="space-y-1">
-                                    <label className="text-xs font-medium text-slate-500 uppercase">Start Date</label>
-                                    <div className="relative">
-                                        <Calendar className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
-                                        <input
-                                            type="date"
-                                            value={startDate}
-                                            onChange={(e) => setStartDate(e.target.value)}
-                                            className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                                        />
-                                    </div>
+                                <div className="flex items-center gap-1.5">
+                                    <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">From</span>
+                                    <input
+                                        type="date"
+                                        value={startDate}
+                                        onChange={(e) => setStartDate(e.target.value)}
+                                        className="px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 bg-white"
+                                    />
                                 </div>
 
-                                {/* Start Time */}
-                                <div className="space-y-1">
-                                    <label className="text-xs font-medium text-slate-500 uppercase">Start Time</label>
-                                    <div className="relative">
-                                        <Clock className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
-                                        <select
-                                            value={startTimeOfDay}
-                                            onChange={(e) => setStartTimeOfDay(e.target.value)}
-                                            className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none appearance-none bg-white transition-all"
-                                        >
-                                            <option value="">All Day</option>
-                                            <option value="Morning">Morning</option>
-                                            <option value="Evening">Evening</option>
-                                        </select>
-                                    </div>
+                                <div className="min-w-[110px]">
+                                    <select
+                                        value={startTimeOfDay}
+                                        onChange={(e) => setStartTimeOfDay(e.target.value)}
+                                        className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 bg-white text-slate-700"
+                                    >
+                                        <option value="">All Times</option>
+                                        <option value="Morning">Morning</option>
+                                        <option value="Evening">Evening</option>
+                                    </select>
                                 </div>
 
                                 {/* End Date */}
-                                <div className="space-y-1">
-                                    <label className="text-xs font-medium text-slate-500 uppercase">End Date</label>
-                                    <div className="relative">
-                                        <Calendar className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
-                                        <input
-                                            type="date"
-                                            value={endDate}
-                                            onChange={(e) => setEndDate(e.target.value)}
-                                            className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                                        />
-                                    </div>
+                                <div className="flex items-center gap-1.5">
+                                    <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">To</span>
+                                    <input
+                                        type="date"
+                                        value={endDate}
+                                        onChange={(e) => setEndDate(e.target.value)}
+                                        className="px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 bg-white"
+                                    />
                                 </div>
 
-                                {/* End Time */}
-                                <div className="space-y-1">
-                                    <label className="text-xs font-medium text-slate-500 uppercase">End Time</label>
-                                    <div className="relative">
-                                        <Clock className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
-                                        <select
-                                            value={endTimeOfDay}
-                                            onChange={(e) => setEndTimeOfDay(e.target.value)}
-                                            className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none appearance-none bg-white transition-all"
-                                        >
-                                            <option value="">All Day</option>
-                                            <option value="Morning">Morning</option>
-                                            <option value="Evening">Evening</option>
-                                        </select>
-                                    </div>
+                                <div className="min-w-[110px]">
+                                    <select
+                                        value={endTimeOfDay}
+                                        onChange={(e) => setEndTimeOfDay(e.target.value)}
+                                        className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 bg-white text-slate-700"
+                                    >
+                                        <option value="">All Times</option>
+                                        <option value="Morning">Morning</option>
+                                        <option value="Evening">Evening</option>
+                                    </select>
                                 </div>
 
                                 {/* Chillar Select (Admin Only) */}
                                 {isAdmin && (
-                                    <div className="space-y-1 md:col-span-4">
-                                        <label className="text-xs font-medium text-slate-500 uppercase">Select Chillar</label>
-                                        <div className="relative">
-                                            <Building2 className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
-                                            <select
-                                                value={selectedChillarId || ''}
-                                                onChange={(e) => {
-                                                    const value = e.target.value;
-                                                    setSelectedChillarId(value === '' ? undefined : Number(value));
-                                                }}
-                                                className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none appearance-none bg-white transition-all"
-                                            >
-                                                <option value="">All Chillars</option>
-                                                {chillars.map((chillar) => (
-                                                    <option key={chillar.chillarId} value={chillar.chillarId}>
-                                                        {chillar.name}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                            <Filter className="absolute right-3 top-2.5 w-4 h-4 text-slate-400 pointer-events-none" />
-                                        </div>
+                                    <div className="min-w-[170px]">
+                                        <select
+                                            value={selectedChillarId || ''}
+                                            onChange={(e) => {
+                                                const value = e.target.value;
+                                                setSelectedChillarId(value === '' ? undefined : Number(value));
+                                            }}
+                                            className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 bg-white text-slate-700"
+                                        >
+                                            <option value="">All Chillars</option>
+                                            {chillars.map((chillar) => (
+                                                <option key={chillar.chillarId} value={chillar.chillarId}>
+                                                    {chillar.name}
+                                                </option>
+                                            ))}
+                                        </select>
                                     </div>
                                 )}
+
+                                <div className="text-xs text-slate-500 font-medium ml-auto">
+                                    Records: <strong className="text-slate-800">{dodhiDetails.length}</strong>
+                                </div>
                             </div>
                         </div>
 
                         {isLoading ? (
                             <div className="flex justify-center py-12">
-                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                             </div>
                         ) : (
                             <>
@@ -269,69 +254,69 @@ export default function DodhiSummaryReportPage() {
                                 )}
 
                                 {/* Desktop Table */}
-                                <div className="hidden md:block bg-white rounded-xl shadow-xs border border-slate-200 overflow-hidden">
-                                    <div className="px-5 py-3 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                                        <h2 className="font-semibold text-slate-800 text-sm">Dodhi Performance Details</h2>
-                                        <span className="text-xs text-slate-500">{dodhiDetails.length} Records</span>
-                                    </div>
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full text-xs text-left">
-                                            <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
-                                                <tr>
-                                                    <th className="px-4 py-2.5">Dodhi Name</th>
-                                                    <th className="px-4 py-2.5 text-right">Purchased (L)</th>
-                                                    <th className="px-4 py-2.5 text-right">Amount (Rs)</th>
-                                                    <th className="px-4 py-2.5 text-right">Received (L)</th>
-                                                    <th className="px-4 py-2.5 text-right">Net (L)</th>
-                                                    <th className="px-4 py-2.5 text-right">Difference (L)</th>
-                                                    <th className="px-4 py-2.5 text-center">Status</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-slate-100">
+                                <div className="hidden md:block">
+                                    <TableContainer title="Dodhi Performance Details">
+                                        <Table dense>
+                                            <Table.Header sticky>
+                                                <Table.Row>
+                                                    <Table.Head>Dodhi Name</Table.Head>
+                                                    <Table.Head align="right">Purchased (L)</Table.Head>
+                                                    <Table.Head align="right">Amount (Rs)</Table.Head>
+                                                    <Table.Head align="right">Received (L)</Table.Head>
+                                                    <Table.Head align="right">Net (L)</Table.Head>
+                                                    <Table.Head align="right">Difference (L)</Table.Head>
+                                                    <Table.Head align="center">Status</Table.Head>
+                                                </Table.Row>
+                                            </Table.Header>
+                                            <Table.Body>
                                                 {dodhiDetails.length > 0 ? (
                                                     dodhiDetails.map((record) => (
-                                                        <tr key={`${record.dodhiId}-${record.chillarId}`} className="hover:bg-slate-50/50 transition-colors">
-                                                            <td className="px-4 py-2 font-medium text-slate-800">{record.dodhiName}</td>
-                                                            <td className="px-4 py-2 text-right text-slate-700">
-                                                                {record.totalPurchasedLiters.toLocaleString()}
+                                                        <Table.Row key={`${record.dodhiId}-${record.chillarId}`}>
+                                                            <Table.Cell className="font-medium text-xs text-slate-900">{record.dodhiName}</Table.Cell>
+                                                            <Table.Cell align="right">
+                                                                <span className="font-medium text-xs text-slate-900 tabular-nums">
+                                                                    {record.totalPurchasedLiters.toLocaleString()} L
+                                                                </span>
                                                                 <span className="text-[10px] text-slate-400 block">{record.purchaseTransactionCount} txns</span>
-                                                            </td>
-                                                            <td className="px-4 py-2 text-right font-medium text-slate-800">
+                                                            </Table.Cell>
+                                                            <Table.Cell align="right" className="font-medium text-xs text-slate-800 tabular-nums">
                                                                 {record.totalPurchaseAmount.toLocaleString()}
-                                                            </td>
-                                                            <td className="px-4 py-2 text-right text-slate-700">
-                                                                {record.totalReceivedLiters.toLocaleString()}
-                                                            </td>
-                                                            <td className="px-4 py-2 text-right text-slate-700">
-                                                                {record.totalNetLiters.toLocaleString()}
-                                                            </td>
-                                                            <td className={`px-4 py-2 text-right font-semibold ${
-                                                                record.purchaseReceiveDifference > 0 ? 'text-rose-600' : 'text-emerald-600'
-                                                            }`}>
-                                                                {record.purchaseReceiveDifference > 0 ? '+' : ''}{record.purchaseReceiveDifference.toLocaleString()}
-                                                                <span className="text-[10px] opacity-70 block">{record.purchaseReceiveDifferencePercentage.toFixed(1)}%</span>
-                                                            </td>
-                                                            <td className="px-4 py-2 text-center">
-                                                                <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                                                            </Table.Cell>
+                                                            <Table.Cell align="right" className="text-xs text-slate-700 tabular-nums">
+                                                                {record.totalReceivedLiters.toLocaleString()} L
+                                                            </Table.Cell>
+                                                            <Table.Cell align="right" className="text-xs text-slate-700 tabular-nums">
+                                                                {record.totalNetLiters.toLocaleString()} L
+                                                            </Table.Cell>
+                                                            <Table.Cell align="right">
+                                                                <span className={`font-medium text-xs tabular-nums ${
+                                                                    record.purchaseReceiveDifference > 0 ? 'text-rose-600' : 'text-emerald-700'
+                                                                }`}>
+                                                                    {record.purchaseReceiveDifference > 0 ? '+' : ''}{record.purchaseReceiveDifference.toLocaleString()} L
+                                                                    <span className="text-[10px] opacity-70 block">{record.purchaseReceiveDifferencePercentage.toFixed(1)}%</span>
+                                                                </span>
+                                                            </Table.Cell>
+                                                            <Table.Cell align="center">
+                                                                <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium ${
                                                                     record.receptionLossPercentage > 5
                                                                         ? 'bg-rose-50 text-rose-700 border border-rose-200'
                                                                         : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                                                                 }`}>
                                                                     {record.receptionLossPercentage > 5 ? 'High Loss' : 'Normal'}
                                                                 </span>
-                                                            </td>
-                                                        </tr>
+                                                            </Table.Cell>
+                                                        </Table.Row>
                                                     ))
                                                 ) : (
-                                                    <tr>
-                                                        <td colSpan={7} className="px-6 py-8 text-center text-xs text-slate-500">
+                                                    <Table.Row>
+                                                        <Table.Cell colSpan={7} className="py-10 text-center text-xs text-slate-500">
                                                             No records found for the selected criteria
-                                                        </td>
-                                                    </tr>
+                                                        </Table.Cell>
+                                                    </Table.Row>
                                                 )}
-                                            </tbody>
-                                        </table>
-                                    </div>
+                                            </Table.Body>
+                                        </Table>
+                                    </TableContainer>
                                 </div>
 
                                 {/* Mobile Card List */}

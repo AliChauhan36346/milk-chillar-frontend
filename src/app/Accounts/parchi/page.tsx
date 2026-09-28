@@ -3,7 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/layouts/AdminLayout';
 import { ParchiPrintSlip } from '@/components/ui/ParchiPrintSlip';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table } from '@/components/ui/Table/Table';
+import { Table, TableContainer } from '@/components/ui/Table/Table';
+import { PageHeader } from '@/components/ui/PageHeader';
 import SummaryCard from '@/components/ui/SummaryCard';
 import { Select } from '@/components/ui/Select';
 import ProtectedRoute from '@/components/ProtectedRoutes';
@@ -259,149 +260,126 @@ export default function ParchiPage() {
   return (
     <ProtectedRoute requiredRole="admin">
       <AdminLayout>
-        <div className="space-y-6 print:space-y-4">
+        <div className="space-y-4 print:space-y-4">
           {/* Header - Hide on print */}
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 print:hidden">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Supplier Parchi</h1>
-              <p className="text-gray-600">Generate billing statements for suppliers</p>
-            </div>
-            <div className="flex gap-2">
+          <div className="print:hidden">
+            <PageHeader
+              title="Supplier Parchi"
+              subtitle="Generate billing statements for suppliers"
+              icon={<FileText className="w-5 h-5 text-blue-600" />}
+              actions={
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handlePayAllParchis}
+                    disabled={!parchiData || parchiData.items.length === 0 || loading}
+                    className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1.5 text-xs font-semibold shadow-xs disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <Wallet className="w-3.5 h-3.5" />
+                    Create Payments
+                  </button>
+                  <button
+                    onClick={handlePrintAll}
+                    className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors flex items-center gap-1.5 text-xs font-semibold shadow-xs"
+                  >
+                    <Printer className="w-3.5 h-3.5" />
+                    Print All
+                  </button>
+                  <button
+                    onClick={loadParchiData}
+                    className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors flex items-center gap-1.5 text-xs font-semibold border border-slate-200"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+                    Refresh
+                  </button>
+                </div>
+              }
+            />
+          </div>
+
+          {/* Filters Toolbar - Hide on print */}
+          <div className="bg-white rounded-xl border border-slate-200/90 p-2.5 sm:p-3 shadow-xs print:hidden">
+            <div className="flex flex-wrap items-center gap-2.5">
+              {/* Date Range */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">From</span>
+                <input
+                  type="date"
+                  value={filters.startDate}
+                  onChange={(e) => handleFilterChange('startDate', e.target.value)}
+                  className="px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 bg-white"
+                />
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">To</span>
+                <input
+                  type="date"
+                  value={filters.endDate}
+                  onChange={(e) => handleFilterChange('endDate', e.target.value)}
+                  className="px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 bg-white"
+                />
+              </div>
+
+              {/* Dodhi Filter */}
+              <div className="min-w-[150px]">
+                <Select
+                  value={filters.dodhiId?.toString() || ''}
+                  onChange={(value) => handleFilterChange('dodhiId', value ? Number(value) : undefined)}
+                  options={[
+                    { value: '', label: 'All Dodhis' },
+                    ...employees.map(emp => ({
+                      value: emp.employeeId.toString(),
+                      label: emp.fullName
+                    }))
+                  ]}
+                  placeholder="Select Dodhi"
+                />
+              </div>
+
+              {/* Search Supplier */}
+              <div className="relative min-w-[150px] flex-1 sm:flex-initial">
+                <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 transform -translate-y-1/2 text-slate-400 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="Search suppliers..."
+                  value={filters.search}
+                  onChange={(e) => handleFilterChange('search', e.target.value)}
+                  className="w-full pl-8 pr-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 bg-white placeholder:text-slate-400"
+                />
+              </div>
+
+              {/* Status */}
+              <div className="min-w-[120px]">
+                <Select
+                  value={filters.isActive === undefined ? '' : String(filters.isActive)}
+                  onChange={(value) => handleFilterChange('isActive', value === '' ? undefined : value === 'true')}
+                  options={[
+                    { value: '', label: 'All Status' },
+                    { value: 'true', label: 'Active Only' },
+                    { value: 'false', label: 'Inactive Only' },
+                  ]}
+                />
+              </div>
+
+              {/* Generate Button */}
               <button
-                onClick={handlePayAllParchis}
-                disabled={!parchiData || parchiData.items.length === 0 || loading}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={handleGenerateParchi}
+                disabled={loading}
+                className="px-3.5 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-1.5 text-xs font-semibold shadow-xs ml-auto"
               >
-                <Wallet className="w-4 h-4" />
-                Create Payments
-              </button>
-              <button
-                onClick={handlePrintAll}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
-              >
-                <Printer className="w-4 h-4" />
-                Print
-              </button>
-              <button
-                onClick={loadParchiData}
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2"
-              >
-                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                Refresh
+                <Calendar className="w-3.5 h-3.5" />
+                Generate Parchi
               </button>
             </div>
           </div>
 
-          {/* Filters Card - Hide on print */}
-          <Card className="print:hidden">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Filters</CardTitle>
-                <button
-                  onClick={() => setShowFilters(!showFilters)}
-                  className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
-                >
-                  <Filter className="w-4 h-4" />
-                  {showFilters ? 'Hide Filters' : 'Show Filters'}
-                </button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-                {/* Date Range */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Start Date
-                  </label>
-                  <input
-                    type="date"
-                    value={filters.startDate}
-                    onChange={(e) => handleFilterChange('startDate', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    End Date
-                  </label>
-                  <input
-                    type="date"
-                    value={filters.endDate}
-                    onChange={(e) => handleFilterChange('endDate', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                {/* Dodhi Filter */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Dodhi
-                  </label>
-                  <Select
-                    value={filters.dodhiId?.toString() || ''}
-                    onChange={(value) => handleFilterChange('dodhiId', value ? Number(value) : undefined)}
-                    options={[
-                      { value: '', label: 'All Dodhis' },
-                      ...employees.map(emp => ({
-                        value: emp.employeeId.toString(),
-                        label: emp.fullName
-                      }))
-                    ]}
-                  />
-                </div>
-
-                {/* Generate Button */}
-                <div className="flex items-end">
-                  <button
-                    onClick={handleGenerateParchi}
-                    disabled={loading}
-                    className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                  >
-                    <Calendar className="w-4 h-4" />
-                    Generate Parchi
-                  </button>
-                </div>
-              </div>
-
-              {/* Advanced Filters - Collapsible */}
-              {showFilters && (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4 pt-4 border-t">
-                  <div className="relative">
-                    <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                    <input
-                      type="text"
-                      placeholder="Search suppliers..."
-                      value={filters.search}
-                      onChange={(e) => handleFilterChange('search', e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <Select
-                      value={filters.isActive === undefined ? '' : String(filters.isActive)}
-                      onChange={(value) => handleFilterChange('isActive', value === '' ? undefined : value === 'true')}
-                      options={[
-                        { value: 'true', label: 'Active Only' },
-                        { value: 'false', label: 'Inactive Only' },
-                        { value: '', label: 'All Status' }
-                      ]}
-                    />
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
           {/* Summary Cards - Hide on print */}
           {parchiData && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 print:hidden">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3 print:hidden">
               <SummaryCard
                 title="Total Liters"
-                value={parchiData.summary.totalLiters.toFixed(2)}
-                //icon should be milk drops etc
-                icon={<TrendingUp className="w-6 h-6" />}
+                value={`${parchiData.summary.totalLiters.toFixed(2)} L`}
+                icon={<TrendingUp className="w-4 h-4 text-blue-600" />}
                 color="blue"
                 subtitle="Total milk supplied"
               />
@@ -409,21 +387,21 @@ export default function ParchiPage() {
               <SummaryCard
                 title="Purchase Amount"
                 value={formatCurrency(parchiData.summary.totalPurchaseAmount)}
-                icon={<Wallet className="w-6 h-6" />}
+                icon={<Wallet className="w-4 h-4 text-emerald-600" />}
                 color="green"
               />
 
               <SummaryCard
                 title="Payments Made"
                 value={formatCurrency(parchiData.summary.totalPayments)}
-                icon={<FileText className="w-6 h-6" />}
+                icon={<FileText className="w-4 h-4 text-indigo-600" />}
                 color="purple"
               />
 
               <SummaryCard
                 title="Parchi Amount"
                 value={formatCurrency(parchiData.summary.totalParchiAmount)}
-                icon={<Calendar className="w-6 h-6" />}
+                icon={<Calendar className="w-4 h-4 text-amber-600" />}
                 color="orange"
                 subtitle={`${parchiData.totalCount} suppliers`}
               />
@@ -444,39 +422,36 @@ export default function ParchiPage() {
           </div>
 
           {/* Parchi Table */}
-          <Card>
-            <CardHeader className="print:hidden">
-              <CardTitle>Supplier Parchi Details</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <Table>
-                <Table.Header>
+          <TableContainer title="Supplier Parchi Details">
+            <div className="overflow-x-auto">
+              <Table dense>
+                <Table.Header sticky>
                   <Table.Row>
                     <Table.Head>Account</Table.Head>
                     <Table.Head>Khata No</Table.Head>
-                    <Table.Head><div className="text-right">Prev. Balance</div></Table.Head>
-                    <Table.Head><div className="text-right">Liters</div></Table.Head>
-                    <Table.Head><div className="text-right">Purchase Amt</div></Table.Head>
-                    <Table.Head><div className="text-right">Payments</div></Table.Head>
-                    <Table.Head><div className="text-right">Closing Bal.</div></Table.Head>
-                    <Table.Head><div className="text-right">Credit Limit</div></Table.Head>
-                    <Table.Head><div className="text-right">Parchi Amt</div></Table.Head>
-                    <Table.Head><div className="text-right">Final Bal.</div></Table.Head>
-                    <Table.Head><div className="text-center print:hidden">Actions</div></Table.Head>
+                    <Table.Head align="right">Prev. Balance</Table.Head>
+                    <Table.Head align="right">Liters</Table.Head>
+                    <Table.Head align="right">Purchase Amt</Table.Head>
+                    <Table.Head align="right">Payments</Table.Head>
+                    <Table.Head align="right">Closing Bal.</Table.Head>
+                    <Table.Head align="right">Credit Limit</Table.Head>
+                    <Table.Head align="right">Parchi Amt</Table.Head>
+                    <Table.Head align="right">Final Bal.</Table.Head>
+                    <Table.Head align="center" className="print:hidden">Actions</Table.Head>
                   </Table.Row>
                 </Table.Header>
                 <Table.Body>
                   {loading ? (
                     <Table.Row>
-                      <td colSpan={10} className="text-center py-12">
-                        <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-gray-400" />
-                        <p className="text-gray-500">Loading parchi data...</p>
+                      <td colSpan={11} className="text-center py-10">
+                        <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-slate-400" />
+                        <p className="text-xs text-slate-500">Loading parchi data...</p>
                       </td>
                     </Table.Row>
                   ) : !parchiData || parchiData.items.length === 0 ? (
                     <Table.Row>
-                      <td colSpan={10} className="text-center py-12">
-                        <p className="text-gray-500">No data found. Please select filters and generate parchi.</p>
+                      <td colSpan={11} className="text-center py-10">
+                        <p className="text-xs text-slate-500">No data found. Please select filters and generate parchi.</p>
                       </td>
                     </Table.Row>
                   ) : (
@@ -484,47 +459,53 @@ export default function ParchiPage() {
                       <Table.Row key={index}>
                         <Table.Cell>
                           <div>
-                            <div className="font-medium">{item.accountName}</div>
-                            <div className="text-xs text-gray-500">{item.accountCode}</div>
+                            <div className="font-medium text-xs text-slate-900">{item.accountName}</div>
+                            <div className="text-[11px] text-slate-500 font-mono">{item.accountCode}</div>
                           </div>
                         </Table.Cell>
-                        <Table.Cell>{item.khataNumber}</Table.Cell>
-                        <Table.Cell className="text-right">
-                          <div className={item.previousBalanceType === 'Credit' ? 'text-green-600' : 'text-red-600'}>
+                        <Table.Cell className="text-xs text-slate-600 font-mono">{item.khataNumber}</Table.Cell>
+                        <Table.Cell align="right">
+                          <span className={`text-xs font-medium tabular-nums ${item.previousBalanceType === 'Credit' ? 'text-emerald-700' : 'text-rose-600'}`}>
                             {formatCurrency(item.previousBalance)}
-                            <span className="text-xs ml-1">({item.previousBalanceType})</span>
-                          </div>
+                            <span className="text-[10px] ml-0.5 text-slate-400 font-normal">({item.previousBalanceType})</span>
+                          </span>
                         </Table.Cell>
-                        <Table.Cell className="text-right">{item.totalLiters.toFixed(2)}</Table.Cell>
-                        <Table.Cell className="text-right">{formatCurrency(item.purchaseAmount)}</Table.Cell>
-                        <Table.Cell className="text-right">{formatCurrency(item.paymentsInPeriod)}</Table.Cell>
-                        <Table.Cell className="text-right">
-                          <div className={item.closingBalanceType === 'Credit' ? 'text-green-600' : 'text-red-600'}>
+                        <Table.Cell align="right" className="text-xs text-slate-900 font-medium tabular-nums">
+                          {item.totalLiters.toFixed(2)}L
+                        </Table.Cell>
+                        <Table.Cell align="right" className="text-xs text-slate-900 font-medium tabular-nums">
+                          {formatCurrency(item.purchaseAmount)}
+                        </Table.Cell>
+                        <Table.Cell align="right" className="text-xs text-slate-700 font-medium tabular-nums">
+                          {formatCurrency(item.paymentsInPeriod)}
+                        </Table.Cell>
+                        <Table.Cell align="right">
+                          <span className={`text-xs font-medium tabular-nums ${item.closingBalanceType === 'Credit' ? 'text-emerald-700' : 'text-rose-600'}`}>
                             {formatCurrency(item.closingBalance)}
-                            <span className="text-xs ml-1">({item.closingBalanceType})</span>
-                          </div>
+                            <span className="text-[10px] ml-0.5 text-slate-400 font-normal">({item.closingBalanceType})</span>
+                          </span>
                         </Table.Cell>
-                        <Table.Cell className="text-right">
+                        <Table.Cell align="right" className="text-xs text-slate-600 tabular-nums">
                           {item.isCreditAllowed ? formatCurrency(item.creditLimit) : '-'}
                         </Table.Cell>
-                        <Table.Cell className="text-right">
-                          <span className="font-bold text-blue-600">
+                        <Table.Cell align="right">
+                          <span className="font-medium text-xs text-blue-700 tabular-nums">
                             {formatCurrency(item.parchiAmount)}
                           </span>
                         </Table.Cell>
-                        <Table.Cell className="text-right">
-                          <div className={item.finalBalanceType === 'Credit' ? 'text-green-600' : 'text-red-600'}>
+                        <Table.Cell align="right">
+                          <span className={`text-xs font-medium tabular-nums ${item.finalBalanceType === 'Credit' ? 'text-emerald-700' : 'text-rose-600'}`}>
                             {formatCurrency(item.finalBalance)}
-                            <span className="text-xs ml-1">({item.finalBalanceType})</span>
-                          </div>
+                            <span className="text-[10px] ml-0.5 text-slate-400 font-normal">({item.finalBalanceType})</span>
+                          </span>
                         </Table.Cell>
-                        <Table.Cell className="text-center print:hidden">
+                        <Table.Cell align="center" className="print:hidden">
                           <button
                             onClick={() => handlePrintSelected(item)}
-                            className="text-green-600 hover:text-green-800 transition-colors p-1 hover:bg-green-50 rounded"
+                            className="text-emerald-600 hover:text-emerald-800 transition-colors p-1 hover:bg-emerald-50 rounded"
                             title="Print Parchi"
                           >
-                            <Printer className="w-4 h-4" />
+                            <Printer className="w-3.5 h-3.5" />
                           </button>
                         </Table.Cell>
                       </Table.Row>
@@ -532,8 +513,8 @@ export default function ParchiPage() {
                   )}
                 </Table.Body>
               </Table>
-            </CardContent>
-          </Card>
+            </div>
+          </TableContainer>
 
           {/* Print View */}
           {printMode && (

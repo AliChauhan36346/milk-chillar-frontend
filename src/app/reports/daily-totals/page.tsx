@@ -390,7 +390,7 @@ function DailyTotalsContent() {
                     </div>
 
                     <Table dense>
-                        <Table.Header>
+                        <Table.Header sticky>
                             <Table.Row>
                                 <Table.Head align="left" className="w-[120px]">Date</Table.Head>
                                 <Table.Head align="right">Procurement</Table.Head>
@@ -435,7 +435,7 @@ function DailyTotalsContent() {
                                             {/* Procurement: Purchase Liters + Chillar Receive */}
                                             <Table.Cell align="right">
                                                 <div className="flex flex-col items-end">
-                                                    <span className="font-semibold text-blue-600 tabular-nums">
+                                                    <span className="font-medium text-slate-900 tabular-nums">
                                                         {item.totalPurchaseLiters.toFixed(1)} L
                                                     </span>
                                                     <span className="text-[11px] text-slate-500 font-normal tabular-nums">
@@ -452,7 +452,7 @@ function DailyTotalsContent() {
                                             {/* Sales & Dispatch: Total Sales + TS Sales */}
                                             <Table.Cell align="right">
                                                 <div className="flex flex-col items-end">
-                                                    <span className="font-semibold text-emerald-600 tabular-nums">
+                                                    <span className="font-medium text-slate-900 tabular-nums">
                                                         {item.totalSalesLiters.toFixed(1)} L
                                                     </span>
                                                     <span className="text-[11px] text-slate-500 font-normal tabular-nums">
@@ -464,7 +464,7 @@ function DailyTotalsContent() {
                                             {/* Storage & TS Variance */}
                                             <Table.Cell align="right">
                                                 <div className="flex flex-col items-end">
-                                                    <span className={`font-semibold tabular-nums ${chillarDiff >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                                    <span className={`font-medium tabular-nums ${chillarDiff >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                                                         {chillarDiff > 0 ? '+' : ''}{chillarDiff.toFixed(1)} L
                                                         <span className="text-[10px] text-slate-400 font-normal ml-1">chillar</span>
                                                     </span>
@@ -477,7 +477,7 @@ function DailyTotalsContent() {
                                             {/* Financial Value: Sales Amount & Purchase Cost */}
                                             <Table.Cell align="right" mono>
                                                 <div className="flex flex-col items-end">
-                                                    <span className="font-semibold text-slate-900">
+                                                    <span className="font-medium text-slate-900">
                                                         {formatPKR(item.salesAmount)}
                                                     </span>
                                                     <span className="text-[11px] text-slate-400 font-normal">
@@ -490,7 +490,7 @@ function DailyTotalsContent() {
                                             {isAdmin && (
                                                 <Table.Cell align="right" mono>
                                                     <div className="flex flex-col items-end">
-                                                        <span className={`font-bold ${item.grossProfit >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                                        <span className={`font-medium ${item.grossProfit >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
                                                             {formatPKR(item.grossProfit)}
                                                         </span>
                                                         <span className="text-[10px] text-slate-400 font-normal">
@@ -507,14 +507,14 @@ function DailyTotalsContent() {
 
                         {/* Summary Totals Row */}
                         {dailyTotals.length > 0 && (
-                            <tfoot className="bg-slate-50/80 border-t-2 border-slate-200/80 font-medium">
+                            <tfoot className="bg-slate-50/90 border-t-2 border-slate-200/90 font-medium">
                                 <tr>
                                     <Table.Cell align="left">
-                                        <span className="font-bold text-slate-700 text-xs">Summary</span>
+                                        <span className="font-semibold text-slate-700 text-xs uppercase tracking-wider">Summary</span>
                                     </Table.Cell>
                                     <Table.Cell align="right">
                                         <div className="flex flex-col items-end">
-                                            <span className="font-bold text-blue-700 text-xs tabular-nums">
+                                            <span className="font-semibold text-slate-800 text-xs tabular-nums">
                                                 {summary.totalPurchaseLiters.toFixed(1)} L
                                             </span>
                                             <span className="text-[10px] text-slate-500 tabular-nums">
@@ -524,7 +524,7 @@ function DailyTotalsContent() {
                                     </Table.Cell>
                                     <Table.Cell align="right">
                                         <div className="flex flex-col items-end">
-                                            <span className="font-bold text-emerald-700 text-xs tabular-nums">
+                                            <span className="font-semibold text-slate-800 text-xs tabular-nums">
                                                 {summary.totalSalesLiters.toFixed(1)} L
                                             </span>
                                             <span className="text-[10px] text-slate-500 tabular-nums">
@@ -534,7 +534,7 @@ function DailyTotalsContent() {
                                     </Table.Cell>
                                     <Table.Cell align="right">
                                         <div className="flex flex-col items-end">
-                                            <span className={`font-bold text-xs tabular-nums ${summary.chillarLoss >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                                            <span className={`font-semibold text-xs tabular-nums ${summary.chillarLoss >= 0 ? 'text-slate-800' : 'text-rose-600'}`}>
                                                 {summary.chillarLoss > 0 ? '+' : ''}{summary.chillarLoss.toFixed(1)} L
                                             </span>
                                             <span className="text-[10px] text-slate-500 tabular-nums">
@@ -544,7 +544,7 @@ function DailyTotalsContent() {
                                     </Table.Cell>
                                     <Table.Cell align="right" mono>
                                         <div className="flex flex-col items-end">
-                                            <span className="font-bold text-slate-900 text-xs">
+                                            <span className="font-semibold text-slate-900 text-xs">
                                                 {formatPKR(summary.salesAmount)}
                                             </span>
                                             <span className="text-[10px] text-slate-400">
@@ -555,7 +555,7 @@ function DailyTotalsContent() {
                                     {isAdmin && (
                                         <Table.Cell align="right" mono>
                                             <div className="flex flex-col items-end">
-                                                <span className={`font-bold text-xs ${summary.grossProfit >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                                                <span className={`font-semibold text-xs ${summary.grossProfit >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
                                                     {formatPKR(summary.grossProfit)}
                                                 </span>
                                                 <span className="text-[10px] text-slate-400">

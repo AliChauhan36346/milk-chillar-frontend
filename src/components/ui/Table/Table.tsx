@@ -40,15 +40,27 @@ export function Table({ children, className }: TableProps) {
 
 Table.Container = TableContainer;
 
+export interface TableHeaderProps extends HTMLAttributes<HTMLTableSectionElement> {
+  children: ReactNode;
+  className?: string;
+  sticky?: boolean;
+}
+
 Table.Header = function TableHeader({
   children,
   className,
-}: {
-  children: ReactNode;
-  className?: string;
-}) {
+  sticky = false,
+  ...props
+}: TableHeaderProps) {
   return (
-    <thead className={twMerge('bg-slate-50/75 border-b border-slate-200/80', className)}>
+    <thead
+      className={twMerge(
+        'bg-slate-50/80 border-b border-slate-200/80',
+        sticky && 'sticky top-0 z-10 backdrop-blur-xs shadow-2xs',
+        className
+      )}
+      {...props}
+    >
       {children}
     </thead>
   );
@@ -65,6 +77,29 @@ Table.Body = function TableBody({
     <tbody className={twMerge('bg-white divide-y divide-slate-100', className)}>
       {children}
     </tbody>
+  );
+};
+
+export interface TableFooterProps extends HTMLAttributes<HTMLTableSectionElement> {
+  children: ReactNode;
+  className?: string;
+}
+
+Table.Footer = function TableFooter({
+  children,
+  className,
+  ...props
+}: TableFooterProps) {
+  return (
+    <tfoot
+      className={twMerge(
+        'bg-slate-50/80 border-t-2 border-slate-200/90 text-xs font-medium text-slate-800',
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </tfoot>
   );
 };
 
@@ -133,7 +168,8 @@ Table.Cell = function TableCell({
       className={twMerge(
         'text-xs sm:text-sm text-slate-800 whitespace-nowrap',
         alignClass,
-        mono && 'font-mono tabular-nums',
+        (mono || align === 'right') && 'tabular-nums',
+        mono && 'font-mono',
         dense ? 'px-3 py-1.5 sm:py-2 text-xs' : 'px-3.5 py-2.5 sm:px-4 sm:py-3',
         className
       )}
