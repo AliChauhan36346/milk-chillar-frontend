@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
 import { Select } from '@/components/ui/Select';
 import AccountFormModal from '@/components/modals/AccountFormModal';
+import { FullPageSpinner } from '@/components/ui/spinner';
 import ProtectedRoute from '@/components/ProtectedRoutes';
 import {
   getMainAccounts,
@@ -254,9 +255,7 @@ export default function CreateAccountPage() {
     return (
       <ProtectedRoute>
         <DynamicLayout>
-          <div className="flex items-center justify-center min-h-screen">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          </div>
+          <FullPageSpinner message="Loading account details..." />
         </DynamicLayout>
       </ProtectedRoute>
     );

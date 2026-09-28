@@ -22,6 +22,7 @@ import { useToast } from '@/hooks/useToast';
 import { AdminLayout } from '@/components/layouts/AdminLayout';
 import ProtectedRoute from '@/components/ProtectedRoutes';
 import { StatStrip } from '@/components/ui/StatStrip';
+import { TableContainer } from '@/components/ui/Table/Table';
 import {
   TrendingUp,
   TrendingDown,
@@ -31,6 +32,9 @@ import {
   Calendar,
   PieChart,
   BarChart3,
+  Building2,
+  Printer,
+  RefreshCw,
 } from 'lucide-react';
 
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -219,7 +223,7 @@ export default function ProfitLossPage() {
           {activeTab === 'report' && (
             <>
               {isPlLoading ? (
-                <CenteredSpinner size="lg" />
+                <CenteredSpinner message="Calculating profit & loss statement..." />
               ) : plData ? (
                 <PLReportView data={plData} formatCurrency={formatCurrency} formatPercentage={formatPercentage} />
               ) : (
@@ -235,7 +239,7 @@ export default function ProfitLossPage() {
           {activeTab === 'expenses' && (
             <>
               {isExpenseLoading ? (
-                <CenteredSpinner size="lg" />
+                <CenteredSpinner message="Compiling expense breakdown..." />
               ) : expenseData ? (
                 <ExpenseBreakdownView data={expenseData} formatCurrency={formatCurrency} />
               ) : (
@@ -251,7 +255,7 @@ export default function ProfitLossPage() {
           {activeTab === 'income' && (
             <>
               {isIncomeLoading ? (
-                <CenteredSpinner size="lg" />
+                <CenteredSpinner message="Compiling income breakdown..." />
               ) : incomeData ? (
                 <IncomeBreakdownView data={incomeData} formatCurrency={formatCurrency} />
               ) : (
@@ -318,170 +322,212 @@ function PLReportView({
         ]}
       />
 
-      {/* Detailed Report */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Income Statement</CardTitle>
-          <CardDescription>{data.period.displayText}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-6">
-            {/* Income Section */}
-            <div>
-              <h3 className="font-semibold text-lg mb-3">Revenue</h3>
-              <div className="space-y-2 pl-4">
-                <div className="flex justify-between">
-                  <span>Sales Revenue</span>
-                  <span className="font-medium">{formatCurrency(data.income.salesRevenue)}</span>
-                </div>
-                <div className="flex justify-between text-red-600">
-                  <span>Less: Sales Returns</span>
-                  <span className="font-medium">({formatCurrency(data.income.salesReturns)})</span>
-                </div>
-                <div className="flex justify-between font-semibold border-t pt-2">
-                  <span>Net Sales</span>
-                  <span>{formatCurrency(data.income.netSales)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Other Income</span>
-                  <span className="font-medium">{formatCurrency(data.income.otherIncome)}</span>
-                </div>
-                <div className="flex justify-between font-bold text-lg border-t-2 pt-2">
-                  <span>Total Income</span>
-                  <span>{formatCurrency(data.income.totalIncome)}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* COGS Section */}
-            <div>
-              <h3 className="font-semibold text-lg mb-3">Cost of Goods Sold</h3>
-              <div className="space-y-2 pl-4">
-                <div className="flex justify-between">
-                  <span>Opening Stock</span>
-                  <span className="font-medium">{formatCurrency(data.cogs.openingStock)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Add: Purchases</span>
-                  <span className="font-medium">{formatCurrency(data.cogs.purchases)}</span>
-                </div>
-                <div className="flex justify-between text-red-600">
-                  <span>Less: Purchase Returns</span>
-                  <span className="font-medium">({formatCurrency(data.cogs.purchaseReturns)})</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Add: Direct Expenses</span>
-                  <span className="font-medium">{formatCurrency(data.cogs.directExpenses)}</span>
-                </div>
-                <div className="flex justify-between text-red-600">
-                  <span>Less: Closing Stock</span>
-                  <span className="font-medium">({formatCurrency(data.cogs.closingStock)})</span>
-                </div>
-                <div className="flex justify-between font-bold text-lg border-t-2 pt-2">
-                  <span>Total COGS</span>
-                  <span>{formatCurrency(data.cogs.totalCogs)}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Gross Profit */}
-            <div className="bg-emerald-50/70 border border-emerald-200/80 p-3.5 rounded-xl">
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-semibold uppercase tracking-wider text-emerald-800">Gross Profit</span>
-                <span className="text-base font-semibold text-emerald-800 tabular-nums">{formatCurrency(data.grossProfit)}</span>
-              </div>
-              <div className="text-[11px] text-emerald-700 text-right mt-0.5 font-medium tabular-nums">
-                Margin: {formatPercentage(data.grossProfitMargin)}
-              </div>
-            </div>
-
-            {/* Operating Expenses */}
-            <div>
-              <h3 className="font-semibold text-sm text-slate-800 mb-2">Operating Expenses</h3>
-              <div className="space-y-1.5 pl-3 text-xs">
-                <div className="flex justify-between text-slate-600">
-                  <span>Salaries & Wages</span>
-                  <span className="font-medium text-slate-900 tabular-nums">{formatCurrency(data.operatingExpenses.salaries)}</span>
-                </div>
-                <div className="flex justify-between text-slate-600">
-                  <span>Rent</span>
-                  <span className="font-medium text-slate-900 tabular-nums">{formatCurrency(data.operatingExpenses.rent)}</span>
-                </div>
-                <div className="flex justify-between text-slate-600">
-                  <span>Utilities</span>
-                  <span className="font-medium text-slate-900 tabular-nums">{formatCurrency(data.operatingExpenses.utilities)}</span>
-                </div>
-                <div className="flex justify-between text-slate-600">
-                  <span>Transportation</span>
-                  <span className="font-medium text-slate-900 tabular-nums">{formatCurrency(data.operatingExpenses.transportation)}</span>
-                </div>
-                <div className="flex justify-between text-slate-600">
-                  <span>Marketing</span>
-                  <span className="font-medium text-slate-900 tabular-nums">{formatCurrency(data.operatingExpenses.marketing)}</span>
-                </div>
-                <div className="flex justify-between text-slate-600">
-                  <span>Office Expenses</span>
-                  <span className="font-medium text-slate-900 tabular-nums">{formatCurrency(data.operatingExpenses.officeExpenses)}</span>
-                </div>
-                <div className="flex justify-between text-slate-600">
-                  <span>Depreciation</span>
-                  <span className="font-medium text-slate-900 tabular-nums">{formatCurrency(data.operatingExpenses.depreciation)}</span>
-                </div>
-                <div className="flex justify-between text-slate-600">
-                  <span>Other Expenses</span>
-                  <span className="font-medium text-slate-900 tabular-nums">{formatCurrency(data.operatingExpenses.otherExpenses)}</span>
-                </div>
-                <div className="flex justify-between font-semibold text-slate-800 border-t border-slate-200 pt-1.5">
-                  <span>Total Operating Expenses</span>
-                  <span className="tabular-nums">{formatCurrency(data.operatingExpenses.totalOperatingExpenses)}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Financial Expenses */}
-            <div>
-              <h3 className="font-semibold text-sm text-slate-800 mb-2">Financial Expenses</h3>
-              <div className="space-y-1.5 pl-3 text-xs">
-                <div className="flex justify-between text-slate-600">
-                  <span>Interest Expense</span>
-                  <span className="font-medium text-slate-900 tabular-nums">{formatCurrency(data.financialExpenses.interestExpense)}</span>
-                </div>
-                <div className="flex justify-between text-slate-600">
-                  <span>Bank Charges</span>
-                  <span className="font-medium text-slate-900 tabular-nums">{formatCurrency(data.financialExpenses.bankCharges)}</span>
-                </div>
-                <div className="flex justify-between text-slate-600">
-                  <span>Other Financial Expenses</span>
-                  <span className="font-medium text-slate-900 tabular-nums">{formatCurrency(data.financialExpenses.otherFinancialExpenses)}</span>
-                </div>
-                <div className="flex justify-between font-semibold text-slate-800 border-t border-slate-200 pt-1.5">
-                  <span>Total Financial Expenses</span>
-                  <span className="tabular-nums">{formatCurrency(data.financialExpenses.totalFinancialExpenses)}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Total Expenses */}
-            <div className="bg-rose-50/70 border border-rose-200/80 p-3.5 rounded-xl">
-              <div className="flex justify-between items-center font-semibold text-xs uppercase tracking-wider text-rose-800">
-                <span>Total Expenses</span>
-                <span className="text-sm font-semibold tabular-nums">{formatCurrency(data.totalExpenses)}</span>
-              </div>
-            </div>
-
-            {/* Net Profit/Loss */}
-            <div className={`p-4 rounded-xl border ${isProfitable ? 'bg-emerald-50/80 border-emerald-300 text-emerald-900' : 'bg-rose-50/80 border-rose-300 text-rose-900'}`}>
-              <div className="flex justify-between items-center font-semibold text-base">
-                <span>Net {isProfitable ? 'Profit' : 'Loss'}</span>
-                <span className="tabular-nums text-lg">{formatCurrency(Math.abs(data.netProfit))}</span>
-              </div>
-              <div className="text-[11px] text-right mt-0.5 opacity-80 font-medium tabular-nums">
-                Margin: {formatPercentage(data.netProfitMargin)}
-              </div>
-            </div>
+      {/* Formal Letterhead */}
+      <div className="bg-white border border-slate-200/90 rounded-xl p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-center sm:text-left print:border-b-2 print:border-slate-800 print:shadow-none print:p-2">
+        <div>
+          <div className="flex items-center justify-center sm:justify-start gap-2">
+            <Building2 className="w-4 h-4 text-blue-600 print:hidden" />
+            <span className="text-xs uppercase font-extrabold tracking-widest text-slate-500">
+              CHAUHAN DAIRY FARMS • MILK CHILLAR ERP
+            </span>
           </div>
-        </CardContent>
-      </Card>
+          <h1 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight mt-0.5 uppercase">
+            STATEMENT OF PROFIT OR LOSS
+          </h1>
+          <p className="text-xs text-slate-500 flex items-center justify-center sm:justify-start gap-1.5 mt-0.5">
+            <Calendar className="w-3 h-3 text-slate-400 print:hidden" />
+            Period: <strong className="text-slate-700 font-semibold">{data.period.displayText}</strong> • All amounts in PKR
+          </p>
+        </div>
+
+        <div className="inline-flex items-center gap-2 self-center sm:self-auto px-3.5 py-1.5 rounded-lg border text-xs font-semibold shadow-2xs">
+          <span className={isProfitable ? 'text-emerald-700' : 'text-rose-700'}>
+            Net {isProfitable ? 'Profit' : 'Loss'}: {formatCurrency(Math.abs(data.netProfit))} ({formatPercentage(data.netProfitMargin)})
+          </span>
+        </div>
+      </div>
+
+      {/* Multi-Step Income Statement */}
+      <TableContainer title="Statement of Profit or Loss (Income Statement)">
+        <div className="divide-y divide-slate-100 text-xs">
+          {/* 1. REVENUE SECTION */}
+          <div className="p-3 bg-slate-50/70 border-b border-slate-200 flex items-center justify-between font-bold text-xs uppercase tracking-wider text-slate-800">
+            <span>1. Revenue & Operating Income</span>
+            <span className="text-[11px] font-semibold text-slate-500 lowercase">Gross Sales & Operating Revenues</span>
+          </div>
+
+          <div className="flex items-center justify-between px-6 py-2 hover:bg-slate-50/50">
+            <span className="text-slate-700">Gross Sales Revenue</span>
+            <span className="font-mono tabular-nums text-slate-900 font-medium">{formatCurrency(data.income.salesRevenue)}</span>
+          </div>
+
+          {data.income.salesReturns > 0 && (
+            <div className="flex items-center justify-between px-6 py-2 hover:bg-slate-50/50 text-rose-600">
+              <span>Less: Sales Returns & Allowances</span>
+              <span className="font-mono tabular-nums">({formatCurrency(data.income.salesReturns)})</span>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between px-6 py-2 bg-slate-50/30 font-semibold text-slate-800 border-t border-slate-150">
+            <span>Net Sales Revenue</span>
+            <span className="font-mono tabular-nums">{formatCurrency(data.income.netSales)}</span>
+          </div>
+
+          {data.income.otherIncome > 0 && (
+            <div className="flex items-center justify-between px-6 py-2 hover:bg-slate-50/50">
+              <span className="text-slate-700">Other Operating Income</span>
+              <span className="font-mono tabular-nums text-slate-900 font-medium">{formatCurrency(data.income.otherIncome)}</span>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between px-4 py-2.5 bg-slate-100/60 font-bold border-t border-slate-300 text-slate-900">
+            <span className="uppercase tracking-wide">Total Income</span>
+            <span className="font-mono tabular-nums text-blue-900 font-bold">{formatCurrency(data.income.totalIncome)}</span>
+          </div>
+
+          {/* 2. COST OF GOODS SOLD SECTION */}
+          <div className="p-3 bg-slate-50/70 border-t-2 border-b border-slate-200 flex items-center justify-between font-bold text-xs uppercase tracking-wider text-slate-800 mt-2">
+            <span>2. Cost of Goods Sold (COGS)</span>
+            <span className="text-[11px] font-semibold text-slate-500 lowercase">Direct Procurement & Production</span>
+          </div>
+
+          <div className="flex items-center justify-between px-6 py-2 hover:bg-slate-50/50">
+            <span className="text-slate-700">Opening Milk Inventory / Stock</span>
+            <span className="font-mono tabular-nums text-slate-900 font-medium">{formatCurrency(data.cogs.openingStock)}</span>
+          </div>
+
+          <div className="flex items-center justify-between px-6 py-2 hover:bg-slate-50/50">
+            <span className="text-slate-700">Add: Raw Milk Purchases</span>
+            <span className="font-mono tabular-nums text-slate-900 font-medium">{formatCurrency(data.cogs.purchases)}</span>
+          </div>
+
+          {data.cogs.purchaseReturns > 0 && (
+            <div className="flex items-center justify-between px-6 py-2 hover:bg-slate-50/50 text-rose-600">
+              <span>Less: Purchase Returns / Rejections</span>
+              <span className="font-mono tabular-nums">({formatCurrency(data.cogs.purchaseReturns)})</span>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between px-6 py-2 hover:bg-slate-50/50">
+            <span className="text-slate-700">Add: Direct Chilling & Processing Costs</span>
+            <span className="font-mono tabular-nums text-slate-900 font-medium">{formatCurrency(data.cogs.directExpenses)}</span>
+          </div>
+
+          {data.cogs.closingStock > 0 && (
+            <div className="flex items-center justify-between px-6 py-2 hover:bg-slate-50/50 text-emerald-700">
+              <span>Less: Closing Milk Inventory / Stock</span>
+              <span className="font-mono tabular-nums">({formatCurrency(data.cogs.closingStock)})</span>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between px-4 py-2.5 bg-slate-100/60 font-bold border-t border-slate-300 text-slate-900">
+            <span className="uppercase tracking-wide">Total Cost of Goods Sold</span>
+            <span className="font-mono tabular-nums text-rose-900 font-bold">{formatCurrency(data.cogs.totalCogs)}</span>
+          </div>
+
+          {/* GROSS PROFIT HIGHLIGHT */}
+          <div className="p-3.5 bg-emerald-50/80 border-t-2 border-b border-emerald-200 flex items-center justify-between font-bold text-xs">
+            <div className="flex items-center gap-2">
+              <span className="uppercase tracking-wider text-emerald-950 text-sm">GROSS PROFIT / (LOSS)</span>
+              <span className="text-[11px] font-semibold text-emerald-700 bg-white/80 px-2 py-0.5 rounded border border-emerald-300">
+                Margin: {formatPercentage(data.grossProfitMargin)}
+              </span>
+            </div>
+            <span className="text-sm font-extrabold font-mono tabular-nums text-emerald-950">
+              {formatCurrency(data.grossProfit)}
+            </span>
+          </div>
+
+          {/* 3. OPERATING EXPENSES SECTION */}
+          <div className="p-3 bg-slate-50/70 border-t-2 border-b border-slate-200 flex items-center justify-between font-bold text-xs uppercase tracking-wider text-slate-800 mt-2">
+            <span>3. Operating Expenses</span>
+            <span className="text-[11px] font-semibold text-slate-500 lowercase">Administrative & Operations</span>
+          </div>
+
+          <div className="flex items-center justify-between px-6 py-1.5 hover:bg-slate-50/50">
+            <span className="text-slate-600">Salaries & Wages</span>
+            <span className="font-mono tabular-nums text-slate-900">{formatCurrency(data.operatingExpenses.salaries)}</span>
+          </div>
+          <div className="flex items-center justify-between px-6 py-1.5 hover:bg-slate-50/50">
+            <span className="text-slate-600">Rent & Leases</span>
+            <span className="font-mono tabular-nums text-slate-900">{formatCurrency(data.operatingExpenses.rent)}</span>
+          </div>
+          <div className="flex items-center justify-between px-6 py-1.5 hover:bg-slate-50/50">
+            <span className="text-slate-600">Electricity & Chillar Utilities</span>
+            <span className="font-mono tabular-nums text-slate-900">{formatCurrency(data.operatingExpenses.utilities)}</span>
+          </div>
+          <div className="flex items-center justify-between px-6 py-1.5 hover:bg-slate-50/50">
+            <span className="text-slate-600">Transportation & Fuel</span>
+            <span className="font-mono tabular-nums text-slate-900">{formatCurrency(data.operatingExpenses.transportation)}</span>
+          </div>
+          <div className="flex items-center justify-between px-6 py-1.5 hover:bg-slate-50/50">
+            <span className="text-slate-600">Marketing & Promotion</span>
+            <span className="font-mono tabular-nums text-slate-900">{formatCurrency(data.operatingExpenses.marketing)}</span>
+          </div>
+          <div className="flex items-center justify-between px-6 py-1.5 hover:bg-slate-50/50">
+            <span className="text-slate-600">Office & General Supplies</span>
+            <span className="font-mono tabular-nums text-slate-900">{formatCurrency(data.operatingExpenses.officeExpenses)}</span>
+          </div>
+          <div className="flex items-center justify-between px-6 py-1.5 hover:bg-slate-50/50">
+            <span className="text-slate-600">Depreciation</span>
+            <span className="font-mono tabular-nums text-slate-900">{formatCurrency(data.operatingExpenses.depreciation)}</span>
+          </div>
+          <div className="flex items-center justify-between px-6 py-1.5 hover:bg-slate-50/50">
+            <span className="text-slate-600">Other Miscellaneous Expenses</span>
+            <span className="font-mono tabular-nums text-slate-900">{formatCurrency(data.operatingExpenses.otherExpenses)}</span>
+          </div>
+
+          <div className="flex items-center justify-between px-4 py-2.5 bg-slate-100/60 font-bold border-t border-slate-300 text-slate-900">
+            <span className="uppercase tracking-wide">Total Operating Expenses</span>
+            <span className="font-mono tabular-nums text-rose-900 font-bold">{formatCurrency(data.operatingExpenses.totalOperatingExpenses)}</span>
+          </div>
+
+          {/* 4. FINANCIAL EXPENSES SECTION */}
+          <div className="p-3 bg-slate-50/70 border-t-2 border-b border-slate-200 flex items-center justify-between font-bold text-xs uppercase tracking-wider text-slate-800 mt-2">
+            <span>4. Financial & Banking Charges</span>
+            <span className="text-[11px] font-semibold text-slate-500 lowercase">Financing Costs</span>
+          </div>
+
+          <div className="flex items-center justify-between px-6 py-1.5 hover:bg-slate-50/50">
+            <span className="text-slate-600">Interest Expense</span>
+            <span className="font-mono tabular-nums text-slate-900">{formatCurrency(data.financialExpenses.interestExpense)}</span>
+          </div>
+          <div className="flex items-center justify-between px-6 py-1.5 hover:bg-slate-50/50">
+            <span className="text-slate-600">Bank Charges & Fees</span>
+            <span className="font-mono tabular-nums text-slate-900">{formatCurrency(data.financialExpenses.bankCharges)}</span>
+          </div>
+          <div className="flex items-center justify-between px-6 py-1.5 hover:bg-slate-50/50">
+            <span className="text-slate-600">Other Financial Charges</span>
+            <span className="font-mono tabular-nums text-slate-900">{formatCurrency(data.financialExpenses.otherFinancialExpenses)}</span>
+          </div>
+
+          <div className="flex items-center justify-between px-4 py-2.5 bg-slate-100/60 font-bold border-t border-slate-300 text-slate-900">
+            <span className="uppercase tracking-wide">Total Financial Expenses</span>
+            <span className="font-mono tabular-nums text-rose-900 font-bold">{formatCurrency(data.financialExpenses.totalFinancialExpenses)}</span>
+          </div>
+
+          {/* TOTAL EXPENSES */}
+          <div className="flex items-center justify-between px-4 py-2.5 bg-rose-50/60 font-bold border-t border-slate-300 text-rose-900">
+            <span className="uppercase tracking-wide">Total Expenses (COGS + Operating + Financial)</span>
+            <span className="font-mono tabular-nums text-rose-950 font-extrabold">{formatCurrency(data.totalExpenses)}</span>
+          </div>
+
+          {/* NET PROFIT / LOSS WITH CLASSIC DOUBLE UNDERLINE */}
+          <div className={`p-4 border-t-2 border-slate-400 flex items-center justify-between font-bold text-xs ${isProfitable ? 'bg-emerald-50/90 text-emerald-950' : 'bg-rose-50/90 text-rose-950'}`}>
+            <div className="flex items-center gap-2">
+              <span className="uppercase tracking-wider text-sm">
+                NET {isProfitable ? 'PROFIT' : 'LOSS'} FOR THE PERIOD
+              </span>
+              <span className={`text-[11px] font-semibold px-2 py-0.5 rounded border ${isProfitable ? 'bg-white/80 text-emerald-800 border-emerald-300' : 'bg-white/80 text-rose-800 border-rose-300'}`}>
+                Net Margin: {formatPercentage(data.netProfitMargin)}
+              </span>
+            </div>
+            <span className="text-base font-extrabold font-mono tabular-nums border-b-4 border-double border-slate-900">
+              {formatCurrency(Math.abs(data.netProfit))}
+            </span>
+          </div>
+        </div>
+      </TableContainer>
     </div>
   );
 }

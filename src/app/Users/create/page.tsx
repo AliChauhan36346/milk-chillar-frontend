@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Label } from '@/components/ui/Label';
 import { Select } from '@/components/ui/Select';
 import { Switch } from '@/components/ui/Switch';
+import { CenteredSpinner } from '@/components/ui/spinner';
 import { useToast } from '@/hooks/useToast';
 
 // Mock data
@@ -79,7 +80,7 @@ export default function UserForm({ params }: { params: { action: string, id?: st
 
   if (isLoading) return (
     <div className="max-w-3xl mx-auto p-6 flex justify-center items-center h-64">
-      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      <CenteredSpinner message="Loading user details..." />
     </div>
   );
 

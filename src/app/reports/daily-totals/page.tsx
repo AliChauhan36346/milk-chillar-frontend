@@ -19,7 +19,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { CompactToolbar } from '@/components/ui/CompactToolbar';
 import { Table, TableContainer } from '@/components/ui/Table/Table';
 import { Select } from '@/components/ui/Select';
-import { FullPageSpinner } from '@/components/ui/spinner';
+import { FullPageSpinner, CenteredSpinner } from '@/components/ui/spinner';
 import { getDailyTotalsReport, DailyTotalsDto } from '@/lib/api/reports';
 import { getChillars, Chillar } from '@/lib/api/chillar';
 import { getMyChillar } from '@/lib/api/chillarReceive';
@@ -401,7 +401,13 @@ function DailyTotalsContent() {
                             </Table.Row>
                         </Table.Header>
                         <Table.Body>
-                            {dailyTotals.length === 0 ? (
+                            {loading ? (
+                                <tr>
+                                    <td colSpan={isAdmin ? 6 : 5} className="text-center py-12">
+                                        <CenteredSpinner message="Loading daily totals..." />
+                                    </td>
+                                </tr>
+                            ) : dailyTotals.length === 0 ? (
                                 <tr>
                                     <td colSpan={isAdmin ? 6 : 5} className="text-center py-10">
                                         <div className="text-slate-400 flex flex-col items-center justify-center">

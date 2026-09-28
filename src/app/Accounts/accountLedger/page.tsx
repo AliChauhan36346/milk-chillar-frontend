@@ -11,6 +11,7 @@ import SummaryCard from '@/components/ui/SummaryCard';
 import { SearchableSelect, SearchableOption } from '@/components/ui/SearchableSelect';
 import ProtectedRoute from '@/components/ProtectedRoutes';
 import MilkCardModal from '@/components/modals/MilkCardModal';
+import { FullPageSpinner } from '@/components/ui/spinner';
 import { useToast } from '@/hooks/useToast';
 import {
     Download,
@@ -629,13 +630,7 @@ function AccountLedgerInner() {
 
 export default function AccountLedgerPage() {
     return (
-        <Suspense
-            fallback={
-                <div className="flex items-center justify-center min-h-screen">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-                </div>
-            }
-        >
+        <Suspense fallback={<FullPageSpinner message="Loading account ledger..." />}>
             <AccountLedgerInner />
         </Suspense>
     );

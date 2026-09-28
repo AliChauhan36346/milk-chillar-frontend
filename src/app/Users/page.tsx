@@ -11,6 +11,7 @@ import { ConfirmationModal } from '@/components/modals/ConfirmationModal';
 import { UserFormModal } from '@/components/features/users/UserFormModal';
 import { ChangeCredentialsModal } from '@/components/features/users/ChangeCredentialsModal';
 import { UserPermissionsModal } from '@/components/features/users/UserPermissionsModal';
+import { CenteredSpinner } from '@/components/ui/spinner';
 import {
   User,
   Role,
@@ -275,10 +276,7 @@ export default function UsersPage() {
                 {isLoading ? (
                   <Table.Row>
                     <Table.Cell colSpan={7} className="h-32 text-center text-xs text-gray-400">
-                      <div className="flex flex-col items-center justify-center gap-2">
-                        <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                        <span>Loading user accounts...</span>
-                      </div>
+                      <CenteredSpinner message="Loading user accounts..." />
                     </Table.Cell>
                   </Table.Row>
                 ) : filteredUsers.length === 0 ? (
@@ -449,9 +447,8 @@ export default function UsersPage() {
         {/* Mobile View: Responsive Cards */}
         <div className="md:hidden space-y-2.5">
           {isLoading ? (
-            <div className="py-12 flex flex-col items-center justify-center gap-2 text-gray-400 bg-white rounded-xl border border-gray-100">
-              <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-              <span className="text-xs">Loading user accounts...</span>
+            <div className="py-6 bg-white rounded-xl border border-gray-100">
+              <CenteredSpinner message="Loading user accounts..." />
             </div>
           ) : filteredUsers.length === 0 ? (
             <div className="py-8 text-center text-xs text-gray-400 bg-white rounded-xl border border-gray-100">

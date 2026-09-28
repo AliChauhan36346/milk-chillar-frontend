@@ -15,6 +15,7 @@ import {
   DropdownItem,
 } from '@/components/ui/Dropdown/Dropdown';
 import { Badge } from '@/components/ui/Badge';
+import { CenteredSpinner } from '@/components/ui/spinner';
 import { getPagedEmployees, deleteEmployee, Employee } from '@/lib/api/employees';
 import { useToast } from '@/hooks/useToast';
 
@@ -116,7 +117,9 @@ export default function EmployeesPage() {
             <Table.Body>
               {isLoading ? (
                 <Table.Row>
-                  <Table.Cell colSpan={7} className="text-center">Loading...</Table.Cell>
+                  <Table.Cell colSpan={7} className="text-center py-10">
+                    <CenteredSpinner message="Loading employees..." />
+                  </Table.Cell>
                 </Table.Row>
               ) : employees.length === 0 ? (
                 <Table.Row>

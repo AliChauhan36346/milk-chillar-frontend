@@ -28,6 +28,7 @@ import {
   DollarSign
 } from 'lucide-react';
 import { DynamicLayout } from '@/components/layouts/DynamicLayout';
+import { Spinner } from '@/components/ui/spinner';
 import ProtectedRoute from '@/components/ProtectedRoutes';
 import {
   getChartOfAccounts,
@@ -588,7 +589,7 @@ export default function ChartOfAccountsPage() {
         <DynamicLayout>
           <div className="min-h-screen bg-slate-50 flex items-center justify-center">
             <div className="text-center p-8 bg-white rounded-2xl shadow-sm border border-slate-200">
-              <div className="w-10 h-10 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+              <Spinner size="lg" color="blue" className="mx-auto mb-3" />
               <p className="text-sm font-semibold text-slate-700">Loading Chart of Accounts & Balances...</p>
               <p className="text-xs text-slate-400 mt-1">Calculating real-time financial rollups</p>
             </div>

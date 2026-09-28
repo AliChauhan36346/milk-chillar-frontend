@@ -1,11 +1,30 @@
 'use client';
-import { useState, useEffect } from 'react';
-import { Plus, Search, Filter, Trash2, Edit, RefreshCw } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import {
+  Plus,
+  Search,
+  Filter,
+  Trash2,
+  Edit,
+  RefreshCw,
+  Wallet,
+  TrendingUp,
+  TrendingDown,
+  CheckCircle2,
+  AlertTriangle,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
 import { openingBalancesApi, OpeningBalance, OpeningBalanceFilters } from '@/lib/api/openingBalances';
 import OpeningBalanceModal from '@/components/modals/OpeningBalanceModal';
-import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/useToast';
 import { AdminLayout } from '@/components/layouts/AdminLayout';
+import ProtectedRoute from '@/components/ProtectedRoutes';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { StatStrip } from '@/components/ui/StatStrip';
+import { Table, TableContainer } from '@/components/ui/Table/Table';
+import { CenteredSpinner } from '@/components/ui/spinner';
+import { Select } from '@/components/ui/Select';
 
 export default function OpeningBalancesPage() {
   // State
@@ -15,13 +34,11 @@ export default function OpeningBalancesPage() {
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<OpeningBalanceFilters>({
     pageNumber: 1,
-    pageSize: 10
+    pageSize: 15,
   });
   const [totalPages, setTotalPages] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
   const { toast } = useToast();
-
-  // Account search will be implemented later when API is available
 
   // Load opening balances
   const loadOpeningBalances = async () => {
@@ -33,7 +50,7 @@ export default function OpeningBalancesPage() {
     } catch (error) {
       toast({
         title: 'Failed to load opening balances',
-        variant: 'error'
+        variant: 'error',
       });
     } finally {
       setLoading(false);
@@ -45,36 +62,39 @@ export default function OpeningBalancesPage() {
   }, [filters]);
 
   // Handle create/update
-  const handleSubmit = async (data: {
-    accountId: number;
-    openingDate: string;
-    debitOpening: number;
-    creditOpening: number;
-    description: string;
-  }, keepOpen: boolean) => {
+  const handleSubmit = async (
+    data: {
+      accountId: number;
+      openingDate: string;
+      debitOpening: number;
+      creditOpening: number;
+      description: string;
+    },
+    keepOpen: boolean
+  ) => {
     try {
       if (selectedBalance) {
         await openingBalancesApi.updateOpeningBalance(selectedBalance.openingBalanceId, data);
         toast({
           title: 'Opening balance updated successfully',
-          variant: 'success'
+          variant: 'success',
         });
-        setShowModal(false); // Always close on update
+        setShowModal(false);
       } else {
         await openingBalancesApi.createOpeningBalance(data);
         toast({
           title: 'Opening balance added successfully',
-          variant: 'success'
+          variant: 'success',
         });
         if (!keepOpen) {
-          setShowModal(false); // Only close if keepOpen is false
+          setShowModal(false);
         }
       }
       loadOpeningBalances();
     } catch (error) {
       toast({
         title: 'Operation failed',
-        variant: 'error'
+        variant: 'error',
       });
       throw error;
     }
@@ -83,13 +103,13 @@ export default function OpeningBalancesPage() {
   // Handle delete
   const handleDelete = async (id: number) => {
     if (!confirm('Are you sure you want to delete this opening balance?')) return;
-    
+
     try {
       await openingBalancesApi.deleteOpeningBalance(id);
       toast({
         title: 'Opening balance deleted successfully',
         description: `Opening balance with ID ${id} has been deleted`,
-        variant: 'success'
+        variant: 'success',
       });
       loadOpeningBalances();
     } catch (error: any) {
@@ -97,228 +117,393 @@ export default function OpeningBalancesPage() {
       toast({
         title: 'Failed to delete opening balance',
         description: error?.message || 'An unexpected error occurred',
-        variant: 'error'
+        variant: 'error',
       });
     }
   };
 
-  return (
-    <AdminLayout>
-      <div className="p-6 max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Opening Balances</h1>
-            <p className="text-sm text-gray-600">Manage account opening balances</p>
-          </div>
-          <button
-            onClick={() => {
-              setSelectedBalance(undefined);
-              setShowModal(true);
-            }}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg flex items-center gap-2 hover:bg-blue-700"
-          >
-            <Plus className="w-4 h-4" />
-            Add Opening Balance
-          </button>
-        </div>
+  const formatCurrency = (val: number): string => {
+    return new Intl.NumberFormat('en-PK', {
+      style: 'currency',
+      currency: 'PKR',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(val);
+  };
 
-        {/* Filters */}
-        <Card className="p-4">
-          <div className="flex items-center gap-4 flex-wrap">
-            <div className="flex-1 min-w-[200px]">
-              <div className="relative">
-                <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+  // Calculate stats
+  const totals = useMemo(() => {
+    return openingBalances.reduce(
+      (acc, curr) => {
+        acc.totalDebit += curr.debitOpening || 0;
+        acc.totalCredit += curr.creditOpening || 0;
+        return acc;
+      },
+      { totalDebit: 0, totalCredit: 0 }
+    );
+  }, [openingBalances]);
+
+  const netDifference = Math.abs(totals.totalDebit - totals.totalCredit);
+  const isBalanced = netDifference < 1.0;
+
+  return (
+    <ProtectedRoute requiredRole="admin">
+      <AdminLayout>
+        <div className="space-y-4 max-w-7xl mx-auto">
+          {/* Header */}
+          <PageHeader
+            title="Opening Balances"
+            subtitle="Manage initial account balances and ledger migration figures"
+            icon={<Wallet className="w-5 h-5 text-blue-600" />}
+            actions={
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => loadOpeningBalances()}
+                  disabled={loading}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-700 text-xs font-semibold rounded-lg hover:bg-slate-200 transition-colors border border-slate-200"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+                  Refresh
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedBalance(undefined);
+                    setShowModal(true);
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-2xs"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Add Opening Balance
+                </button>
+              </div>
+            }
+          />
+
+          {/* KPI StatStrip */}
+          <StatStrip
+            items={[
+              {
+                label: 'Recorded Accounts',
+                value: openingBalances.length.toString(),
+                subtext: `Page ${filters.pageNumber} of ${totalPages}`,
+                color: 'info',
+                icon: <Wallet className="w-4 h-4 text-blue-600" />,
+              },
+              {
+                label: 'Total Debit Opening',
+                value: formatCurrency(totals.totalDebit),
+                color: 'success',
+                icon: <TrendingUp className="w-4 h-4 text-emerald-600" />,
+              },
+              {
+                label: 'Total Credit Opening',
+                value: formatCurrency(totals.totalCredit),
+                color: 'danger',
+                icon: <TrendingDown className="w-4 h-4 text-rose-600" />,
+              },
+              {
+                label: 'Parity Status',
+                value: isBalanced ? 'Balanced' : 'Imbalance',
+                subtext: isBalanced ? 'Debits equal Credits' : `${formatCurrency(netDifference)} variance`,
+                color: isBalanced ? 'success' : 'danger',
+                icon: isBalanced ? (
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                ) : (
+                  <AlertTriangle className="w-4 h-4 text-rose-600" />
+                ),
+              },
+            ]}
+          />
+
+          {/* Compact Filter Toolbar */}
+          <div className="bg-white rounded-xl border border-slate-200/90 p-2.5 sm:p-3 shadow-xs space-y-3">
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Quick Search */}
+              <div className="relative min-w-[220px] flex-1 sm:flex-initial">
+                <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                 <input
                   type="text"
-                  placeholder="Search accounts..."
-                  className="w-full pl-10 pr-4 py-2 border rounded-lg"
+                  placeholder="Search code or account..."
                   value={filters.search || ''}
-                  onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+                  onChange={(e) =>
+                    setFilters((prev) => ({ ...prev, search: e.target.value, pageNumber: 1 }))
+                  }
+                  className="w-full pl-8 pr-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 bg-white placeholder:text-slate-400"
                 />
               </div>
-            </div>
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className="p-2 border rounded-lg hover:bg-gray-50 flex items-center gap-2"
-            >
-              <Filter className="w-5 h-5" />
-              Filters
-            </button>
-            <button
-              onClick={() => loadOpeningBalances()}
-              className="p-2 border rounded-lg hover:bg-gray-50"
-              title="Refresh"
-            >
-              <RefreshCw className="w-5 h-5" />
-            </button>
-          </div>
 
-          {/* Advanced Filters */}
-          {showFilters && (
-            <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Balance Type
-                </label>
-                <select
-                  className="w-full p-2 border rounded-lg"
-                  onChange={(e) => {
-                    if (e.target.value === 'debit') {
-                      setFilters(prev => ({ ...prev, hasDebitBalance: true, hasCreditBalance: false }));
-                    } else if (e.target.value === 'credit') {
-                      setFilters(prev => ({ ...prev, hasDebitBalance: false, hasCreditBalance: true }));
+              {/* Balance Type Filter */}
+              <div className="min-w-[150px]">
+                <Select
+                  value={
+                    filters.hasDebitBalance
+                      ? 'debit'
+                      : filters.hasCreditBalance
+                      ? 'credit'
+                      : 'all'
+                  }
+                  onChange={(val) => {
+                    if (val === 'debit') {
+                      setFilters((prev) => ({
+                        ...prev,
+                        hasDebitBalance: true,
+                        hasCreditBalance: false,
+                        pageNumber: 1,
+                      }));
+                    } else if (val === 'credit') {
+                      setFilters((prev) => ({
+                        ...prev,
+                        hasDebitBalance: false,
+                        hasCreditBalance: true,
+                        pageNumber: 1,
+                      }));
                     } else {
-                      setFilters(prev => ({ ...prev, hasDebitBalance: undefined, hasCreditBalance: undefined }));
+                      setFilters((prev) => ({
+                        ...prev,
+                        hasDebitBalance: undefined,
+                        hasCreditBalance: undefined,
+                        pageNumber: 1,
+                      }));
                     }
                   }}
-                >
-                  <option value="">All</option>
-                  <option value="debit">Debit Only</option>
-                  <option value="credit">Credit Only</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Min Amount
-                </label>
-                <input
-                  type="number"
-                  className="w-full p-2 border rounded-lg"
-                  value={filters.minAmount || ''}
-                  onChange={(e) => setFilters(prev => ({ ...prev, minAmount: Number(e.target.value) || undefined }))}
+                  options={[
+                    { value: 'all', label: 'All Balance Types' },
+                    { value: 'debit', label: 'Debit Balances' },
+                    { value: 'credit', label: 'Credit Balances' },
+                  ]}
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Max Amount
-                </label>
-                <input
-                  type="number"
-                  className="w-full p-2 border rounded-lg"
-                  value={filters.maxAmount || ''}
-                  onChange={(e) => setFilters(prev => ({ ...prev, maxAmount: Number(e.target.value) || undefined }))}
-                />
-              </div>
-            </div>
-          )}
-        </Card>
 
-        {/* Opening Balances Table */}
-        <Card className="overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-gray-50 border-b">
-                  <th className="text-left p-4">Account</th>
-                  <th className="text-left p-4">Debit</th>
-                  <th className="text-left p-4">Credit</th>
-                  <th className="text-left p-4">Net Balance</th>
-                  <th className="text-left p-4">Added By</th>
-                  <th className="text-left p-4">Created At</th>
-                  <th className="text-left p-4">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
+              {/* Advanced Filters Toggle */}
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors ${
+                  showFilters
+                    ? 'bg-blue-50 text-blue-700 border-blue-300'
+                    : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200'
+                }`}
+              >
+                <Filter className="w-3.5 h-3.5" />
+                {showFilters ? 'Hide Filters' : 'More Filters'}
+              </button>
+            </div>
+
+            {/* Expandable Advanced Filters */}
+            {showFilters && (
+              <div className="pt-2 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                <div>
+                  <label className="block text-[11px] font-medium text-slate-600 mb-1">
+                    Min Amount (PKR)
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="Min amount..."
+                    className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500"
+                    value={filters.minAmount || ''}
+                    onChange={(e) =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        minAmount: Number(e.target.value) || undefined,
+                        pageNumber: 1,
+                      }))
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-medium text-slate-600 mb-1">
+                    Max Amount (PKR)
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="Max amount..."
+                    className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500"
+                    value={filters.maxAmount || ''}
+                    onChange={(e) =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        maxAmount: Number(e.target.value) || undefined,
+                        pageNumber: 1,
+                      }))
+                    }
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Table Container */}
+          <TableContainer title="Opening Balance Records">
+            <Table dense>
+              <Table.Header sticky>
+                <Table.Row>
+                  <Table.Head className="whitespace-nowrap">Account Code</Table.Head>
+                  <Table.Head className="whitespace-nowrap">Account Title</Table.Head>
+                  <Table.Head align="right" className="whitespace-nowrap">Debit (PKR)</Table.Head>
+                  <Table.Head align="right" className="whitespace-nowrap">Credit (PKR)</Table.Head>
+                  <Table.Head align="right" className="whitespace-nowrap">Net Balance</Table.Head>
+                  <Table.Head className="whitespace-nowrap">Created By</Table.Head>
+                  <Table.Head className="whitespace-nowrap">Date</Table.Head>
+                  <Table.Head align="center" className="whitespace-nowrap">Actions</Table.Head>
+                </Table.Row>
+              </Table.Header>
+              <Table.Body>
                 {loading ? (
-                  <tr>
-                    <td colSpan={8} className="text-center p-4">
-                      Loading...
-                    </td>
-                  </tr>
+                  <Table.Row>
+                    <Table.Cell colSpan={8} className="text-center py-12">
+                      <CenteredSpinner message="Loading opening balances..." />
+                    </Table.Cell>
+                  </Table.Row>
                 ) : openingBalances.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="text-center p-4">
-                      No opening balances found
-                    </td>
-                  </tr>
+                  <Table.Row>
+                    <Table.Cell colSpan={8} className="text-center py-10 text-xs text-slate-400">
+                      No opening balances found matching the specified criteria
+                    </Table.Cell>
+                  </Table.Row>
                 ) : (
                   openingBalances.map((balance) => (
-                    <tr key={balance.openingBalanceId} className="border-b hover:bg-gray-50">
-                      <td className="p-4">
-                        <div>
-                          <div className="font-medium">{balance.accountCode}</div>
-                          <div className="text-sm text-gray-600">{balance.accountName}</div>
-                        </div>
-                      </td>
-                      <td className="p-4">
-                        {balance.debitOpening > 0 ? `₨ ${balance.debitOpening.toFixed(2)}` : '-'}
-                      </td>
-                      <td className="p-4">
-                        {balance.creditOpening > 0 ? `₨ ${balance.creditOpening.toFixed(2)}` : '-'}
-                      </td>
-                      <td className="p-4">
-                        <span className={balance.balanceType === 'Debit' ? 'text-blue-600' : 'text-green-600'}>
-                          ₨ {balance.absoluteBalance.toFixed(2)} {balance.balanceType}
+                    <Table.Row key={balance.openingBalanceId}>
+                      <Table.Cell className="font-mono text-xs text-slate-600 font-semibold whitespace-nowrap">
+                        {balance.accountCode}
+                      </Table.Cell>
+                      <Table.Cell className="text-xs font-medium text-slate-900 whitespace-nowrap">
+                        {balance.accountName}
+                      </Table.Cell>
+                      <Table.Cell
+                        align="right"
+                        className="text-xs font-mono tabular-nums whitespace-nowrap text-emerald-700 font-medium"
+                      >
+                        {balance.debitOpening > 0 ? formatCurrency(balance.debitOpening) : '—'}
+                      </Table.Cell>
+                      <Table.Cell
+                        align="right"
+                        className="text-xs font-mono tabular-nums whitespace-nowrap text-rose-600 font-medium"
+                      >
+                        {balance.creditOpening > 0 ? formatCurrency(balance.creditOpening) : '—'}
+                      </Table.Cell>
+                      <Table.Cell
+                        align="right"
+                        className="text-xs font-mono tabular-nums font-semibold whitespace-nowrap"
+                      >
+                        <span
+                          className={
+                            balance.balanceType === 'Debit' ? 'text-emerald-700' : 'text-purple-700'
+                          }
+                        >
+                          {formatCurrency(balance.absoluteBalance)}{' '}
+                          <span className="text-[10px] uppercase font-normal text-slate-400">
+                            {balance.balanceType}
+                          </span>
                         </span>
-                      </td>
-                      <td className="p-4">{balance.addedByUsername}</td>
-                      <td className="p-4">
-                        {new Date(balance.createdAt).toLocaleDateString()}
-                      </td>
-                      <td className="p-4">
-                        <div className="flex items-center gap-2">
+                      </Table.Cell>
+                      <Table.Cell className="text-xs text-slate-500 whitespace-nowrap">
+                        {balance.addedByUsername || '—'}
+                      </Table.Cell>
+                      <Table.Cell className="text-xs text-slate-500 whitespace-nowrap">
+                        {balance.createdAt
+                          ? new Date(balance.createdAt).toLocaleDateString('en-PK', {
+                              dateStyle: 'medium',
+                            })
+                          : '—'}
+                      </Table.Cell>
+                      <Table.Cell align="center" className="whitespace-nowrap">
+                        <div className="flex items-center justify-center gap-1">
                           <button
                             onClick={() => {
                               setSelectedBalance(balance);
                               setShowModal(true);
                             }}
-                            className="p-2 hover:bg-gray-100 rounded-lg"
-                            title="Edit"
+                            className="p-1 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                            title="Edit Opening Balance"
                           >
-                            <Edit className="w-4 h-4" />
+                            <Edit className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => handleDelete(balance.openingBalanceId)}
-                            className="p-2 hover:bg-red-100 rounded-lg text-red-600"
-                            title="Delete"
+                            className="p-1 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors"
+                            title="Delete Opening Balance"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
-                      </td>
-                    </tr>
+                      </Table.Cell>
+                    </Table.Row>
                   ))
                 )}
-              </tbody>
-            </table>
-          </div>
+              </Table.Body>
+              {/* Grand Totals Footer */}
+              {!loading && openingBalances.length > 0 && (
+                <tfoot>
+                  <tr className="bg-slate-100/90 border-t border-slate-300 font-semibold text-xs text-slate-800">
+                    <td colSpan={2} className="px-3.5 py-2.5 uppercase tracking-wider text-slate-700">
+                      Total ({openingBalances.length} Records)
+                    </td>
+                    <td className="px-3.5 py-2.5 text-right font-mono tabular-nums text-emerald-800 font-bold border-b-4 border-double border-slate-900">
+                      {formatCurrency(totals.totalDebit)}
+                    </td>
+                    <td className="px-3.5 py-2.5 text-right font-mono tabular-nums text-rose-800 font-bold border-b-4 border-double border-slate-900">
+                      {formatCurrency(totals.totalCredit)}
+                    </td>
+                    <td className="px-3.5 py-2.5 text-right font-mono tabular-nums text-slate-900 font-bold border-b-4 border-double border-slate-900">
+                      {formatCurrency(Math.abs(totals.totalDebit - totals.totalCredit))}
+                    </td>
+                    <td colSpan={3}></td>
+                  </tr>
+                </tfoot>
+              )}
+            </Table>
 
-          {/* Pagination */}
-          <div className="p-4 border-t flex items-center justify-between">
-            <div className="text-sm text-gray-600">
-              Showing {openingBalances.length} of {filters.pageSize} entries
+            {/* Pagination Controls */}
+            <div className="p-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600 bg-slate-50/50">
+              <div>
+                Showing <strong className="text-slate-800">{openingBalances.length}</strong> items
+                (Page {filters.pageNumber} of {totalPages})
+              </div>
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      pageNumber: Math.max(1, (prev.pageNumber || 1) - 1),
+                    }))
+                  }
+                  disabled={(filters.pageNumber || 1) <= 1 || loading}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 border border-slate-200 rounded-lg hover:bg-white disabled:opacity-40 transition-colors text-xs font-medium"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                  Prev
+                </button>
+                <span className="px-2 py-1 text-xs font-semibold text-slate-700">
+                  {filters.pageNumber}
+                </span>
+                <button
+                  onClick={() =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      pageNumber: (prev.pageNumber || 1) + 1,
+                    }))
+                  }
+                  disabled={(filters.pageNumber || 1) >= totalPages || loading}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 border border-slate-200 rounded-lg hover:bg-white disabled:opacity-40 transition-colors text-xs font-medium"
+                >
+                  Next
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setFilters(prev => ({ ...prev, pageNumber: Math.max(1, (prev.pageNumber || 1) - 1) }))}
-                disabled={filters.pageNumber === 1}
-                className="px-3 py-1 border rounded hover:bg-gray-50 disabled:opacity-50"
-              >
-                Previous
-              </button>
-              <button
-                onClick={() => setFilters(prev => ({ ...prev, pageNumber: (prev.pageNumber || 1) + 1 }))}
-                disabled={(filters.pageNumber || 1) >= totalPages}
-                className="px-3 py-1 border rounded hover:bg-gray-50 disabled:opacity-50"
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        </Card>
+          </TableContainer>
 
-        {/* Opening Balance Modal */}
-        <OpeningBalanceModal
-          isOpen={showModal}
-          onClose={() => {
-            setShowModal(false);
-            setSelectedBalance(undefined);
-          }}
-          onSubmit={handleSubmit}
-          initialData={selectedBalance}
-        />
-      </div>
-    </AdminLayout>
+          {/* Opening Balance Modal */}
+          <OpeningBalanceModal
+            isOpen={showModal}
+            onClose={() => {
+              setShowModal(false);
+              setSelectedBalance(undefined);
+            }}
+            onSubmit={handleSubmit}
+            initialData={selectedBalance}
+          />
+        </div>
+      </AdminLayout>
+    </ProtectedRoute>
   );
 }

@@ -5,11 +5,12 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { API_BASE_URL } from '@/lib/api/api';
 import { AlertCircle } from 'lucide-react';
+import { FullPageSpinner } from '@/components/ui/spinner';
 import Link from 'next/link';
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+    <Suspense fallback={<FullPageSpinner message="Loading login portal..." />}>
       <LoginForm />
     </Suspense>
   );

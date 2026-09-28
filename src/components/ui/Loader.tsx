@@ -15,16 +15,16 @@ interface LoaderProps {
  */
 export default function MilkLoader({
   message = 'Loading...',
-  size = 'lg',
+  size = 'md',
   fullScreen = true
 }: LoaderProps) {
   const content = (
-    <div className="flex flex-col items-center justify-center gap-3">
+    <div className="flex flex-col items-center justify-center gap-2.5">
       <Spinner size={size} color="blue" />
       {message && (
-        <p className="text-xs font-medium text-slate-500 tracking-wide animate-pulse">
+        <span className="text-xs font-medium text-slate-500">
           {message}
-        </p>
+        </span>
       )}
     </div>
   );

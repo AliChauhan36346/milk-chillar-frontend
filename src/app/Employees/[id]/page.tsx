@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/Badge';
 import { UserPlus, Edit, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { Employee, getEmployeeById, deleteEmployee } from '@/lib/api/employees';
+import { CenteredSpinner } from '@/components/ui/spinner';
 import { useToast } from '@/hooks/useToast';
 
 interface PageProps {
@@ -87,9 +88,7 @@ export default function EmployeeDetailsPage({ params }: PageProps) {
     return (
       <DynamicLayout allowedRoles={['admin', 'manager']}>
         <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
-            <p>Loading...</p>
-          </div>
+          <CenteredSpinner message="Loading employee details..." />
         </div>
       </DynamicLayout>
     );
