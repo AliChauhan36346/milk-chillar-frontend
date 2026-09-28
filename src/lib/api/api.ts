@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { isTokenExpired, handleSessionExpired } from '@/lib/auth/tokenUtils';
 
 const DEFAULT_API_URL = 'https://localhost:7013/api';
 
@@ -15,12 +16,19 @@ export const api = axios.create({
   timeout: 30000, // 30-second timeout to handle free-tier cloud cold starts gracefully
 });
 
-// Add request interceptor for authentication
+// Add request interceptor for authentication & pre-flight expiration checks
 api.interceptors.request.use(
   (config) => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('token');
+      if (token) {
+        if (isTokenExpired(token)) {
+          // Token is already expired; intercept and redirect immediately without sending a doomed request
+          handleSessionExpired(window.location.pathname);
+          return Promise.reject(new axios.Cancel('Session expired. Redirecting to login...'));
+        }
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
     return config;
   },
@@ -29,16 +37,21 @@ api.interceptors.request.use(
   }
 );
 
-// Add response interceptor for error handling
+// Add response interceptor for error handling & 401 expiration handling
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      // Handle unauthorized access
+    if (axios.isCancel(error)) {
+      return Promise.reject(error);
+    }
+
+    const status = error.response?.status;
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+
+    // Handle unauthorized access or expired token detected on failure
+    if (status === 401 || (token && isTokenExpired(token))) {
       if (typeof window !== 'undefined') {
-        localStorage.removeItem('token');
-        localStorage.removeItem('userInfo');
-        window.location.href = '/login';
+        handleSessionExpired(window.location.pathname);
       }
     }
 

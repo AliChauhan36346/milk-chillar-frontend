@@ -7,7 +7,6 @@ import {
   Settings,
   FileText,
   BarChart2,
-  Package,
   ShoppingCart,
   ShoppingBag,
   Truck,
@@ -20,7 +19,6 @@ import {
   Building,
   Banknote,
   ClipboardList,
-  PackageOpen,
   DollarSign
 } from 'lucide-react';
 import { Label } from '../ui/Label';
@@ -37,7 +35,6 @@ const adminNavigation = [
     items: [
       { label: 'Sales', href: '/Sales', icon: <ShoppingBag size={18} /> },
       { label: 'Purchase', href: '/Purchase/SimplePurchase', icon: <ShoppingCart size={18} /> },
-      { label: 'Stock', href: '/Stock', icon: <Package size={18} /> },
       { label: 'Chillar Receive', href: '/chillarReceive', icon: <Scale size={18} /> }
     ]
   },
@@ -100,15 +97,6 @@ const adminNavigation = [
           { label: 'Profit & Loss', href: '/reports/financialReports/profitLoss', icon: <DollarSign size={18} /> },
           { label: 'Trial Balance', href: '/reports/financial/trial-balance', icon: <Scale size={18} /> },
           { label: 'Balance Sheet', href: '/reports/financial/balance-sheet', icon: <FileText size={18} /> }
-        ]
-      },
-      {
-        label: 'Inventory Reports',
-        icon: <Package size={18} />,
-        href: '/reports/inventory',
-        subItems: [
-          { label: 'Stock Summary', href: '/reports/inventory/stock-summary', icon: <PackageOpen size={18} /> },
-          { label: 'Stock Movement', href: '/reports/inventory/stock-movement', icon: <ClipboardList size={18} /> }
         ]
       }
     ]

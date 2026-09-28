@@ -1,6 +1,7 @@
 // lib/auth/AuthContext.tsx
 'use client';
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { isTokenExpired, clearAuthSession, handleSessionExpired } from './tokenUtils';
 
 type User = {
   userId: number;
@@ -17,7 +18,7 @@ type AuthContextType = {
   logout: () => void;
   hasPermission: (permission: string) => boolean;
   isAuthenticated: () => boolean;
-  isInitialized: boolean; // Add this
+  isInitialized: boolean;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -25,22 +26,69 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [isInitialized, setIsInitialized] = useState(false); // Replace loading with this
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  const logout = useCallback(() => {
+    clearAuthSession();
+    setToken(null);
+    setUser(null);
+  }, []);
 
   useEffect(() => {
     const initializeAuth = () => {
-      const token = localStorage.getItem('token');
+      const storedToken = localStorage.getItem('token');
       const userInfo = localStorage.getItem('userInfo');
-      
-      if (token && userInfo) {
-        setToken(token);
-        setUser(JSON.parse(userInfo));
+
+      if (storedToken && userInfo) {
+        if (isTokenExpired(storedToken)) {
+          clearAuthSession();
+          setToken(null);
+          setUser(null);
+        } else {
+          try {
+            setToken(storedToken);
+            setUser(JSON.parse(userInfo));
+          } catch (e) {
+            console.error('Failed to parse user info:', e);
+            clearAuthSession();
+          }
+        }
       }
-      setIsInitialized(true); // Mark as initialized
+      setIsInitialized(true);
     };
 
     initializeAuth();
   }, []);
+
+  // Monitor session expiration upon tab focus, visibility change, and periodic intervals
+  useEffect(() => {
+    if (!token) return;
+
+    const checkSession = () => {
+      if (isTokenExpired(token)) {
+        logout();
+        handleSessionExpired();
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        checkSession();
+      }
+    };
+
+    window.addEventListener('focus', checkSession);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Periodic check every 45 seconds
+    const interval = setInterval(checkSession, 45000);
+
+    return () => {
+      window.removeEventListener('focus', checkSession);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      clearInterval(interval);
+    };
+  }, [token, logout]);
 
   const login = (newToken: string, newUser: User) => {
     localStorage.setItem('token', newToken);
@@ -49,19 +97,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(newUser);
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('userInfo');
-    setToken(null);
-    setUser(null);
-  };
-
   const hasPermission = (permission: string) => {
     return user?.permissions?.includes(permission) || false;
   };
 
   const isAuthenticated = () => {
-    return !!token && !!user;
+    return !!token && !!user && !isTokenExpired(token);
   };
 
   return (
@@ -72,7 +113,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       logout, 
       hasPermission, 
       isAuthenticated,
-      isInitialized // Add this to context value
+      isInitialized
     }}>
       {children}
     </AuthContext.Provider>

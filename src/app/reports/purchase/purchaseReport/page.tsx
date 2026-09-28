@@ -730,7 +730,7 @@ function PurchaseReportContent() {
 
 export default function PurchaseReportPage() {
   return (
-    <ProtectedRoute requiredRole="admin">
+    <ProtectedRoute allowedRoles={['admin', 'manager']}>
       <AdminLayout>
         <Suspense fallback={<CenteredSpinner message="Loading purchase report..." />}>
           <PurchaseReportContent />

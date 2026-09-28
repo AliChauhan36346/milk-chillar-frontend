@@ -1,18 +1,31 @@
 // app/login/page.tsx
 'use client';
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { API_BASE_URL } from '@/lib/api/api';
+import { AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login, isInitialized } = useAuth(); // Add isInitialized
+  const { login, isInitialized } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const isSessionExpired = searchParams.get('sessionExpired') === 'true';
+  const callbackUrl = searchParams.get('callbackUrl');
 
   // Show loading state until auth is initialized
   if (!isInitialized) {
@@ -25,53 +38,12 @@ export default function LoginPage() {
     );
   }
 
-  // const handleLogin = async (e: React.FormEvent) => {
-  //   e.preventDefault();
-  //   setError('');
-  //   setLoading(true);
-
-  //   try {
-  //     const response = await fetch('https://localhost:7013/api/Auth/login', {
-  //       //const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Auth/login`, {
-  //       method: 'POST',
-  //       headers: { 'Content-Type': 'application/json' },
-  //       body: JSON.stringify({ username, password }),
-  //       //credentials: 'include'
-  //     });
-
-  //     const data = await response.json();
-
-  //     if (!response.ok) {
-  //       throw new Error(data?.message || 'Invalid username or password');
-  //     }
-
-  //     login(data.token, data.user);
-
-  //     const role = data.user?.role?.toLowerCase();
-  //     const redirectPaths = {
-  //       admin: '/dashboard/admin',
-  //       manager: '/dashboard/manager',
-  //       dodhi: '/dashboard/dodhi',
-  //       chillarincharge: '/dashboard/ChillarIncharge'
-  //     };
-  //     const redirectPath = role && redirectPaths[role as keyof typeof redirectPaths]
-  //       ? redirectPaths[role as keyof typeof redirectPaths]
-  //       : '/dashboard';
-
-  //     router.push(redirectPath);
-  //   } catch (err: any) {
-  //     setError(err.message || 'Something went wrong. Please try again.');
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
-    const sanitizedUsername = username.trim(); // 🔥 Remove unwanted spaces
+    const sanitizedUsername = username.trim();
 
     try {
       const response = await fetch(`${API_BASE_URL}/Auth/login`, {
@@ -87,6 +59,12 @@ export default function LoginPage() {
       }
 
       login(data.token, data.user);
+
+      // If a valid internal callbackUrl was requested, redirect back there
+      if (callbackUrl && callbackUrl.startsWith('/') && !callbackUrl.startsWith('/login')) {
+        router.push(callbackUrl);
+        return;
+      }
 
       const role = data.user?.role?.toLowerCase();
       const redirectPaths = {
@@ -107,49 +85,56 @@ export default function LoginPage() {
     }
   };
 
-
-  // Render the login form
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-cyan-50 p-4 sm:p-6 lg:p-8">
       <form
         onSubmit={handleLogin}
         className="bg-white/95 backdrop-blur-sm border border-blue-100/50 p-6 sm:p-8 rounded-xl shadow-2xl shadow-blue-100/30 w-full max-w-md transition-all hover:shadow-blue-100/50"
       >
-        <div className="mb-8 text-center">
+        <div className="mb-6 text-center">
           <div className="mb-4 flex flex-col items-center">
             <img src="/images/dairify-logo.png" alt="Dairify Logo" className="h-16 w-auto mb-3" />
             <h2 className="text-2xl sm:text-3xl font-bold text-blue-900">Dairify</h2>
           </div>
-          <p className="mt-4 text-gray-600">Login to your account</p>
+          <p className="mt-2 text-gray-600">Login to your account</p>
         </div>
 
+        {isSessionExpired && !error && (
+          <div className="mb-5 p-3.5 bg-amber-50 text-amber-800 rounded-lg text-xs leading-relaxed flex items-start gap-2.5 border border-amber-200">
+            <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+            <div>
+              <strong className="font-semibold block mb-0.5">Session Expired</strong>
+              Your session has expired due to inactivity. Please log in again to continue where you left off.
+            </div>
+          </div>
+        )}
+
         {error && (
-          <div className="mb-6 p-3 bg-red-50 text-red-700 rounded-lg text-sm text-center border border-red-100">
+          <div className="mb-5 p-3 bg-red-50 text-red-700 rounded-lg text-sm text-center border border-red-100">
             {error}
           </div>
         )}
 
-        <div className="space-y-5">
+        <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Username</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Username</label>
             <input
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder-gray-300 text-gray-800 font-medium"
+              className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder-gray-300 text-gray-800 font-medium text-sm"
               placeholder="Enter your username"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder-gray-300 text-gray-800 font-medium"
+              className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder-gray-300 text-gray-800 font-medium text-sm"
               placeholder="••••••••"
               required
             />
@@ -158,12 +143,12 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className={`w-full py-3 px-4 ${loading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'} text-white font-medium rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
+            className={`w-full mt-2 py-2.5 px-4 ${loading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'} text-white font-medium rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-sm shadow-xs`}
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">
                 <svg
-                  className="animate-spin h-5 w-5 text-white"
+                  className="animate-spin h-4 w-4 text-white"
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
                   viewBox="0 0 24 24"
@@ -190,7 +175,7 @@ export default function LoginPage() {
           </button>
         </div>
 
-        <div className="mt-6 text-center text-sm text-gray-600">
+        <div className="mt-5 text-center text-xs text-gray-600">
           Don’t have an account?{' '}
           <Link href="/" className="text-blue-600 hover:underline font-medium">
             Back to Home
@@ -200,4 +185,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
