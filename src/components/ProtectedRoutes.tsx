@@ -67,6 +67,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { useAuth } from '@/lib/auth/AuthContext';
+import { handleSessionExpired } from '@/lib/auth/tokenUtils';
 
 export default function ProtectedRoute({
   children,
@@ -84,9 +85,14 @@ export default function ProtectedRoute({
     if (!isInitialized) return;
 
     if (!isAuthenticated()) {
-      const loginUrl = new URL('/login', window.location.origin);
-      loginUrl.searchParams.set('callbackUrl', window.location.pathname);
-      router.push(loginUrl.toString());
+      const storedToken = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      if (storedToken) {
+        handleSessionExpired(window.location.pathname);
+      } else {
+        const loginUrl = new URL('/login', window.location.origin);
+        loginUrl.searchParams.set('callbackUrl', window.location.pathname);
+        router.push(loginUrl.toString());
+      }
       return;
     }
 
