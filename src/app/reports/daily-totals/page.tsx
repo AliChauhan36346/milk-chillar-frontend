@@ -322,12 +322,6 @@ function DailyTotalsContent() {
                 }
             />
 
-            {/* Compact Metric Strips */}
-            <div className="space-y-2">
-                <StatStrip items={volumeStats} />
-                <StatStrip items={qualityStats} dense />
-            </div>
-
             {/* Compact Filter Toolbar */}
             <CompactToolbar
                 left={
@@ -373,6 +367,12 @@ function DailyTotalsContent() {
                     </span>
                 }
             />
+
+            {/* Compact Metric Strips */}
+            <div className="space-y-2">
+                <StatStrip items={volumeStats} />
+                <StatStrip items={qualityStats} dense />
+            </div>
 
             {/* Minimalist Desktop Table (Zero Horizontal Scroll) */}
             <div className="hidden md:block">

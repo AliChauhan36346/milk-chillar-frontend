@@ -33,6 +33,8 @@ import {
   BarChart3,
 } from 'lucide-react';
 
+import { PageHeader } from '@/components/ui/PageHeader';
+
 export default function ProfitLossPage() {
   const { toast } = useToast();
   const [startDate, setStartDate] = useState<string>(
@@ -107,7 +109,8 @@ export default function ProfitLossPage() {
     return new Intl.NumberFormat('en-PK', {
       style: 'currency',
       currency: 'PKR',
-      minimumFractionDigits: 2,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(amount);
   };
 
@@ -117,73 +120,64 @@ export default function ProfitLossPage() {
 
   return (
     <AdminLayout>
-      <div className="max-w-7xl mx-auto p-2 space-y-6">
-        <div className="space-y-6">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Profit & Loss Statement</h1>
-              <p className="text-gray-600 mt-1">Comprehensive financial performance report</p>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
+      <div className="max-w-7xl mx-auto space-y-4">
+        {/* Header */}
+        <PageHeader
+          title="Profit & Loss Statement"
+          subtitle="Comprehensive financial performance and margin analysis"
+          icon={<TrendingUp className="w-5 h-5 text-blue-600" />}
+          actions={
+            <div className="flex items-center gap-2">
+              <button
                 onClick={() => handleExport('excel')}
                 disabled={isExporting || !plData}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-700 text-xs font-semibold rounded-lg hover:bg-slate-200 transition-colors border border-slate-200 shadow-2xs disabled:opacity-50"
               >
-                <Download className="w-4 h-4 mr-2" />
-                Export Excel
-              </Button>
-              <Button
-                variant="outline"
+                <Download className="w-3.5 h-3.5" />
+                Excel
+              </button>
+              <button
                 onClick={() => handleExport('pdf')}
                 disabled={isExporting || !plData}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-2xs disabled:opacity-50"
               >
-                <Download className="w-4 h-4 mr-2" />
-                Export PDF
-              </Button>
+                <Download className="w-3.5 h-3.5" />
+                PDF
+              </button>
             </div>
-          </div>
+          }
+        />
 
-          {/* Filters */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="w-5 h-5" />
-                Report Period
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Start Date
-                  </label>
-                  <Input
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    End Date
-                  </label>
-                  <Input
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                  />
-                </div>
-                <div className="flex items-end">
-                  <Button onClick={handleGenerateReport} className="w-full">
-                    <FileText className="w-4 h-4 mr-2" />
-                    Generate Report
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Compact Filters Toolbar */}
+        <div className="bg-white rounded-xl border border-slate-200/90 p-2.5 sm:p-3 shadow-xs">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">From</span>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 bg-white"
+              />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">To</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-1 focus:ring-blue-500 bg-white"
+              />
+            </div>
+            <button
+              onClick={handleGenerateReport}
+              className="px-3.5 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1.5 text-xs font-semibold shadow-xs"
+            >
+              <FileText className="w-3.5 h-3.5" />
+              Generate Report
+            </button>
+          </div>
+        </div>
 
           {/* Tabs */}
           <div className="border-b border-gray-200">
@@ -270,7 +264,6 @@ export default function ProfitLossPage() {
             </>
           )}
         </div>
-      </div>
     </AdminLayout>
   );
 }
@@ -392,97 +385,97 @@ function PLReportView({
             </div>
 
             {/* Gross Profit */}
-            <div className="bg-green-50 p-4 rounded-lg">
-              <div className="flex justify-between font-bold text-xl text-green-700">
-                <span>Gross Profit</span>
-                <span>{formatCurrency(data.grossProfit)}</span>
+            <div className="bg-emerald-50/70 border border-emerald-200/80 p-3.5 rounded-xl">
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-semibold uppercase tracking-wider text-emerald-800">Gross Profit</span>
+                <span className="text-base font-semibold text-emerald-800 tabular-nums">{formatCurrency(data.grossProfit)}</span>
               </div>
-              <div className="text-sm text-green-600 text-right mt-1">
+              <div className="text-[11px] text-emerald-700 text-right mt-0.5 font-medium tabular-nums">
                 Margin: {formatPercentage(data.grossProfitMargin)}
               </div>
             </div>
 
             {/* Operating Expenses */}
             <div>
-              <h3 className="font-semibold text-lg mb-3">Operating Expenses</h3>
-              <div className="space-y-2 pl-4">
-                <div className="flex justify-between">
+              <h3 className="font-semibold text-sm text-slate-800 mb-2">Operating Expenses</h3>
+              <div className="space-y-1.5 pl-3 text-xs">
+                <div className="flex justify-between text-slate-600">
                   <span>Salaries & Wages</span>
-                  <span className="font-medium">{formatCurrency(data.operatingExpenses.salaries)}</span>
+                  <span className="font-medium text-slate-900 tabular-nums">{formatCurrency(data.operatingExpenses.salaries)}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between text-slate-600">
                   <span>Rent</span>
-                  <span className="font-medium">{formatCurrency(data.operatingExpenses.rent)}</span>
+                  <span className="font-medium text-slate-900 tabular-nums">{formatCurrency(data.operatingExpenses.rent)}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between text-slate-600">
                   <span>Utilities</span>
-                  <span className="font-medium">{formatCurrency(data.operatingExpenses.utilities)}</span>
+                  <span className="font-medium text-slate-900 tabular-nums">{formatCurrency(data.operatingExpenses.utilities)}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between text-slate-600">
                   <span>Transportation</span>
-                  <span className="font-medium">{formatCurrency(data.operatingExpenses.transportation)}</span>
+                  <span className="font-medium text-slate-900 tabular-nums">{formatCurrency(data.operatingExpenses.transportation)}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between text-slate-600">
                   <span>Marketing</span>
-                  <span className="font-medium">{formatCurrency(data.operatingExpenses.marketing)}</span>
+                  <span className="font-medium text-slate-900 tabular-nums">{formatCurrency(data.operatingExpenses.marketing)}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between text-slate-600">
                   <span>Office Expenses</span>
-                  <span className="font-medium">{formatCurrency(data.operatingExpenses.officeExpenses)}</span>
+                  <span className="font-medium text-slate-900 tabular-nums">{formatCurrency(data.operatingExpenses.officeExpenses)}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between text-slate-600">
                   <span>Depreciation</span>
-                  <span className="font-medium">{formatCurrency(data.operatingExpenses.depreciation)}</span>
+                  <span className="font-medium text-slate-900 tabular-nums">{formatCurrency(data.operatingExpenses.depreciation)}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between text-slate-600">
                   <span>Other Expenses</span>
-                  <span className="font-medium">{formatCurrency(data.operatingExpenses.otherExpenses)}</span>
+                  <span className="font-medium text-slate-900 tabular-nums">{formatCurrency(data.operatingExpenses.otherExpenses)}</span>
                 </div>
-                <div className="flex justify-between font-bold text-lg border-t-2 pt-2">
+                <div className="flex justify-between font-semibold text-slate-800 border-t border-slate-200 pt-1.5">
                   <span>Total Operating Expenses</span>
-                  <span>{formatCurrency(data.operatingExpenses.totalOperatingExpenses)}</span>
+                  <span className="tabular-nums">{formatCurrency(data.operatingExpenses.totalOperatingExpenses)}</span>
                 </div>
               </div>
             </div>
 
             {/* Financial Expenses */}
             <div>
-              <h3 className="font-semibold text-lg mb-3">Financial Expenses</h3>
-              <div className="space-y-2 pl-4">
-                <div className="flex justify-between">
+              <h3 className="font-semibold text-sm text-slate-800 mb-2">Financial Expenses</h3>
+              <div className="space-y-1.5 pl-3 text-xs">
+                <div className="flex justify-between text-slate-600">
                   <span>Interest Expense</span>
-                  <span className="font-medium">{formatCurrency(data.financialExpenses.interestExpense)}</span>
+                  <span className="font-medium text-slate-900 tabular-nums">{formatCurrency(data.financialExpenses.interestExpense)}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between text-slate-600">
                   <span>Bank Charges</span>
-                  <span className="font-medium">{formatCurrency(data.financialExpenses.bankCharges)}</span>
+                  <span className="font-medium text-slate-900 tabular-nums">{formatCurrency(data.financialExpenses.bankCharges)}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between text-slate-600">
                   <span>Other Financial Expenses</span>
-                  <span className="font-medium">{formatCurrency(data.financialExpenses.otherFinancialExpenses)}</span>
+                  <span className="font-medium text-slate-900 tabular-nums">{formatCurrency(data.financialExpenses.otherFinancialExpenses)}</span>
                 </div>
-                <div className="flex justify-between font-bold text-lg border-t-2 pt-2">
+                <div className="flex justify-between font-semibold text-slate-800 border-t border-slate-200 pt-1.5">
                   <span>Total Financial Expenses</span>
-                  <span>{formatCurrency(data.financialExpenses.totalFinancialExpenses)}</span>
+                  <span className="tabular-nums">{formatCurrency(data.financialExpenses.totalFinancialExpenses)}</span>
                 </div>
               </div>
             </div>
 
             {/* Total Expenses */}
-            <div className="bg-red-50 p-4 rounded-lg">
-              <div className="flex justify-between font-bold text-xl text-red-700">
+            <div className="bg-rose-50/70 border border-rose-200/80 p-3.5 rounded-xl">
+              <div className="flex justify-between items-center font-semibold text-xs uppercase tracking-wider text-rose-800">
                 <span>Total Expenses</span>
-                <span>{formatCurrency(data.totalExpenses)}</span>
+                <span className="text-sm font-semibold tabular-nums">{formatCurrency(data.totalExpenses)}</span>
               </div>
             </div>
 
             {/* Net Profit/Loss */}
-            <div className={`p-6 rounded-lg ${isProfitable ? 'bg-green-100' : 'bg-red-100'}`}>
-              <div className={`flex justify-between font-bold text-2xl ${isProfitable ? 'text-green-700' : 'text-red-700'}`}>
+            <div className={`p-4 rounded-xl border ${isProfitable ? 'bg-emerald-50/80 border-emerald-300 text-emerald-900' : 'bg-rose-50/80 border-rose-300 text-rose-900'}`}>
+              <div className="flex justify-between items-center font-semibold text-base">
                 <span>Net {isProfitable ? 'Profit' : 'Loss'}</span>
-                <span>{formatCurrency(Math.abs(data.netProfit))}</span>
+                <span className="tabular-nums text-lg">{formatCurrency(Math.abs(data.netProfit))}</span>
               </div>
-              <div className={`text-sm text-right mt-2 ${isProfitable ? 'text-green-600' : 'text-red-600'}`}>
+              <div className="text-[11px] text-right mt-0.5 opacity-80 font-medium tabular-nums">
                 Margin: {formatPercentage(data.netProfitMargin)}
               </div>
             </div>

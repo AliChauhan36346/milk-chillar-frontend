@@ -350,9 +350,6 @@ function PurchaseReportContent() {
         }
       />
 
-      {/* Summary Ribbon */}
-      {summary && <StatStrip items={summaryStats} loading={summaryLoading} />}
-
       {/* Filters */}
       <PurchaseReportFilters
         startDate={filters.startDate}
@@ -366,6 +363,9 @@ function PurchaseReportContent() {
         onSearch={handleSearch}
         onClear={handleClearFilters}
       />
+
+      {/* Summary Ribbon */}
+      {summary && <StatStrip items={summaryStats} loading={summaryLoading} />}
 
       {/* Loading State */}
       {loading && (

@@ -138,7 +138,7 @@ export function PageLayout({
       )}
 
       {/* Main content area - adjust width based on sidebar visibility */}
-      <div className={`flex-1 flex flex-col ${showSidebar ? '' : 'w-full'}`}>
+      <div className={`flex-1 flex flex-col min-w-0 ${showSidebar ? '' : 'w-full'}`}>
         {showHeader && (
           <Header 
             toggleSidebar={toggleSidebar}
@@ -146,7 +146,7 @@ export function PageLayout({
           />
         )}
         
-        <main className={`flex-1 p-4 lg:p-6 ${contentClassName}`}>
+        <main className={`flex-1 p-4 lg:p-6 min-w-0 ${contentClassName}`}>
           {children}
         </main>
       </div>

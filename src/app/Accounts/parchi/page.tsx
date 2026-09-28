@@ -423,23 +423,22 @@ export default function ParchiPage() {
 
           {/* Parchi Table */}
           <TableContainer title="Supplier Parchi Details">
-            <div className="overflow-x-auto">
-              <Table dense>
-                <Table.Header sticky>
-                  <Table.Row>
-                    <Table.Head>Account</Table.Head>
-                    <Table.Head>Khata No</Table.Head>
-                    <Table.Head align="right">Prev. Balance</Table.Head>
-                    <Table.Head align="right">Liters</Table.Head>
-                    <Table.Head align="right">Purchase Amt</Table.Head>
-                    <Table.Head align="right">Payments</Table.Head>
-                    <Table.Head align="right">Closing Bal.</Table.Head>
-                    <Table.Head align="right">Credit Limit</Table.Head>
-                    <Table.Head align="right">Parchi Amt</Table.Head>
-                    <Table.Head align="right">Final Bal.</Table.Head>
-                    <Table.Head align="center" className="print:hidden">Actions</Table.Head>
-                  </Table.Row>
-                </Table.Header>
+            <Table dense>
+              <Table.Header sticky>
+                <Table.Row>
+                  <Table.Head className="whitespace-nowrap">Account</Table.Head>
+                  <Table.Head className="whitespace-nowrap">Khata No</Table.Head>
+                  <Table.Head align="right" className="whitespace-nowrap">Prev. Balance</Table.Head>
+                  <Table.Head align="right" className="whitespace-nowrap">Liters</Table.Head>
+                  <Table.Head align="right" className="whitespace-nowrap">Purchase Amt</Table.Head>
+                  <Table.Head align="right" className="whitespace-nowrap">Payments</Table.Head>
+                  <Table.Head align="right" className="whitespace-nowrap">Closing Bal.</Table.Head>
+                  <Table.Head align="right" className="whitespace-nowrap">Credit Limit</Table.Head>
+                  <Table.Head align="right" className="whitespace-nowrap">Parchi Amt</Table.Head>
+                  <Table.Head align="right" className="whitespace-nowrap">Final Bal.</Table.Head>
+                  <Table.Head align="center" className="print:hidden whitespace-nowrap">Actions</Table.Head>
+                </Table.Row>
+              </Table.Header>
                 <Table.Body>
                   {loading ? (
                     <Table.Row>
@@ -457,49 +456,49 @@ export default function ParchiPage() {
                   ) : (
                     parchiData.items.map((item, index) => (
                       <Table.Row key={index}>
-                        <Table.Cell>
+                        <Table.Cell className="whitespace-nowrap">
                           <div>
                             <div className="font-medium text-xs text-slate-900">{item.accountName}</div>
                             <div className="text-[11px] text-slate-500 font-mono">{item.accountCode}</div>
                           </div>
                         </Table.Cell>
-                        <Table.Cell className="text-xs text-slate-600 font-mono">{item.khataNumber}</Table.Cell>
-                        <Table.Cell align="right">
+                        <Table.Cell className="text-xs text-slate-600 font-mono whitespace-nowrap">{item.khataNumber}</Table.Cell>
+                        <Table.Cell align="right" className="whitespace-nowrap">
                           <span className={`text-xs font-medium tabular-nums ${item.previousBalanceType === 'Credit' ? 'text-emerald-700' : 'text-rose-600'}`}>
                             {formatCurrency(item.previousBalance)}
                             <span className="text-[10px] ml-0.5 text-slate-400 font-normal">({item.previousBalanceType})</span>
                           </span>
                         </Table.Cell>
-                        <Table.Cell align="right" className="text-xs text-slate-900 font-medium tabular-nums">
+                        <Table.Cell align="right" className="text-xs text-slate-900 font-medium tabular-nums whitespace-nowrap">
                           {item.totalLiters.toFixed(2)}L
                         </Table.Cell>
-                        <Table.Cell align="right" className="text-xs text-slate-900 font-medium tabular-nums">
+                        <Table.Cell align="right" className="text-xs text-slate-900 font-medium tabular-nums whitespace-nowrap">
                           {formatCurrency(item.purchaseAmount)}
                         </Table.Cell>
-                        <Table.Cell align="right" className="text-xs text-slate-700 font-medium tabular-nums">
+                        <Table.Cell align="right" className="text-xs text-slate-700 font-medium tabular-nums whitespace-nowrap">
                           {formatCurrency(item.paymentsInPeriod)}
                         </Table.Cell>
-                        <Table.Cell align="right">
+                        <Table.Cell align="right" className="whitespace-nowrap">
                           <span className={`text-xs font-medium tabular-nums ${item.closingBalanceType === 'Credit' ? 'text-emerald-700' : 'text-rose-600'}`}>
                             {formatCurrency(item.closingBalance)}
                             <span className="text-[10px] ml-0.5 text-slate-400 font-normal">({item.closingBalanceType})</span>
                           </span>
                         </Table.Cell>
-                        <Table.Cell align="right" className="text-xs text-slate-600 tabular-nums">
+                        <Table.Cell align="right" className="text-xs text-slate-600 tabular-nums whitespace-nowrap">
                           {item.isCreditAllowed ? formatCurrency(item.creditLimit) : '-'}
                         </Table.Cell>
-                        <Table.Cell align="right">
+                        <Table.Cell align="right" className="whitespace-nowrap">
                           <span className="font-medium text-xs text-blue-700 tabular-nums">
                             {formatCurrency(item.parchiAmount)}
                           </span>
                         </Table.Cell>
-                        <Table.Cell align="right">
+                        <Table.Cell align="right" className="whitespace-nowrap">
                           <span className={`text-xs font-medium tabular-nums ${item.finalBalanceType === 'Credit' ? 'text-emerald-700' : 'text-rose-600'}`}>
                             {formatCurrency(item.finalBalance)}
                             <span className="text-[10px] ml-0.5 text-slate-400 font-normal">({item.finalBalanceType})</span>
                           </span>
                         </Table.Cell>
-                        <Table.Cell align="center" className="print:hidden">
+                        <Table.Cell align="center" className="print:hidden whitespace-nowrap">
                           <button
                             onClick={() => handlePrintSelected(item)}
                             className="text-emerald-600 hover:text-emerald-800 transition-colors p-1 hover:bg-emerald-50 rounded"
@@ -513,7 +512,6 @@ export default function ParchiPage() {
                   )}
                 </Table.Body>
               </Table>
-            </div>
           </TableContainer>
 
           {/* Print View */}

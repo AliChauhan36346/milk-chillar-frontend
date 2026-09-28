@@ -16,7 +16,7 @@ import {
   Filter,
   Droplet
 } from 'lucide-react';
-import { FullPageSpinner } from '@/components/ui/spinner';
+import { FullPageSpinner, CenteredSpinner } from '@/components/ui/spinner';
 import { DynamicLayout } from '@/components/layouts/DynamicLayout';
 import { useAuth } from '@/lib/auth/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoutes';
@@ -664,8 +664,6 @@ function SalesReportContent() {
         }
       />
 
-      {summary && <StatStrip items={summaryStats} loading={summaryLoading} />}
-
       <CompactToolbar
         filters={
           <div className="flex flex-wrap items-center gap-2">
@@ -716,10 +714,10 @@ function SalesReportContent() {
         }
       />
 
+      {summary && <StatStrip items={summaryStats} loading={summaryLoading} />}
+
       {loading && (
-        <div className="flex items-center justify-center h-48 bg-white rounded-xl border border-slate-200">
-          <div className="text-sm text-slate-500">Loading report...</div>
-        </div>
+        <CenteredSpinner message="Loading sales report..." />
       )}
 
       {/* Detailed Sales Table */}
