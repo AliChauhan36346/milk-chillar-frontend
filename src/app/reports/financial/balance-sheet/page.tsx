@@ -26,13 +26,16 @@ import {
   ShieldCheck,
   Scale,
   ArrowUpRight,
+  BarChart3,
 } from 'lucide-react';
+import { FormalBalanceSheet } from '@/components/financial/FormalBalanceSheet';
 
 export default function BalanceSheetPage() {
   const [data, setData] = useState<AccountLedgerSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hideZeroBalances, setHideZeroBalances] = useState(true);
+  const [activeTab, setActiveTab] = useState<'statement' | 'dashboard'>('statement');
   const asOfDate = new Date().toLocaleDateString('en-PK', {
     day: '2-digit',
     month: 'long',
@@ -286,101 +289,32 @@ export default function BalanceSheetPage() {
             />
           </div>
 
-          {/* Standard Enterprise Print Header (Visible on Print Only) */}
-          <ReportPrintHeader
-            title="Statement of Financial Position (Balance Sheet)"
-            subtitle="Categorized Assets, Liabilities, and Owner's Equity at reporting cutoff"
-            asOfDate={asOfDate}
-          />
-
-          {/* Screen Formal Letterhead - Hidden on Print */}
-          <div className="bg-white border border-slate-200/90 rounded-xl p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-center sm:text-left print:hidden">
-            <div>
-              <div className="flex items-center justify-center sm:justify-start gap-2">
-                <Building2 className="w-4 h-4 text-blue-600 print:hidden" />
-                <span className="text-xs uppercase font-extrabold tracking-widest text-slate-500">
-                  CHAUHAN DAIRY FARMS • MILK CHILLAR ERP
-                </span>
-              </div>
-              <h1 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight mt-0.5 uppercase">
-                STATEMENT OF FINANCIAL POSITION
-              </h1>
-              <p className="text-xs text-slate-500 flex items-center justify-center sm:justify-start gap-1.5 mt-0.5">
-                <Calendar className="w-3 h-3 text-slate-400 print:hidden" />
-                As of <strong className="text-slate-700 font-semibold">{asOfDate}</strong> • All amounts in Pakistani Rupees (PKR)
-              </p>
-            </div>
-
-            {/* Parity Status Badge */}
-            <div className="inline-flex items-center gap-2 self-center sm:self-auto px-3.5 py-1.5 rounded-lg border text-xs font-semibold shadow-2xs print:border-slate-800">
-              {balanceSheet.isBalanced ? (
-                <div className="flex items-center gap-1.5 text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  <span>Equation Balanced (Assets = Liab. + Equity)</span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-1.5 text-rose-800 bg-rose-50 px-2.5 py-1 rounded-md border border-rose-200">
-                  <AlertTriangle className="w-4 h-4 text-rose-600" />
-                  <span>Parity Variance: {formatCurrency(balanceSheet.variance)}</span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Screen Toolbar */}
-          <div className="bg-white rounded-xl border border-slate-200/90 p-2.5 sm:p-3 shadow-xs flex items-center justify-between print:hidden">
-            <span className="text-xs text-slate-600 font-medium">
-              Classified Balance Sheet Format (Report Form)
-            </span>
-            <label className="flex items-center gap-2 cursor-pointer select-none text-xs text-slate-600 font-medium">
-              <input
-                type="checkbox"
-                checked={hideZeroBalances}
-                onChange={(e) => setHideZeroBalances(e.target.checked)}
-                className="rounded text-blue-600 focus:ring-blue-500 border-slate-300 w-3.5 h-3.5"
-              />
-              Hide Zero Balances
-            </label>
-          </div>
-
-          {/* Executive StatStrip - Screen Only */}
-          <div className="print:hidden">
-            <StatStrip
-              items={[
-                {
-                  label: 'Total Assets',
-                  value: formatCurrency(balanceSheet.totalAssets),
-                  color: 'info',
-                  icon: <Wallet className="w-4 h-4 text-blue-600" />,
-                },
-                {
-                  label: 'Total Liabilities',
-                  value: formatCurrency(balanceSheet.totalLiabilities),
-                  color: 'danger',
-                  icon: <Landmark className="w-4 h-4 text-rose-600" />,
-                },
-                {
-                  label: 'Total Equity & Reserves',
-                  value: formatCurrency(balanceSheet.totalEquity),
-                  subtext: `Incl. ${formatCurrency(balanceSheet.currentPeriodNetEarnings)} Profit`,
-                  color: 'purple',
-                  icon: <TrendingUp className="w-4 h-4 text-purple-600" />,
-                },
-                {
-                  label: 'Equation Parity',
-                  value: balanceSheet.isBalanced ? 'Balanced' : 'Variance',
-                  subtext: balanceSheet.isBalanced
-                    ? 'Assets = Liab. + Equity'
-                    : `Diff: ${formatCurrency(balanceSheet.variance)}`,
-                  color: balanceSheet.isBalanced ? 'success' : 'danger',
-                  icon: balanceSheet.isBalanced ? (
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  ) : (
-                    <AlertTriangle className="w-4 h-4 text-rose-600" />
-                  ),
-                },
-              ]}
-            />
+          {/* Navigation Tabs - Hidden on Print */}
+          <div className="border-b border-gray-200 print:hidden">
+            <nav className="-mb-px flex space-x-6 sm:space-x-8">
+              <button
+                onClick={() => setActiveTab('statement')}
+                className={`py-3.5 px-1 border-b-2 font-medium text-xs sm:text-sm transition-colors ${
+                  activeTab === 'statement'
+                    ? 'border-blue-600 text-blue-600 font-bold'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <FileText className="w-4 h-4 inline mr-2 text-blue-600" />
+                Formal Statement (CPA Report)
+              </button>
+              <button
+                onClick={() => setActiveTab('dashboard')}
+                className={`py-3.5 px-1 border-b-2 font-medium text-xs sm:text-sm transition-colors ${
+                  activeTab === 'dashboard'
+                    ? 'border-blue-600 text-blue-600 font-bold'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <BarChart3 className="w-4 h-4 inline mr-2" />
+                Executive Breakdown
+              </button>
+            </nav>
           </div>
 
           {/* Loading */}
@@ -395,10 +329,110 @@ export default function BalanceSheetPage() {
             </div>
           )}
 
-          {/* Formal Classified Statement Layout */}
-          {!loading && !error && (
-            <>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 print:grid-cols-2">
+          {/* Screen Formal Statement View */}
+          {!loading && !error && activeTab === 'statement' && (
+            <div className="py-2 print:hidden">
+              <FormalBalanceSheet
+                data={balanceSheet}
+                asOfDate={asOfDate}
+                companyName="CHAUHAN DAIRY FARMS"
+                currency="PKR"
+              />
+            </div>
+          )}
+
+          {/* Screen Dashboard View */}
+          {!loading && !error && activeTab === 'dashboard' && (
+            <div className="space-y-4 print:hidden">
+              {/* Screen Formal Letterhead */}
+              <div className="bg-white border border-slate-200/90 rounded-xl p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-center sm:text-left">
+                <div>
+                  <div className="flex items-center justify-center sm:justify-start gap-2">
+                    <Building2 className="w-4 h-4 text-blue-600" />
+                    <span className="text-xs uppercase font-extrabold tracking-widest text-slate-500">
+                      CHAUHAN DAIRY FARMS • MILK CHILLAR ERP
+                    </span>
+                  </div>
+                  <h1 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight mt-0.5 uppercase">
+                    STATEMENT OF FINANCIAL POSITION
+                  </h1>
+                  <p className="text-xs text-slate-500 flex items-center justify-center sm:justify-start gap-1.5 mt-0.5">
+                    <Calendar className="w-3 h-3 text-slate-400" />
+                    As of <strong className="text-slate-700 font-semibold">{asOfDate}</strong> • All amounts in Pakistani Rupees (PKR)
+                  </p>
+                </div>
+
+                {/* Parity Status Badge */}
+                <div className="inline-flex items-center gap-2 self-center sm:self-auto px-3.5 py-1.5 rounded-lg border text-xs font-semibold shadow-2xs">
+                  {balanceSheet.isBalanced ? (
+                    <div className="flex items-center gap-1.5 text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                      <span>Equation Balanced (Assets = Liab. + Equity)</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5 text-rose-800 bg-rose-50 px-2.5 py-1 rounded-md border border-rose-200">
+                      <AlertTriangle className="w-4 h-4 text-rose-600" />
+                      <span>Parity Variance: {formatCurrency(balanceSheet.variance)}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Screen Toolbar */}
+              <div className="bg-white rounded-xl border border-slate-200/90 p-2.5 sm:p-3 shadow-xs flex items-center justify-between">
+                <span className="text-xs text-slate-600 font-medium">
+                  Classified Balance Sheet Format (Report Form)
+                </span>
+                <label className="flex items-center gap-2 cursor-pointer select-none text-xs text-slate-600 font-medium">
+                  <input
+                    type="checkbox"
+                    checked={hideZeroBalances}
+                    onChange={(e) => setHideZeroBalances(e.target.checked)}
+                    className="rounded text-blue-600 focus:ring-blue-500 border-slate-300 w-3.5 h-3.5"
+                  />
+                  Hide Zero Balances
+                </label>
+              </div>
+
+              {/* Executive StatStrip */}
+              <StatStrip
+                items={[
+                  {
+                    label: 'Total Assets',
+                    value: formatCurrency(balanceSheet.totalAssets),
+                    color: 'info',
+                    icon: <Wallet className="w-4 h-4 text-blue-600" />,
+                  },
+                  {
+                    label: 'Total Liabilities',
+                    value: formatCurrency(balanceSheet.totalLiabilities),
+                    color: 'danger',
+                    icon: <Landmark className="w-4 h-4 text-rose-600" />,
+                  },
+                  {
+                    label: 'Total Equity & Reserves',
+                    value: formatCurrency(balanceSheet.totalEquity),
+                    subtext: `Incl. ${formatCurrency(balanceSheet.currentPeriodNetEarnings)} Profit`,
+                    color: 'purple',
+                    icon: <TrendingUp className="w-4 h-4 text-purple-600" />,
+                  },
+                  {
+                    label: 'Equation Parity',
+                    value: balanceSheet.isBalanced ? 'Balanced' : 'Variance',
+                    subtext: balanceSheet.isBalanced
+                      ? 'Assets = Liab. + Equity'
+                      : `Diff: ${formatCurrency(balanceSheet.variance)}`,
+                    color: balanceSheet.isBalanced ? 'success' : 'danger',
+                    icon: balanceSheet.isBalanced ? (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    ) : (
+                      <AlertTriangle className="w-4 h-4 text-rose-600" />
+                    ),
+                  },
+                ]}
+              />
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {/* LEFT COLUMN: ASSETS */}
               <div className="space-y-4">
                 <TableContainer title="Assets (Statement of Financial Position)">
@@ -642,11 +676,24 @@ export default function BalanceSheetPage() {
                 </TableContainer>
               </div>
             </div>
-              <ReportPrintFooter notes="Statement of Financial Position compiled under accrual accounting standards. Total Assets equal Total Liabilities and Equity." />
-            </>
-          )}
-        </div>
-      </AdminLayout>
-    </ProtectedRoute>
-  );
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* PRINT-ONLY CONTAINER: Strictly renders the Formal Accounting Statement    */}
+        {/* ========================================================================= */}
+        {!loading && !error && (
+          <div className="hidden print:block w-full">
+            <FormalBalanceSheet
+              data={balanceSheet}
+              asOfDate={asOfDate}
+              companyName="CHAUHAN DAIRY FARMS"
+              currency="PKR"
+            />
+          </div>
+        )}
+      </div>
+    </AdminLayout>
+  </ProtectedRoute>
+);
 }

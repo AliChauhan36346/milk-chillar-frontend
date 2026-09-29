@@ -40,6 +40,9 @@ import {
 } from 'lucide-react';
 
 import { PageHeader } from '@/components/ui/PageHeader';
+import { FormalIncomeStatement } from '@/components/financial/FormalIncomeStatement';
+
+type TabType = 'statement' | 'dashboard' | 'expenses' | 'income';
 
 export default function ProfitLossPage() {
   const { toast } = useToast();
@@ -49,7 +52,7 @@ export default function ProfitLossPage() {
   const [endDate, setEndDate] = useState<string>(
     new Date().toISOString().split('T')[0]
   );
-  const [activeTab, setActiveTab] = useState<'report' | 'expenses' | 'income'>('report');
+  const [activeTab, setActiveTab] = useState<TabType>('statement');
   const [isExporting, setIsExporting] = useState(false);
 
   // Fetch P&L Report
@@ -60,7 +63,7 @@ export default function ProfitLossPage() {
   } = useQuery({
     queryKey: ['profitLoss', startDate, endDate],
     queryFn: () => getProfitLossReport({ startDate, endDate }),
-    enabled: activeTab === 'report' && !!startDate && !!endDate,
+    enabled: (activeTab === 'statement' || activeTab === 'dashboard') && !!startDate && !!endDate,
   });
 
   // Fetch Expense Breakdown
@@ -86,7 +89,7 @@ export default function ProfitLossPage() {
   });
 
   const handleGenerateReport = () => {
-    if (activeTab === 'report') refetchPL();
+    if (activeTab === 'statement' || activeTab === 'dashboard') refetchPL();
     else if (activeTab === 'expenses') refetchExpense();
     else if (activeTab === 'income') refetchIncome();
   };
@@ -127,35 +130,37 @@ export default function ProfitLossPage() {
   return (
     <AdminLayout>
       <div className="max-w-7xl mx-auto space-y-4">
-        {/* Header */}
-        <PageHeader
-          title="Profit & Loss Statement"
-          subtitle="Comprehensive financial performance and margin analysis"
-          icon={<TrendingUp className="w-5 h-5 text-blue-600" />}
-          actions={
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => handleExport('excel')}
-                disabled={isExporting || !plData}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-700 text-xs font-semibold rounded-lg hover:bg-slate-200 transition-colors border border-slate-200 shadow-2xs disabled:opacity-50"
-              >
-                <Download className="w-3.5 h-3.5" />
-                Excel
-              </button>
-              <button
-                onClick={() => window.print()}
-                disabled={!plData}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-2xs disabled:opacity-50"
-              >
-                <Printer className="w-3.5 h-3.5" />
-                Print / PDF
-              </button>
-            </div>
-          }
-        />
+        {/* Header - Hidden on Print */}
+        <div className="print:hidden">
+          <PageHeader
+            title="Profit & Loss Statement"
+            subtitle="CPA-standard multi-step Income Statement and margin performance analysis"
+            icon={<TrendingUp className="w-5 h-5 text-blue-600" />}
+            actions={
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleExport('excel')}
+                  disabled={isExporting || !plData}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-700 text-xs font-semibold rounded-lg hover:bg-slate-200 transition-colors border border-slate-200 shadow-2xs disabled:opacity-50"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  Excel
+                </button>
+                <button
+                  onClick={() => window.print()}
+                  disabled={!plData}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-2xs disabled:opacity-50"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  Print / PDF
+                </button>
+              </div>
+            }
+          />
+        </div>
 
-        {/* Compact Filters Toolbar */}
-        <div className="bg-white rounded-xl border border-slate-200/90 p-2.5 sm:p-3 shadow-xs">
+        {/* Compact Filters Toolbar - Hidden on Print */}
+        <div className="bg-white rounded-xl border border-slate-200/90 p-2.5 sm:p-3 shadow-xs print:hidden">
           <div className="flex flex-wrap items-center gap-2.5">
             <div className="flex items-center gap-1.5">
               <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">From</span>
@@ -185,91 +190,132 @@ export default function ProfitLossPage() {
           </div>
         </div>
 
-          {/* Tabs */}
-          <div className="border-b border-gray-200">
-            <nav className="-mb-px flex space-x-8">
-              <button
-                onClick={() => setActiveTab('report')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'report'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-              >
-                <FileText className="w-4 h-4 inline mr-2" />
-                Full Report
-              </button>
-              <button
-                onClick={() => setActiveTab('expenses')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'expenses'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-              >
-                <PieChart className="w-4 h-4 inline mr-2" />
-                Expense Breakdown
-              </button>
-              <button
-                onClick={() => setActiveTab('income')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'income'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-              >
-                <BarChart3 className="w-4 h-4 inline mr-2" />
-                Income Breakdown
-              </button>
-            </nav>
-          </div>
-
-          {/* Content */}
-          {activeTab === 'report' && (
-            <>
-              {isPlLoading ? (
-                <CenteredSpinner message="Calculating profit & loss statement..." />
-              ) : plData ? (
-                <PLReportView data={plData} formatCurrency={formatCurrency} formatPercentage={formatPercentage} />
-              ) : (
-                <Card>
-                  <CardContent className="py-12 text-center text-gray-500">
-                    Select a date range and click "Generate Report" to view the Profit & Loss statement.
-                  </CardContent>
-                </Card>
-              )}
-            </>
-          )}
-
-          {activeTab === 'expenses' && (
-            <>
-              {isExpenseLoading ? (
-                <CenteredSpinner message="Compiling expense breakdown..." />
-              ) : expenseData ? (
-                <ExpenseBreakdownView data={expenseData} formatCurrency={formatCurrency} />
-              ) : (
-                <Card>
-                  <CardContent className="py-12 text-center text-gray-500">
-                    Select a date range and click "Generate Report" to view expense breakdown.
-                  </CardContent>
-                </Card>
-              )}
-            </>
-          )}
-
-          {activeTab === 'income' && (
-            <>
-              {isIncomeLoading ? (
-                <CenteredSpinner message="Compiling income breakdown..." />
-              ) : incomeData ? (
-                <IncomeBreakdownView data={incomeData} formatCurrency={formatCurrency} />
-              ) : (
-                <Card>
-                  <CardContent className="py-12 text-center text-gray-500">
-                    Select a date range and click "Generate Report" to view income breakdown.
-                  </CardContent>
-                </Card>
-              )}
-            </>
-          )}
+        {/* Navigation Tabs - Hidden on Print */}
+        <div className="border-b border-gray-200 print:hidden">
+          <nav className="-mb-px flex space-x-6 sm:space-x-8">
+            <button
+              onClick={() => setActiveTab('statement')}
+              className={`py-3.5 px-1 border-b-2 font-medium text-xs sm:text-sm transition-colors ${
+                activeTab === 'statement'
+                  ? 'border-blue-600 text-blue-600 font-bold'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <FileText className="w-4 h-4 inline mr-2 text-blue-600" />
+              Formal Statement (CPA Report)
+            </button>
+            <button
+              onClick={() => setActiveTab('dashboard')}
+              className={`py-3.5 px-1 border-b-2 font-medium text-xs sm:text-sm transition-colors ${
+                activeTab === 'dashboard'
+                  ? 'border-blue-600 text-blue-600 font-bold'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <BarChart3 className="w-4 h-4 inline mr-2" />
+              Executive Dashboard
+            </button>
+            <button
+              onClick={() => setActiveTab('expenses')}
+              className={`py-3.5 px-1 border-b-2 font-medium text-xs sm:text-sm transition-colors ${
+                activeTab === 'expenses'
+                  ? 'border-blue-600 text-blue-600 font-bold'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <PieChart className="w-4 h-4 inline mr-2" />
+              Expense Breakdown
+            </button>
+            <button
+              onClick={() => setActiveTab('income')}
+              className={`py-3.5 px-1 border-b-2 font-medium text-xs sm:text-sm transition-colors ${
+                activeTab === 'income'
+                  ? 'border-blue-600 text-blue-600 font-bold'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <DollarSign className="w-4 h-4 inline mr-2" />
+              Income Breakdown
+            </button>
+          </nav>
         </div>
+
+        {/* Screen Tab Contents */}
+        {activeTab === 'statement' && (
+          <div className="print:hidden">
+            {isPlLoading ? (
+              <CenteredSpinner message="Compiling formal profit & loss statement..." />
+            ) : plData ? (
+              <div className="py-2">
+                <FormalIncomeStatement data={plData} companyName="CHAUHAN DAIRY FARMS" currency="PKR" />
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="py-12 text-center text-gray-500">
+                  Select a date range and click "Generate Report" to view the Formal Profit & Loss statement.
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'dashboard' && (
+          <div className="print:hidden">
+            {isPlLoading ? (
+              <CenteredSpinner message="Calculating profit & loss statement..." />
+            ) : plData ? (
+              <PLReportView data={plData} formatCurrency={formatCurrency} formatPercentage={formatPercentage} />
+            ) : (
+              <Card>
+                <CardContent className="py-12 text-center text-gray-500">
+                  Select a date range and click "Generate Report" to view the Profit & Loss statement.
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'expenses' && (
+          <div className="print:hidden">
+            {isExpenseLoading ? (
+              <CenteredSpinner message="Compiling expense breakdown..." />
+            ) : expenseData ? (
+              <ExpenseBreakdownView data={expenseData} formatCurrency={formatCurrency} />
+            ) : (
+              <Card>
+                <CardContent className="py-12 text-center text-gray-500">
+                  Select a date range and click "Generate Report" to view expense breakdown.
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'income' && (
+          <div className="print:hidden">
+            {isIncomeLoading ? (
+              <CenteredSpinner message="Compiling income breakdown..." />
+            ) : incomeData ? (
+              <IncomeBreakdownView data={incomeData} formatCurrency={formatCurrency} />
+            ) : (
+              <Card>
+                <CardContent className="py-12 text-center text-gray-500">
+                  Select a date range and click "Generate Report" to view income breakdown.
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* PRINT-ONLY CONTAINER: Strictly renders the Formal Accounting Statement    */}
+        {/* ========================================================================= */}
+        {plData && (
+          <div className="hidden print:block w-full">
+            <FormalIncomeStatement data={plData} companyName="CHAUHAN DAIRY FARMS" currency="PKR" />
+          </div>
+        )}
+      </div>
     </AdminLayout>
   );
 }
@@ -322,13 +368,6 @@ function PLReportView({
             ),
           },
         ]}
-      />
-
-      {/* Standard Enterprise Print Header (Print Only) */}
-      <ReportPrintHeader
-        title="Statement of Profit or Loss (Income Statement)"
-        subtitle="Operating Performance, Cost of Goods Sold, and Period Net Margin"
-        dateRange={data.period.displayText}
       />
 
       {/* Screen Formal Letterhead - Hidden on Print */}
@@ -537,7 +576,6 @@ function PLReportView({
           </div>
         </div>
       </TableContainer>
-      <ReportPrintFooter notes="Statement of Profit or Loss recognized under accrual basis. Subject to final statutory annual audit." />
     </div>
   );
 }
