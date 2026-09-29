@@ -14,7 +14,9 @@ import {
 } from '@/lib/api/reports';
 import { getEmployees } from '@/lib/api/employees';
 import { PurchaseReportFilters } from '@/components/reports/PurchaseReportFilters';
-import { FileText, TrendingUp, DollarSign, Droplet, Users, ChevronLeft, ChevronRight, ShoppingBag } from 'lucide-react';
+import { FileText, TrendingUp, DollarSign, Droplet, Users, ChevronLeft, ChevronRight, ShoppingBag, Printer } from 'lucide-react';
+import { ReportPrintHeader } from '@/components/reports/ReportPrintHeader';
+import { ReportPrintFooter } from '@/components/reports/ReportPrintFooter';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { StatStrip, StatItem } from '@/components/ui/StatStrip';
 import { Table, TableContainer } from '@/components/ui/Table/Table';
@@ -325,29 +327,46 @@ function PurchaseReportContent() {
         subtitle="Detailed milk collection and supplier-wise aggregation"
         icon={<ShoppingBag className="w-5 h-5 text-blue-600" />}
         actions={
-          <div className="inline-flex p-0.5 bg-slate-100 rounded-lg border border-slate-200">
+          <div className="flex items-center gap-2">
             <button
-              onClick={() => setView('detailed')}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
-                view === 'detailed'
-                  ? 'bg-white text-slate-900 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
+              onClick={() => window.print()}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-lg transition-colors shadow-xs"
             >
-              Detailed Report
+              <Printer className="w-3.5 h-3.5" />
+              Print / PDF
             </button>
-            <button
-              onClick={() => setView('summary')}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
-                view === 'summary'
-                  ? 'bg-white text-slate-900 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Supplier Summary
-            </button>
+            <div className="inline-flex p-0.5 bg-slate-100 rounded-lg border border-slate-200">
+              <button
+                onClick={() => setView('detailed')}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
+                  view === 'detailed'
+                    ? 'bg-white text-slate-900 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Detailed Report
+              </button>
+              <button
+                onClick={() => setView('summary')}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
+                  view === 'summary'
+                    ? 'bg-white text-slate-900 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Supplier Summary
+              </button>
+            </div>
           </div>
         }
+      />
+
+      {/* Print Header */}
+      <ReportPrintHeader
+        title={view === 'detailed' ? "Milk Purchase Detailed Audit Report" : "Milk Purchase Supplier Summary Report"}
+        subtitle={view === 'detailed' ? "Individual Milk Collection Ledger Transactions" : "Consolidated Supplier Procurement & Balances"}
+        dateRange={{ startDate: filters.startDate, endDate: filters.endDate }}
+        chillarName={filters.chillarId ? `Chillar #${filters.chillarId}` : undefined}
       />
 
       {/* Filters */}
@@ -383,7 +402,7 @@ function PurchaseReportContent() {
       {!loading && !error && view === 'detailed' && detailedReport && (
         <>
           {/* Desktop Table View */}
-          <div className="hidden md:block">
+          <div className="hidden md:block print:block">
             <TableContainer
               title={
                 detailedReport.paginatedPurchases.totalCount > 0
@@ -463,7 +482,7 @@ function PurchaseReportContent() {
           </div>
 
           {/* Mobile Card List for Detailed Purchases */}
-          <div className="md:hidden space-y-2.5">
+          <div className="md:hidden space-y-2.5 print:hidden">
             {detailedReport.paginatedPurchases.items.length === 0 ? (
               <div className="bg-white rounded-xl border border-slate-200 p-8 text-center text-xs text-slate-500">
                 No purchases found for the selected filters
@@ -525,7 +544,7 @@ function PurchaseReportContent() {
 
           {/* Pagination */}
           {detailedReport.paginatedPurchases.totalPages > 1 && (
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-2.5 bg-white rounded-xl border border-slate-200 shadow-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-2.5 bg-white rounded-xl border border-slate-200 shadow-xs print:hidden">
               <div className="text-xs text-slate-500">
                 Showing {((currentPage - 1) * pageSize) + 1} to{' '}
                 {Math.min(currentPage * pageSize, detailedReport.paginatedPurchases.totalCount)} of{' '}
@@ -584,6 +603,8 @@ function PurchaseReportContent() {
               </div>
             </div>
           )}
+
+          <ReportPrintFooter />
         </>
       )}
 
@@ -591,7 +612,7 @@ function PurchaseReportContent() {
       {!loading && !error && view === 'summary' && summaryReport && (
         <>
           {/* Desktop Table View */}
-          <div className="hidden md:block">
+          <div className="hidden md:block print:block">
             <TableContainer title="Supplier-wise Summary">
               <Table dense>
                 <Table.Header sticky>
@@ -649,7 +670,7 @@ function PurchaseReportContent() {
           </div>
 
           {/* Mobile Card List for Supplier Summary */}
-          <div className="md:hidden space-y-2.5">
+          <div className="md:hidden space-y-2.5 print:hidden">
             {summaryReport.supplierSummaries.length === 0 ? (
               <div className="bg-white rounded-xl border border-slate-200 p-8 text-center text-xs text-slate-500">
                 No purchases found for the selected filters
@@ -686,6 +707,8 @@ function PurchaseReportContent() {
               ))
             )}
           </div>
+
+          <ReportPrintFooter />
         </>
       )}
 

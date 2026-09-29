@@ -1,6 +1,8 @@
 'use client';
 import { useState, useEffect, useMemo } from 'react';
-import { Calendar, Milk, Scale, Filter, ChevronDown, AlertCircle, Edit, Trash2, Download, Users } from 'lucide-react';
+import { Calendar, Milk, Scale, Filter, ChevronDown, AlertCircle, Edit, Trash2, Download, Users, Printer } from 'lucide-react';
+import { ReportPrintHeader } from '@/components/reports/ReportPrintHeader';
+import { ReportPrintFooter } from '@/components/reports/ReportPrintFooter';
 import { useAuth } from '@/lib/auth/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoutes';
 import { DynamicLayout } from '@/components/layouts/DynamicLayout';
@@ -316,17 +318,24 @@ export default function PurchaseReport() {
               </h1>
             </div>
 
-            <div className="flex gap-3 w-full md:w-auto">
+            <div className="flex flex-wrap gap-2 w-full md:w-auto">
+              <button
+                onClick={() => window.print()}
+                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold transition-colors shadow-xs"
+              >
+                <Printer className="w-4 h-4" />
+                Print / PDF
+              </button>
               <button
                 onClick={handleExportData}
-                className="flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                className="flex items-center justify-center gap-2 px-3.5 py-2 bg-green-600 text-white text-xs font-semibold rounded-lg hover:bg-green-700 transition-colors"
               >
                 <Download className="w-4 h-4" />
                 Export CSV
               </button>
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                className="flex items-center justify-center gap-2 px-3.5 py-2 bg-gray-100 text-gray-700 text-xs font-semibold rounded-lg hover:bg-gray-200 transition-colors"
               >
                 <Filter className="w-4 h-4" />
                 {showFilters ? 'Hide' : 'Show'} Filters
@@ -334,8 +343,17 @@ export default function PurchaseReport() {
             </div>
           </div>
 
+          {/* Print Header */}
+          <ReportPrintHeader
+            title="Dodhi Milk Procurement & Reception Report"
+            subtitle="Field Milk Collection vs Reception Reconciliation Statement"
+            dateRange={{ startDate, endDate }}
+            entityName={selectedDodhiName ? `Dodhi: ${selectedDodhiName}` : undefined}
+            chillarName={selectedChillarName || undefined}
+          />
+
           {/* Filters */}
-          <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 space-y-4">
+          <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 space-y-4 print:hidden">
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
               {/* Date Range Selector */}
               <div className="relative">
@@ -534,7 +552,7 @@ export default function PurchaseReport() {
               {purchases.length > 0 ? (
                 <>
                   {/* Desktop Table */}
-                  <div className="hidden md:block overflow-x-auto">
+                  <div className="hidden md:block overflow-x-auto print:block">
                     <Table dense>
                       <Table.Header sticky>
                         <Table.Row>
@@ -570,7 +588,7 @@ export default function PurchaseReport() {
                   </div>
 
                   {/* Mobile Card List */}
-                  <div className="md:hidden space-y-2">
+                  <div className="md:hidden space-y-2 print:hidden">
                     {purchases.map((purchase) => (
                       <div key={purchase.purchaseId} className="bg-slate-50/70 border border-slate-200 rounded-lg p-3 space-y-1.5 text-xs">
                         <div className="flex items-center justify-between">
@@ -612,7 +630,7 @@ export default function PurchaseReport() {
               {receives.length > 0 ? (
                 <>
                   {/* Desktop Table */}
-                  <div className="hidden md:block overflow-x-auto">
+                  <div className="hidden md:block overflow-x-auto print:block">
                     <Table dense>
                       <Table.Header sticky>
                         <Table.Row>
@@ -671,7 +689,7 @@ export default function PurchaseReport() {
                   </div>
 
                   {/* Mobile Card List */}
-                  <div className="md:hidden space-y-2">
+                  <div className="md:hidden space-y-2 print:hidden">
                     {receives.map((receive) => (
                       <div key={receive.receiveId} className="bg-slate-50/70 border border-slate-200 rounded-lg p-3 space-y-2 text-xs">
                         <div className="flex items-center justify-between border-b border-slate-200/60 pb-1.5">
@@ -722,6 +740,8 @@ export default function PurchaseReport() {
               )}
             </div>
           )}
+
+          <ReportPrintFooter />
 
           {/* Info message for admin when no dodhi selected */}
           {isAdmin && !selectedDodhiId && (

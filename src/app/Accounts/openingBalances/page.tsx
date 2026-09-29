@@ -14,7 +14,10 @@ import {
   AlertTriangle,
   ChevronLeft,
   ChevronRight,
+  Printer,
 } from 'lucide-react';
+import { ReportPrintHeader } from '@/components/reports/ReportPrintHeader';
+import { ReportPrintFooter } from '@/components/reports/ReportPrintFooter';
 import { openingBalancesApi, OpeningBalance, OpeningBalanceFilters } from '@/lib/api/openingBalances';
 import OpeningBalanceModal from '@/components/modals/OpeningBalanceModal';
 import { useToast } from '@/hooks/useToast';
@@ -158,6 +161,13 @@ export default function OpeningBalancesPage() {
             actions={
               <div className="flex items-center gap-2">
                 <button
+                  onClick={() => window.print()}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-lg transition-colors shadow-2xs"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  Print / PDF
+                </button>
+                <button
                   onClick={() => loadOpeningBalances()}
                   disabled={loading}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-700 text-xs font-semibold rounded-lg hover:bg-slate-200 transition-colors border border-slate-200"
@@ -177,6 +187,12 @@ export default function OpeningBalancesPage() {
                 </button>
               </div>
             }
+          />
+
+          {/* Print Header */}
+          <ReportPrintHeader
+            title="Account Opening Balances Statement"
+            subtitle="Initial Account Balances and Ledger Migration Figures"
           />
 
           {/* KPI StatStrip */}
@@ -216,7 +232,7 @@ export default function OpeningBalancesPage() {
           />
 
           {/* Compact Filter Toolbar */}
-          <div className="bg-white rounded-xl border border-slate-200/90 p-2.5 sm:p-3 shadow-xs space-y-3">
+          <div className="bg-white rounded-xl border border-slate-200/90 p-2.5 sm:p-3 shadow-xs space-y-3 print:hidden">
             <div className="flex flex-wrap items-center gap-3">
               {/* Quick Search */}
               <div className="relative min-w-[220px] flex-1 sm:flex-initial">
@@ -491,6 +507,7 @@ export default function OpeningBalancesPage() {
               </div>
             </div>
           </TableContainer>
+          <ReportPrintFooter />
 
           {/* Opening Balance Modal */}
           <OpeningBalanceModal

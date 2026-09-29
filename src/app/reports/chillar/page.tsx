@@ -16,8 +16,11 @@ import {
   ArrowRight,
   FileText,
   Activity,
-  Clock
+  Clock,
+  Printer
 } from 'lucide-react';
+import { ReportPrintHeader } from '@/components/reports/ReportPrintHeader';
+import { ReportPrintFooter } from '@/components/reports/ReportPrintFooter';
 import { FieldStaffLayout } from '@/components/layouts/FieldStaffLayout';
 import ProtectedRoute from '@/components/ProtectedRoutes';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -219,6 +222,13 @@ export default function ChillarReports() {
             actions={
               <div className="flex items-center gap-2">
                 <button
+                  onClick={() => window.print()}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold transition-colors shadow-xs"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  Print / PDF
+                </button>
+                <button
                   onClick={navigateToReceiveReport}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-xs font-semibold border border-blue-200 transition-colors"
                 >
@@ -241,6 +251,14 @@ export default function ChillarReports() {
                 </button>
               </div>
             }
+          />
+
+          {/* Print Header */}
+          <ReportPrintHeader
+            title="Chillar Stock & Inventory Audit Report"
+            subtitle="Chillar Stock Movement, Balance Reconciliation and Transaction Logs"
+            dateRange={{ startDate: dateRange.startDate, endDate: dateRange.endDate }}
+            chillarName={chillarInfo?.chillarId ? `Chillar #${chillarInfo.chillarId}` : undefined}
           />
 
           {/* Main Stock Summary Ribbon */}
@@ -423,7 +441,7 @@ export default function ChillarReports() {
           {activeView === 'daily' && (
             <>
               {/* Desktop Table View */}
-              <div className="hidden md:block">
+              <div className="hidden md:block print:block">
                 <TableContainer title="Daily Stock Movement (Historical)">
                   <Table dense>
                     <Table.Header>
@@ -463,7 +481,7 @@ export default function ChillarReports() {
               </div>
 
               {/* Mobile Card List for Daily Stock */}
-              <div className="md:hidden space-y-2.5">
+              <div className="md:hidden space-y-2.5 print:hidden">
                 {additionalData.dailyStock.map((day) => (
                   <div key={day.date} className="bg-white rounded-xl border border-slate-200/90 p-3 shadow-xs space-y-2">
                     <div className="flex items-center justify-between border-b border-slate-100 pb-2">
@@ -494,6 +512,8 @@ export default function ChillarReports() {
                   </div>
                 ))}
               </div>
+
+              <ReportPrintFooter />
             </>
           )}
         </div>

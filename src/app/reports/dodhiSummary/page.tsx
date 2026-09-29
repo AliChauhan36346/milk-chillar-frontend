@@ -24,8 +24,11 @@ import {
     Calendar,
     Filter,
     Clock,
-    UserCheck
+    UserCheck,
+    Printer
 } from 'lucide-react';
+import { ReportPrintHeader } from '@/components/reports/ReportPrintHeader';
+import { ReportPrintFooter } from '@/components/reports/ReportPrintFooter';
 
 export default function DodhiSummaryReportPage() {
     // Config
@@ -126,10 +129,27 @@ export default function DodhiSummaryReportPage() {
                             title="Dodhi Summary Report"
                             subtitle="Overview of dodhi collection, performance and variance"
                             icon={<UserCheck className="w-5 h-5 text-blue-600" />}
+                            actions={
+                                <button
+                                    onClick={() => window.print()}
+                                    className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg transition-colors flex items-center gap-1.5 text-xs font-semibold shadow-xs"
+                                >
+                                    <Printer className="w-3.5 h-3.5" />
+                                    Print / PDF
+                                </button>
+                            }
+                        />
+
+                        {/* Print Header */}
+                        <ReportPrintHeader
+                            title="Dodhi Procurement & Performance Summary Report"
+                            subtitle="Consolidated Field Dodhi Collection, Reception, and Variance Analysis"
+                            dateRange={{ startDate, endDate }}
+                            chillarName={chillars.find(c => c.chillarId === selectedChillarId)?.name || undefined}
                         />
 
                         {/* Compact Filters Toolbar */}
-                        <div className="bg-white rounded-xl border border-slate-200/90 p-2.5 sm:p-3 shadow-xs">
+                        <div className="bg-white rounded-xl border border-slate-200/90 p-2.5 sm:p-3 shadow-xs print:hidden">
                             <div className="flex flex-wrap items-center gap-2.5">
                                 {/* Start Date */}
                                 <div className="flex items-center gap-1.5">
@@ -254,7 +274,7 @@ export default function DodhiSummaryReportPage() {
                                 )}
 
                                 {/* Desktop Table */}
-                                <div className="hidden md:block">
+                                <div className="hidden md:block print:block">
                                     <TableContainer title="Dodhi Performance Details">
                                         <Table dense>
                                             <Table.Header sticky>
@@ -319,8 +339,10 @@ export default function DodhiSummaryReportPage() {
                                     </TableContainer>
                                 </div>
 
+                                <ReportPrintFooter />
+
                                 {/* Mobile Card List */}
-                                <div className="md:hidden space-y-2.5">
+                                <div className="md:hidden space-y-2.5 print:hidden">
                                     <div className="flex items-center justify-between px-1">
                                         <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Dodhi Performance</h3>
                                         <span className="text-[11px] text-slate-400">{dodhiDetails.length} Records</span>

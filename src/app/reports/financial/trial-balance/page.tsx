@@ -10,6 +10,8 @@ import { Table, TableContainer } from '@/components/ui/Table/Table';
 import { Select } from '@/components/ui/Select';
 import { CenteredSpinner } from '@/components/ui/spinner';
 import { getAllAccountBalances, AccountLedgerSummary } from '@/lib/api/accountLedger';
+import { ReportPrintHeader } from '@/components/reports/ReportPrintHeader';
+import { ReportPrintFooter } from '@/components/reports/ReportPrintFooter';
 import {
   Scale,
   Download,
@@ -274,7 +276,7 @@ export default function TrialBalancePage() {
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-700 text-xs font-semibold rounded-lg hover:bg-slate-200 transition-colors border border-slate-200 shadow-2xs"
                   >
                     <Printer className="w-3.5 h-3.5" />
-                    Print
+                    Print / PDF
                   </button>
                   <button
                     onClick={loadData}
@@ -289,8 +291,15 @@ export default function TrialBalancePage() {
             />
           </div>
 
-          {/* Formal Letterhead - Visible on Print and Screen */}
-          <div className="bg-white border border-slate-200/90 rounded-xl p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-center sm:text-left print:border-b-2 print:border-slate-800 print:shadow-none print:p-2">
+          {/* Standard Enterprise Print Header (Visible on Print Only) */}
+          <ReportPrintHeader
+            title="Trial Balance Statement"
+            subtitle="Comprehensive double-entry verification of debit and credit parity across general ledger accounts"
+            asOfDate={asOfDate}
+          />
+
+          {/* Screen Executive Letterhead - Hidden on Print */}
+          <div className="bg-white border border-slate-200/90 rounded-xl p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-center sm:text-left print:hidden">
             <div>
               <div className="flex items-center justify-center sm:justify-start gap-2">
                 <Building2 className="w-4 h-4 text-blue-600 print:hidden" />
@@ -419,7 +428,8 @@ export default function TrialBalancePage() {
 
           {/* 8-Column Trial Balance Grid */}
           {!loading && !error && (
-            <TableContainer title="Trial Balance Accounts">
+            <>
+              <TableContainer title="Trial Balance Accounts">
               <div className="px-3.5 py-2 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 text-xs text-slate-500 print:hidden">
                 <span>
                   Showing <strong className="text-slate-700">{filteredAccounts.length}</strong> active accounts
@@ -573,6 +583,8 @@ export default function TrialBalancePage() {
                 )}
               </Table>
             </TableContainer>
+            <ReportPrintFooter notes="Trial Balance verified against General Ledger account balances. Total debits equal total credits." />
+          </>
           )}
         </div>
       </AdminLayout>

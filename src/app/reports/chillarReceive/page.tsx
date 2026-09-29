@@ -3,8 +3,10 @@ import { useSearchParams } from 'next/navigation';
 import { Suspense, useState, useEffect, useMemo, useCallback } from 'react';
 import {
     Truck, Download, RefreshCw, Eye,
-    Users, Clock, Droplets
+    Users, Clock, Droplets, Printer
 } from 'lucide-react';
+import { ReportPrintHeader } from '@/components/reports/ReportPrintHeader';
+import { ReportPrintFooter } from '@/components/reports/ReportPrintFooter';
 import { DynamicLayout } from '@/components/layouts/DynamicLayout';
 import ProtectedRoute from '@/components/ProtectedRoutes';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -332,6 +334,13 @@ function ReceiveReportContent() {
                             </div>
                         )}
                         <button
+                            onClick={() => window.print()}
+                            className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg transition-colors flex items-center gap-1.5 text-xs font-semibold shadow-xs"
+                        >
+                            <Printer className="w-3.5 h-3.5" />
+                            Print / PDF
+                        </button>
+                        <button
                             onClick={loadReceiveData}
                             disabled={loading.records}
                             className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors flex items-center gap-1.5 text-xs font-semibold border border-slate-200"
@@ -341,6 +350,14 @@ function ReceiveReportContent() {
                         </button>
                     </div>
                 }
+            />
+
+            {/* Print Header */}
+            <ReportPrintHeader
+                title="Chillar Milk Reception & Quality Audit Report"
+                subtitle="Field Procurement Receipts & Quality Intake Analysis"
+                dateRange={dateRange}
+                chillarName={chillars.find(c => c.chillarId === userChillar?.chillarId)?.location || undefined}
             />
 
             {/* Metric Strip */}
@@ -375,7 +392,7 @@ function ReceiveReportContent() {
             </div>
 
             {/* Compact Filters Toolbar */}
-            <div className="bg-white rounded-xl border border-slate-200/90 p-2.5 sm:p-3 shadow-xs">
+            <div className="bg-white rounded-xl border border-slate-200/90 p-2.5 sm:p-3 shadow-xs print:hidden">
                 <div className="flex flex-wrap items-center gap-2.5">
                     {/* Date Range */}
                     <div className="flex items-center gap-1.5">
@@ -528,7 +545,7 @@ function ReceiveReportContent() {
 
                 {/* Pagination */}
                 {totalPages > 1 && (
-                    <div className="px-4 py-3 border-t border-slate-200/80 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div className="px-4 py-3 border-t border-slate-200/80 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 print:hidden">
                         <div className="text-xs text-slate-500 text-center sm:text-left">
                             Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, displayTransactions.length)} of {displayTransactions.length} results
                         </div>
@@ -554,6 +571,8 @@ function ReceiveReportContent() {
                     </div>
                 )}
             </TableContainer>
+
+            <ReportPrintFooter />
         </div>
     );
 }

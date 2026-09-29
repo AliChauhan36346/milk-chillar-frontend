@@ -24,8 +24,11 @@ import {
     RefreshCw,
     ChevronLeft,
     ChevronRight,
-    Search
+    Search,
+    Printer
 } from 'lucide-react';
+import { ReportPrintHeader } from '@/components/reports/ReportPrintHeader';
+import { ReportPrintFooter } from '@/components/reports/ReportPrintFooter';
 import {
     getAccountLedger,
     getAccountLedgerSummary,
@@ -345,6 +348,13 @@ function AccountLedgerInner() {
                         icon={<FileText className="w-5 h-5 text-blue-600" />}
                         actions={
                             <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => window.print()}
+                                    className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg transition-colors flex items-center gap-1.5 text-xs font-semibold shadow-xs"
+                                >
+                                    <Printer className="w-3.5 h-3.5" />
+                                    Print / PDF
+                                </button>
                                 <button className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1.5 text-xs font-semibold shadow-xs">
                                     <Download className="w-3.5 h-3.5" />
                                     Export
@@ -360,8 +370,16 @@ function AccountLedgerInner() {
                         }
                     />
 
+                    {/* Print Header */}
+                    <ReportPrintHeader
+                        title="General Account Ledger"
+                        subtitle="Detailed Transaction & Balance Movement Report"
+                        entityName={selectedAccount ? `${selectedAccount.label} (${selectedAccount.code})` : undefined}
+                        dateRange={filters.fromDate || filters.toDate ? `${filters.fromDate || 'All Past'} to ${filters.toDate || 'Present'}` : 'All Time'}
+                    />
+
                     {/* Account Selector and Filters Toolbar */}
-                    <div className="bg-white rounded-xl border border-slate-200/90 p-3 shadow-xs space-y-2.5">
+                    <div className="bg-white rounded-xl border border-slate-200/90 p-3 shadow-xs space-y-2.5 print:hidden">
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
                             <div className="lg:col-span-2">
                                 <SearchableSelect<AccountOption>
@@ -475,7 +493,8 @@ function AccountLedgerInner() {
 
                     {/* Ledger Table */}
                     {selectedAccount && (
-                        <TableContainer title="Transaction History">
+                        <>
+                            <TableContainer title="Transaction History">
                             <div className="overflow-x-auto">
                                 <Table dense className="min-w-full">
                                     <Table.Header sticky>
@@ -605,7 +624,9 @@ function AccountLedgerInner() {
                                     </div>
                                 </div>
                             )}
-                        </TableContainer>
+                            </TableContainer>
+                            <ReportPrintFooter />
+                        </>
                     )}
 
                     {/* Milk Card Modal */}

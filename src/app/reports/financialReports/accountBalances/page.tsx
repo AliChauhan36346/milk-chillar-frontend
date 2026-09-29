@@ -7,11 +7,13 @@ import {
   PagedAccountBalances,
   AccountBalanceDetail
 } from '@/lib/api/reports';
-import { ChevronLeft, ChevronRight, Users, TrendingUp, TrendingDown, Wallet, Search, Download, Landmark, DollarSign, Building } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Users, TrendingUp, TrendingDown, Wallet, Search, Download, Landmark, DollarSign, Building, Printer } from 'lucide-react';
 import { CenteredSpinner } from '@/components/ui/spinner';
 import { StatStrip } from '@/components/ui/StatStrip';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Table, TableContainer } from '@/components/ui/Table/Table';
+import { ReportPrintHeader } from '@/components/reports/ReportPrintHeader';
+import { ReportPrintFooter } from '@/components/reports/ReportPrintFooter';
 
 type AccountType = 'Supplier' | 'Buyer' | 'Cash' | 'Bank';
 
@@ -133,15 +135,32 @@ export default function AccountBalancesPage() {
             subtitle="Real-time balances across suppliers, buyers, cash registers, and bank accounts"
             icon={<Wallet className="w-5 h-5 text-blue-600" />}
             actions={
-              <button
-                onClick={handleExportCSV}
-                disabled={!data || data.balances.length === 0}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white text-xs font-semibold rounded-lg hover:bg-emerald-700 transition-colors shadow-2xs disabled:opacity-50"
-              >
-                <Download className="w-3.5 h-3.5" />
-                Export CSV
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleExportCSV}
+                  disabled={!data || data.balances.length === 0}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white text-xs font-semibold rounded-lg hover:bg-emerald-700 transition-colors shadow-2xs disabled:opacity-50"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  Export CSV
+                </button>
+                <button
+                  onClick={() => window.print()}
+                  disabled={!data || data.balances.length === 0}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-700 text-xs font-semibold rounded-lg hover:bg-slate-200 transition-colors border border-slate-200 shadow-2xs disabled:opacity-50"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  Print / PDF
+                </button>
+              </div>
             }
+          />
+
+          {/* Standard Enterprise Print Header (Print Only) */}
+          <ReportPrintHeader
+            title={`Account Balances Report — ${activeTab} Accounts`}
+            subtitle={`Consolidated balances and ledger positions for ${activeTab.toLowerCase()} accounts`}
+            entityName={`${activeTab} Classification`}
           />
 
           {/* Navigation Tabs & Toolbar */}
@@ -223,7 +242,8 @@ export default function AccountBalancesPage() {
 
           {/* Table Container */}
           {!loading && !error && data && (
-            <TableContainer title={`${activeTab} Account Balances`}>
+            <>
+              <TableContainer title={`${activeTab} Account Balances`}>
               <div className="px-3.5 py-2 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 text-xs text-slate-500">
                 <span>
                   Showing <strong className="text-slate-700">{filteredBalances.length}</strong> accounts
@@ -346,7 +366,9 @@ export default function AccountBalancesPage() {
                   </button>
                 </div>
               )}
-            </TableContainer>
+              </TableContainer>
+              <ReportPrintFooter />
+            </>
           )}
         </div>
       </AdminLayout>

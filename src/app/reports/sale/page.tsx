@@ -14,8 +14,11 @@ import {
   Milk,
   Scale,
   Filter,
-  Droplet
+  Droplet,
+  Printer
 } from 'lucide-react';
+import { ReportPrintHeader } from '@/components/reports/ReportPrintHeader';
+import { ReportPrintFooter } from '@/components/reports/ReportPrintFooter';
 import { FullPageSpinner, CenteredSpinner } from '@/components/ui/spinner';
 import { DynamicLayout } from '@/components/layouts/DynamicLayout';
 import { useAuth } from '@/lib/auth/AuthContext';
@@ -654,6 +657,13 @@ function SalesReportContent() {
               </button>
             </div>
             <button
+              onClick={() => window.print()}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-medium transition-colors shadow-xs"
+            >
+              <Printer className="w-3.5 h-3.5" />
+              Print / PDF
+            </button>
+            <button
               onClick={handleExportData}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-medium hover:bg-emerald-700 transition-colors shadow-xs"
             >
@@ -662,6 +672,14 @@ function SalesReportContent() {
             </button>
           </div>
         }
+      />
+
+      {/* Print Header */}
+      <ReportPrintHeader
+        title={view === 'detailed' ? "Milk Dispatch & Sales Detailed Audit Report" : "Milk Sales Buyer Summary Statement"}
+        subtitle={view === 'detailed' ? "Individual Milk Sales Ledger Transactions" : "Consolidated Buyer-Wise Offtake & Financial Balances"}
+        dateRange={dateRange}
+        chillarName={chillars.find(c => c.chillarId === selectedChillarId)?.name || (isAdmin ? 'All Chillars' : undefined)}
       />
 
       <CompactToolbar
@@ -724,7 +742,7 @@ function SalesReportContent() {
       {!loading && view === 'detailed' && (
         <>
           {/* Desktop Table View */}
-          <div className="hidden md:block">
+          <div className="hidden md:block print:block">
             <TableContainer title="Sales Transactions">
               <Table dense>
                 <Table.Header sticky>
@@ -846,7 +864,7 @@ function SalesReportContent() {
           </div>
 
           {/* Mobile Card List for Detailed Sales */}
-          <div className="md:hidden space-y-2.5">
+          <div className="md:hidden space-y-2.5 print:hidden">
             {paginatedData.length === 0 ? (
               <div className="bg-white rounded-xl border border-slate-200 p-8 text-center text-slate-400">
                 <ShoppingCart className="w-10 h-10 mx-auto mb-2 opacity-50" />
@@ -918,7 +936,7 @@ function SalesReportContent() {
       {!loading && view === 'summary' && buyerSummaryData && (
         <>
           {/* Desktop Table View */}
-          <div className="hidden md:block">
+          <div className="hidden md:block print:block">
             <TableContainer title="Buyer-wise Summary">
               <Table dense>
                 <Table.Header sticky>
@@ -1000,7 +1018,7 @@ function SalesReportContent() {
           </div>
 
           {/* Mobile Card List for Buyer Summary */}
-          <div className="md:hidden space-y-2.5">
+          <div className="md:hidden space-y-2.5 print:hidden">
             {filteredBuyerSummaries.length === 0 ? (
               <div className="bg-white rounded-xl border border-slate-200 p-8 text-center text-xs text-gray-500">
                 No buyer data found for the selected filters
@@ -1053,7 +1071,7 @@ function SalesReportContent() {
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="bg-white rounded-xl border border-slate-200 px-4 py-2.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-xs">
+        <div className="bg-white rounded-xl border border-slate-200 px-4 py-2.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-xs print:hidden">
           <div className="text-xs text-slate-500">
             Showing <span className="font-semibold text-slate-800">{startIndex + 1}</span> to <span className="font-semibold text-slate-800">{Math.min(startIndex + itemsPerPage, view === 'detailed' ? filteredTransactions.length : filteredBuyerSummaries.length)}</span> of <span className="font-semibold text-slate-800">{view === 'detailed' ? filteredTransactions.length : filteredBuyerSummaries.length}</span> results
           </div>
@@ -1093,6 +1111,8 @@ function SalesReportContent() {
           </div>
         </div>
       )}
+
+      <ReportPrintFooter />
 
       {/* Sales Modal */}
       {showSalesModal && salesModalData && currentSale && (

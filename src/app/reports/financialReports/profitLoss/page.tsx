@@ -23,6 +23,8 @@ import { AdminLayout } from '@/components/layouts/AdminLayout';
 import ProtectedRoute from '@/components/ProtectedRoutes';
 import { StatStrip } from '@/components/ui/StatStrip';
 import { TableContainer } from '@/components/ui/Table/Table';
+import { ReportPrintHeader } from '@/components/reports/ReportPrintHeader';
+import { ReportPrintFooter } from '@/components/reports/ReportPrintFooter';
 import {
   TrendingUp,
   TrendingDown,
@@ -141,12 +143,12 @@ export default function ProfitLossPage() {
                 Excel
               </button>
               <button
-                onClick={() => handleExport('pdf')}
-                disabled={isExporting || !plData}
+                onClick={() => window.print()}
+                disabled={!plData}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-2xs disabled:opacity-50"
               >
-                <Download className="w-3.5 h-3.5" />
-                PDF
+                <Printer className="w-3.5 h-3.5" />
+                Print / PDF
               </button>
             </div>
           }
@@ -322,8 +324,15 @@ function PLReportView({
         ]}
       />
 
-      {/* Formal Letterhead */}
-      <div className="bg-white border border-slate-200/90 rounded-xl p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-center sm:text-left print:border-b-2 print:border-slate-800 print:shadow-none print:p-2">
+      {/* Standard Enterprise Print Header (Print Only) */}
+      <ReportPrintHeader
+        title="Statement of Profit or Loss (Income Statement)"
+        subtitle="Operating Performance, Cost of Goods Sold, and Period Net Margin"
+        dateRange={data.period.displayText}
+      />
+
+      {/* Screen Formal Letterhead - Hidden on Print */}
+      <div className="bg-white border border-slate-200/90 rounded-xl p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-center sm:text-left print:hidden">
         <div>
           <div className="flex items-center justify-center sm:justify-start gap-2">
             <Building2 className="w-4 h-4 text-blue-600 print:hidden" />
@@ -528,6 +537,7 @@ function PLReportView({
           </div>
         </div>
       </TableContainer>
+      <ReportPrintFooter notes="Statement of Profit or Loss recognized under accrual basis. Subject to final statutory annual audit." />
     </div>
   );
 }

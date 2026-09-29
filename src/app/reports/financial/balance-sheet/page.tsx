@@ -9,6 +9,8 @@ import { StatStrip } from '@/components/ui/StatStrip';
 import { TableContainer } from '@/components/ui/Table/Table';
 import { CenteredSpinner } from '@/components/ui/spinner';
 import { getAllAccountBalances, AccountLedgerSummary } from '@/lib/api/accountLedger';
+import { ReportPrintHeader } from '@/components/reports/ReportPrintHeader';
+import { ReportPrintFooter } from '@/components/reports/ReportPrintFooter';
 import {
   FileText,
   Download,
@@ -269,7 +271,7 @@ export default function BalanceSheetPage() {
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-700 text-xs font-semibold rounded-lg hover:bg-slate-200 transition-colors border border-slate-200 shadow-2xs"
                   >
                     <Printer className="w-3.5 h-3.5" />
-                    Print
+                    Print / PDF
                   </button>
                   <button
                     onClick={loadData}
@@ -284,8 +286,15 @@ export default function BalanceSheetPage() {
             />
           </div>
 
-          {/* Formal Letterhead */}
-          <div className="bg-white border border-slate-200/90 rounded-xl p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-center sm:text-left print:border-b-2 print:border-slate-800 print:shadow-none print:p-2">
+          {/* Standard Enterprise Print Header (Visible on Print Only) */}
+          <ReportPrintHeader
+            title="Statement of Financial Position (Balance Sheet)"
+            subtitle="Categorized Assets, Liabilities, and Owner's Equity at reporting cutoff"
+            asOfDate={asOfDate}
+          />
+
+          {/* Screen Formal Letterhead - Hidden on Print */}
+          <div className="bg-white border border-slate-200/90 rounded-xl p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-center sm:text-left print:hidden">
             <div>
               <div className="flex items-center justify-center sm:justify-start gap-2">
                 <Building2 className="w-4 h-4 text-blue-600 print:hidden" />
@@ -388,7 +397,8 @@ export default function BalanceSheetPage() {
 
           {/* Formal Classified Statement Layout */}
           {!loading && !error && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 print:grid-cols-2">
+            <>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 print:grid-cols-2">
               {/* LEFT COLUMN: ASSETS */}
               <div className="space-y-4">
                 <TableContainer title="Assets (Statement of Financial Position)">
@@ -632,6 +642,8 @@ export default function BalanceSheetPage() {
                 </TableContainer>
               </div>
             </div>
+              <ReportPrintFooter notes="Statement of Financial Position compiled under accrual accounting standards. Total Assets equal Total Liabilities and Equity." />
+            </>
           )}
         </div>
       </AdminLayout>

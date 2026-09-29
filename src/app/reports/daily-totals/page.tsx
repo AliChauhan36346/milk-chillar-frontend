@@ -9,8 +9,11 @@ import {
     Scale,
     TrendingDown,
     DollarSign,
-    Download
+    Download,
+    Printer
 } from 'lucide-react';
+import { ReportPrintHeader } from '@/components/reports/ReportPrintHeader';
+import { ReportPrintFooter } from '@/components/reports/ReportPrintFooter';
 import { DynamicLayout } from '@/components/layouts/DynamicLayout';
 import { useAuth } from '@/lib/auth/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoutes';
@@ -312,14 +315,31 @@ function DailyTotalsContent() {
                 subtitle="Consolidated daily milk collection, reception, sales, and profit breakdown"
                 icon={<BarChart2 />}
                 actions={
-                    <button
-                        onClick={handleExportData}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white text-xs font-semibold rounded-lg hover:bg-emerald-700 transition-colors shadow-xs"
-                    >
-                        <Download className="w-3.5 h-3.5" />
-                        Export CSV
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => window.print()}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-lg transition-colors shadow-xs"
+                        >
+                            <Printer className="w-3.5 h-3.5" />
+                            Print / PDF
+                        </button>
+                        <button
+                            onClick={handleExportData}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white text-xs font-semibold rounded-lg hover:bg-emerald-700 transition-colors shadow-xs"
+                        >
+                            <Download className="w-3.5 h-3.5" />
+                            Export CSV
+                        </button>
+                    </div>
                 }
+            />
+
+            {/* Print Header */}
+            <ReportPrintHeader
+                title="Daily Milk Totals & Reconciliation Report"
+                subtitle="Consolidated Milk Procurement, Reception, Dispatch, and Financial Performance"
+                dateRange={dateRange}
+                chillarName={chillars.find(c => c.chillarId === selectedChillarId)?.name || (isAdmin ? 'All Chillars' : undefined)}
             />
 
             {/* Compact Filter Toolbar */}
@@ -375,7 +395,7 @@ function DailyTotalsContent() {
             </div>
 
             {/* Minimalist Desktop Table (Zero Horizontal Scroll) */}
-            <div className="hidden md:block">
+            <div className="hidden md:block print:block">
                 <TableContainer>
                     <div className="px-3.5 py-2.5 border-b border-slate-200/80 flex items-center justify-between bg-slate-50/50">
                         <div className="flex items-center gap-2">
@@ -577,8 +597,10 @@ function DailyTotalsContent() {
                 </TableContainer>
             </div>
 
+            <ReportPrintFooter />
+
             {/* Mobile Card View */}
-            <div className="md:hidden space-y-2.5">
+            <div className="md:hidden space-y-2.5 print:hidden">
                 {dailyTotals.length === 0 ? (
                     <div className="bg-white rounded-xl border border-slate-200 p-8 text-center text-slate-500">
                         <Calendar className="w-10 h-10 mx-auto mb-2 text-slate-400" />
